@@ -68,7 +68,17 @@ test.describe("clienta en el móvil", () => {
     await expect(page.getByRole("heading", { name: "¡Hora reservada!" })).toBeVisible();
   });
 
-  test("esa hora ya no se ofrece a nadie más", async ({ page }) => {
+  test("con dos cabinas, otra clienta puede coger la misma hora; una tercera ya no", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: `Pedir cita: ${HIGIENE}` }).click();
+    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").first().click();
+    await page.getByRole("region", { name: /¿A qué hora\?/ }).getByRole("link", { name: horaReservada, exact: true }).click();
+    await page.getByLabel("Tu nombre", { exact: true }).fill("Paula Gil");
+    await page.getByLabel(/Tu teléfono/).fill("644 55 66 77");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Reservar esta hora" }).click();
+    await expect(page.getByRole("heading", { name: "¡Hora reservada!" })).toBeVisible();
+
     await page.goto("/");
     await page.getByRole("link", { name: `Pedir cita: ${HIGIENE}` }).click();
     await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").first().click();
@@ -124,8 +134,8 @@ test.describe("centro", () => {
   test.afterAll(async () => pagina.close());
 
   test("ve la cita web, escribe por WhatsApp y la confirma", async () => {
-    // La cita de Marta, la petición de Lola y las 3 de prueba. Ni la cuarta ni la del robot.
-    await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("5");
+    // Las citas de Marta y Paula, la petición de Lola y las 3 de prueba. Ni la cuarta ni la del robot.
+    await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("6");
     await pagina.getByRole("link", { name: /Reservas por confirmar/ }).click();
     await expect(pagina.getByRole("region", { name: /Robot/ })).toHaveCount(0);
 
@@ -141,7 +151,7 @@ test.describe("centro", () => {
     await expect(marta).toHaveCount(0);
 
     await pagina.goto("/gestion");
-    await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("4");
+    await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("5");
   });
 
   test("Marta tiene ficha creada desde la web, con su permiso de privacidad", async () => {

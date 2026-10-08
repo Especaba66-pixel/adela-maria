@@ -70,3 +70,6 @@ export const BONOS: TarifaBono[] = [
   { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
   { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
 ];
+
+/** Cabinas del centro (dato de Espe, 9 de octubre de 2026): hasta dos citas a la vez. */
+export const CABINAS = 2;

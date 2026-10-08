@@ -111,12 +111,15 @@ export function seSolapan(a: Intervalo, b: Intervalo): boolean {
 export function huecosLibres(opciones: {
   fecha: string;
   horario: Tramo[];
+  /** Lo que no se puede pisar nunca (bloqueos y, si no hay más reglas, citas). */
   ocupados: Intervalo[];
   duracion: number;
   paso: number;
   desde?: Date;
+  /** Regla adicional (por ejemplo, cabinas libres). */
+  admite?: (candidato: Intervalo) => boolean;
 }): number[] {
-  const { fecha, horario, ocupados, duracion, paso, desde } = opciones;
+  const { fecha, horario, ocupados, duracion, paso, desde, admite } = opciones;
   if (duracion <= 0) return [];
   const libres: number[] = [];
   for (const tramo of [...horario].sort((a, b) => a.inicio - b.inicio)) {
@@ -124,6 +127,7 @@ export function huecosLibres(opciones: {
       const candidato = { inicio: instanteMadrid(fecha, t), fin: instanteMadrid(fecha, t + duracion) };
       if (desde && candidato.inicio.getTime() < desde.getTime()) continue;
       if (ocupados.some((o) => seSolapan(candidato, o))) continue;
+      if (admite && !admite(candidato)) continue;
       if (!libres.includes(t)) libres.push(t);
     }
   }
@@ -211,4 +215,50 @@ export function aMinutosDelDia(fecha: string, i: Intervalo): Tramo {
   const ini = Math.max(i.inicio.getTime(), inicioDia);
   const fin = Math.min(i.fin.getTime(), finDia);
   return { inicio: partesMadrid(new Date(ini)).minutos, fin: fin >= finDia ? 24 * 60 : partesMadrid(new Date(fin)).minutos };
+}
+
+// ── Cabinas y tratamientos exclusivos ────────────────────────────────────────
+
+export interface CitaOcupa extends Intervalo {
+  exclusiva: boolean;
+  profesionalId: string;
+}
+
+/**
+ * ¿Cabe una cita nueva? Puede haber a la vez tantas citas como cabinas (de cualquier profesional), y una cita
+ * exclusiva (microblading) no puede coincidir con ninguna otra de la misma profesional.
+ */
+export function cabeCita(nueva: CitaOcupa, citas: CitaOcupa[], cabinas: number): boolean {
+  const coinciden = citas.filter((c) => seSolapan(c, nueva));
+  if (coinciden.some((c) => c.profesionalId === nueva.profesionalId && (c.exclusiva || nueva.exclusiva))) return false;
+  // El máximo de citas a la vez se alcanza al empezar alguna: basta mirar esos momentos.
+  const momentos = [nueva.inicio.getTime(), ...coinciden.map((c) => c.inicio.getTime()).filter((t) => t > nueva.inicio.getTime())];
+  return momentos.every((t) => coinciden.filter((c) => c.inicio.getTime() <= t && t < c.fin.getTime()).length + 1 <= cabinas);
+}
+
+/**
+ * Partes del horario en que todavía se puede empezar algo (de 5 en 5 minutos): sin bloqueo, con cabina libre y
+ * sin un tratamiento exclusivo en curso. Sirve para pintar los huecos de la vista de día.
+ */
+export function tramosDisponibles(opciones: {
+  fecha: string;
+  horario: Tramo[];
+  bloqueos: Intervalo[];
+  citas: CitaOcupa[];
+  cabinas: number;
+  profesionalId: string;
+}): Tramo[] {
+  const { fecha, horario, bloqueos, citas, cabinas, profesionalId } = opciones;
+  const libres: Tramo[] = [];
+  for (const t of [...horario].sort((a, b) => a.inicio - b.inicio)) {
+    for (let m = t.inicio; m < t.fin; m += MINUTOS_TRAMO) {
+      const tramo = { inicio: instanteMadrid(fecha, m), fin: instanteMadrid(fecha, m + MINUTOS_TRAMO) };
+      const sitio = !bloqueos.some((b) => seSolapan(b, tramo)) && cabeCita({ ...tramo, exclusiva: false, profesionalId }, citas, cabinas);
+      if (!sitio) continue;
+      const ultimo = libres.at(-1);
+      if (ultimo && ultimo.fin === m) ultimo.fin = m + MINUTOS_TRAMO;
+      else libres.push({ inicio: m, fin: m + MINUTOS_TRAMO });
+    }
+  }
+  return libres;
 }

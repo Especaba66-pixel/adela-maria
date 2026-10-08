@@ -29,6 +29,7 @@ export default async function Tratamientos() {
     duracion: t.duracionMinutos === null ? "" : String(t.duracionMinutos),
     precio: t.precioCentimos === null ? "" : (t.precioCentimos / 100).toFixed(2).replace(".", ","),
     descripcion: t.descripcion ?? "",
+    exclusivo: t.exclusivo,
     retirado: t.anuladoEn !== null,
   });
 
@@ -51,6 +52,7 @@ export default async function Tratamientos() {
                       <div className="font-medium">{t.nombre}</div>
                       <div className="text-sm text-tinta-suave">
                         {t.duracionMinutos === null ? "Duración por decidir" : `${t.duracionMinutos} min`}
+                        {t.exclusivo && " · va sola"}
                       </div>
                     </div>
                     <div className={t.precioCentimos === null ? "text-pendiente" : "font-semibold"}>{textoPrecio(t.precioCentimos)}</div>

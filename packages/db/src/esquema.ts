@@ -39,6 +39,8 @@ export const centro = pgTable("centro", {
   direccion: text(),
   telefono: text(),
   zonaHoraria: text().notNull().default("Europe/Madrid"),
+  /** Cabinas: cuántas citas puede haber a la vez en el centro. Vacío = por indicar (se cuenta 1). */
+  cabinas: integer(),
   creadoEn: creadoEn(),
 });
 
@@ -146,6 +148,8 @@ export const tratamientos = pgTable(
       .references(() => categorias.id),
     nombre: text().notNull(),
     descripcion: text(),
+    /** Necesita a la profesional en exclusiva (por ejemplo, microblading): no admite otra cita a la vez. */
+    exclusivo: boolean().notNull().default(false),
     /** La agenda trabaja en tramos de 5 minutos. Vacío mientras esté por decidir. */
     duracionMinutos: integer(),
     /** Vacío mientras el precio esté por decidir: se muestra «Precio a consultar» y no se puede cobrar. */
@@ -373,8 +377,8 @@ export const series = pgTable("series", {
 export const estadoCita = pgEnum("estado_cita", ["pendiente", "confirmada", "realizada", "no_presentada", "cancelada"]);
 
 /**
- * Citas. La base de datos rechaza dos citas no canceladas que se solapen para la misma profesional
- * (restricción de exclusión `citas_sin_solape`, en la migración).
+ * Citas. Pueden coincidir varias a la vez, una por cabina, salvo las exclusivas (microblading), que van solas.
+ * Lo comprueba la base de datos con el disparador `citas_comprobar_hueco` (en la migración).
  */
 export const citas = pgTable(
   "citas",
@@ -389,6 +393,8 @@ export const citas = pgTable(
     inicio: fecha().notNull(),
     fin: fecha().notNull(),
     estado: estadoCita().notNull().default("confirmada"),
+    /** Alguno de sus servicios necesita a la profesional en exclusiva. */
+    exclusiva: boolean().notNull().default(false),
     origen: text({ enum: ["centro", "web"] }).notNull(),
     serieId: uuid().references(() => series.id),
     solicitudId: uuid().references(() => solicitudesReserva.id),

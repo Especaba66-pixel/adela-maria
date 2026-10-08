@@ -4,7 +4,7 @@
 import { cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
-import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
+import { BONOS, CABINAS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
 import { categorias, centro, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
@@ -39,6 +39,7 @@ export async function sembrar(
       resumen.centroCreado = true;
     }
     const centroId = c!.id;
+    if (c!.cabinas === null) await tx.update(centro).set({ cabinas: CABINAS }).where(eq(centro.id, centroId));
 
     const [hayAdmin] = await tx.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.rol, "administrador")).limit(1);
     if (!hayAdmin) {

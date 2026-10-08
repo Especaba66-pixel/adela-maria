@@ -36,6 +36,13 @@
       "when": 1791499937238,
       "tag": "0004_agenda_y_clientas",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791501688759,
+      "tag": "0005_cabinas_y_exclusivos",
+      "breakpoints": true
     }
   ]
 }

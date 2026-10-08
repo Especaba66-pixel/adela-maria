@@ -9,6 +9,7 @@ interface Tratamiento {
   nombre: string;
   categoria: string;
   duracionMinutos: number | null;
+  exclusivo: boolean;
 }
 interface Profesional {
   id: string;
@@ -64,11 +65,11 @@ export function FormularioCita({ tratamientos, equipo, inicial }: { tratamientos
   useEffect(() => {
     if (!profesionalId || !fecha || !duracion) return setLibres(null);
     iniciar(async () => {
-      const r = await huecos(profesionalId, fecha, duracion);
+      const r = await huecos(profesionalId, fecha, elegidos);
       setLibres(r.libres);
       setSinHorario(r.horario.length === 0);
     });
-  }, [profesionalId, fecha, duracion]);
+  }, [profesionalId, fecha, duracion, elegidos]);
 
   const alternar = (id: string) => setElegidos((e) => (e.includes(id) ? e.filter((x) => x !== id) : [...e, id]));
   const categorias = [...new Set(tratamientos.map((t) => t.categoria))];
@@ -151,7 +152,10 @@ export function FormularioCita({ tratamientos, equipo, inicial }: { tratamientos
                   <label key={t.id} className={clases(chip, "cursor-pointer", elegidos.includes(t.id) ? "border-dorado-oscuro bg-crema font-semibold" : "border-borde bg-superficie")}>
                     <input type="checkbox" name="tratamiento" value={t.id} checked={elegidos.includes(t.id)} onChange={() => alternar(t.id)} className="sr-only" />
                     {t.nombre}
-                    <span className="ml-2 text-sm font-normal text-tinta-suave">{t.duracionMinutos === null ? "sin duración" : `${t.duracionMinutos}′`}</span>
+                    <span className="ml-2 text-sm font-normal text-tinta-suave">
+                      {t.duracionMinutos === null ? "sin duración" : `${t.duracionMinutos}′`}
+                      {t.exclusivo && " · va sola"}
+                    </span>
                   </label>
                 ))}
             </div>

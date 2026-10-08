@@ -48,8 +48,8 @@ done < "$archivo.conteos"
 disparadores=$(psql "$RESTAURAR_URL" -qtA -c "select count(*) from pg_trigger where tgname like '%inalterable' or tgname like '%sin_borrado'")
 (( disparadores >= 7 )) || errores+=("faltan reglas de la base de datos ($disparadores disparadores)")
 if [[ "$(psql "$RESTAURAR_URL" -qtA -c "select to_regclass('public.citas') is not null")" == "t" ]]; then
-  solape=$(psql "$RESTAURAR_URL" -qtA -c "select count(*) from pg_constraint where conname = 'citas_sin_solape'")
-  (( solape == 1 )) || errores+=("falta la regla que impide la doble reserva")
+  solape=$(psql "$RESTAURAR_URL" -qtA -c "select (select count(*) from pg_constraint where conname = 'citas_tramos_5') + (select count(*) from pg_trigger where tgname = 'citas_comprobar_hueco')")
+  (( solape == 2 )) || errores+=("faltan las reglas que impiden pasarse de cabinas")
 fi
 
 if (( ${#errores[@]} > 0 )); then

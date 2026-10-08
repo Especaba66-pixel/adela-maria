@@ -12,6 +12,7 @@ export async function guardar(_: Resultado | null, f: FormData): Promise<Resulta
     duracion: texto(f, "duracion"),
     precio: texto(f, "precio"),
     descripcion: texto(f, "descripcion"),
+    exclusivo: f.get("exclusivo") === "on",
     retirado: f.get("retirado") === "on",
   });
   revalidatePath("/", "layout");

@@ -9,13 +9,23 @@ import {
   partesMadrid,
   puede,
   sumarDias,
-  tramosLibres,
+  tramosDisponibles,
 } from "@adela/dominio";
 import { Aviso, Tarjeta, clases } from "@adela/ui";
 import Link from "next/link";
 import { BORDE_ESTADO, EstadoCitaChip } from "@/components/EstadoCita";
 import { diaLargo } from "@/lib/fechas";
-import { bloqueosEntre, citasEntre, horarioDe, limitesDia, profesionalDeUsuario, profesionalesActivos, type CitaVista } from "@/server/agenda";
+import {
+  bloqueosEntre,
+  cabinas,
+  citasEntre,
+  citasQueOcupan,
+  horarioDe,
+  limitesDia,
+  profesionalDeUsuario,
+  profesionalesActivos,
+  type CitaVista,
+} from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
 
 type Vista = "dia" | "semana" | "mes";
@@ -135,12 +145,13 @@ function TarjetaCita({ c }: { c: CitaVista }) {
 
 async function VistaDia({ fecha, profesionales, gestiona }: { fecha: string; profesionales: { id: string; nombre: string; color: string }[]; gestiona: boolean }) {
   const { desde, hasta } = limitesDia(fecha);
+  const [ocupan, capacidad] = await Promise.all([citasQueOcupan(desde, hasta), cabinas()]);
   const columnas = await Promise.all(
     profesionales.map(async (prof) => {
       const [horario, lista, bloq] = await Promise.all([horarioDe(prof.id, fecha), citasEntre(desde, hasta, { profesionalId: prof.id, incluirCanceladas: true }), bloqueosEntre(desde, hasta, prof.id)]);
       const activas = lista.filter((c) => c.estado !== "cancelada");
-      const ocupado = [...activas, ...bloq].map((x) => aMinutosDelDia(fecha, x));
-      const libres = tramosLibres(horario, ocupado);
+      // Huecos donde aún se puede empezar algo: sin bloqueo, con cabina libre y sin un exclusivo en curso.
+      const libres = tramosDisponibles({ fecha, horario, bloqueos: bloq, citas: ocupan, cabinas: capacidad, profesionalId: prof.id });
       type Item = { minuto: number; nodo: React.ReactNode; clave: string };
       const items: Item[] = [
         ...lista.map((c) => ({ minuto: minutosDe(c.inicio), clave: c.id, nodo: <TarjetaCita c={c} /> })),
@@ -167,7 +178,8 @@ async function VistaDia({ fecha, profesionales, gestiona }: { fecha: string; pro
               aria-label={`Hueco libre de ${horaATexto(l.inicio)} a ${horaATexto(l.fin)} con ${prof.nombre}`}
             >
               <span>
-                Libre {horaATexto(l.inicio)}–{horaATexto(l.fin)}
+                {activas.some((c) => minutosDe(c.inicio) < l.fin && minutosDe(c.fin) > l.inicio) ? "Cabina libre" : "Libre"} {horaATexto(l.inicio)}–
+                {horaATexto(l.fin)}
               </span>
               <span className="font-semibold">+ Cita</span>
             </Link>

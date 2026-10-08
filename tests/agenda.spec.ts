@@ -64,13 +64,20 @@ test("da una cita en tres toques desde un hueco libre, a una clienta nueva", asy
   await expect(pagina.getByText("Confirmada", { exact: true })).toBeVisible();
 });
 
-test("no deja dar dos citas a la vez a la misma profesional", async () => {
+test("con dos cabinas deja dos citas a la vez, pero no tres", async () => {
   await pagina.goto(`/gestion/agenda/nueva?fecha=${manana}`);
   await elegirClienta("Carmen Ruiz");
   await elegirTratamientos("Ingles");
   await pagina.getByLabel("Hora").fill("09:05");
   await pagina.getByRole("button", { name: "Guardar cita" }).click();
-  await expect(alerta(pagina)).toHaveText("Ya hay otra cita a esa hora.");
+  await expect(pagina.getByRole("heading", { level: 1 })).toContainText("09:05–09:20");
+
+  await pagina.goto(`/gestion/agenda/nueva?fecha=${manana}`);
+  await elegirClienta("Carmen Ruiz");
+  await elegirTratamientos("Brazos");
+  await pagina.getByLabel("Hora").fill("09:05");
+  await pagina.getByRole("button", { name: "Guardar cita" }).click();
+  await expect(alerta(pagina)).toHaveText("No queda cabina libre a esa hora.");
 });
 
 test("una cita con varios servicios suma sus duraciones, y las horas libres ya no ofrecen las ocupadas", async () => {
@@ -91,24 +98,26 @@ test("cambia el estado: ha venido y, si fue un error, se puede deshacer", async 
   await expect(pagina.getByText("Confirmada", { exact: true })).toBeVisible();
 });
 
-test("mueve una cita de hora, pero no encima de otra", async () => {
+test("mueve una cita de hora, pero no si no queda cabina", async () => {
   await pagina.getByLabel("Hora", { exact: true }).fill("09:00");
   await pagina.getByRole("button", { name: "Cambiar hora" }).click();
-  await expect(alerta(pagina)).toHaveText("Ya hay otra cita a esa hora.");
+  await expect(alerta(pagina)).toHaveText("No queda cabina libre a esa hora.");
   await pagina.getByLabel("Hora", { exact: true }).fill("11:00");
   await pagina.getByRole("button", { name: "Cambiar hora" }).click();
   await expect(pagina.getByText("Cita cambiada de hora.")).toBeVisible();
   await expect(pagina.getByRole("heading", { level: 1 })).toContainText("11:00–11:30");
 });
 
-test("la vista de día muestra las citas y los huecos que quedan", async () => {
+test("la vista de día muestra las citas y dónde queda cabina libre", async () => {
   await pagina.goto(`/gestion/agenda?fecha=${manana}`);
   const adela = pagina.getByRole("region", { name: "Agenda de Adela" });
-  await expect(adela.getByText("2 citas")).toBeVisible();
+  await expect(adela.getByText("3 citas")).toBeVisible();
   await expect(adela.getByRole("link", { name: /09:00–09:10 · Carmen Ruiz/ })).toBeVisible();
+  await expect(adela.getByRole("link", { name: /09:05–09:20 · Carmen Ruiz/ })).toBeVisible();
   await expect(adela.getByRole("link", { name: /11:00–11:30 · Carmen Ruiz/ })).toBeVisible();
-  await expect(adela.getByRole("link", { name: "Hueco libre de 09:10 a 11:00 con Adela" })).toBeVisible();
-  await expect(adela.getByRole("link", { name: "Hueco libre de 11:30 a 14:00 con Adela" })).toBeVisible();
+  // De 9:05 a 9:10 están las dos cabinas ocupadas; el resto de la mañana queda al menos una.
+  await expect(adela.getByRole("link", { name: "Hueco libre de 09:00 a 09:05 con Adela" })).toBeVisible();
+  await expect(adela.getByRole("link", { name: "Hueco libre de 09:10 a 14:00 con Adela" })).toBeVisible();
 });
 
 test("una cita que se repite crea toda la serie y se puede cancelar entera", async () => {
@@ -122,7 +131,7 @@ test("una cita que se repite crea toda la serie y se puede cancelar entera", asy
   await expect(pagina.getByText("Se han creado 3 citas (se repite).")).toBeVisible();
 
   await pagina.goto(`/gestion/agenda?vista=mes&fecha=${manana}`);
-  await expect(pagina.getByRole("link", { name: /: 3 citas$/ }).first()).toBeVisible();
+  await expect(pagina.getByRole("link", { name: /: 4 citas$/ }).first()).toBeVisible();
 
   await pagina.goto(`/gestion/agenda?fecha=${manana}`);
   await pagina.getByRole("link", { name: /12:00–13:30 · Carmen Ruiz/ }).click();
@@ -130,11 +139,24 @@ test("una cita que se repite crea toda la serie y se puede cancelar entera", asy
   await expect(pagina.getByText("3 citas canceladas.")).toBeVisible();
 });
 
+test("la administración añade el microblading, que va solo", async () => {
+  await pagina.goto("/gestion/mas/tratamientos");
+  const form = pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Añadir tratamiento" }) });
+  await form.getByLabel("Nombre").fill("Microblading");
+  await form.getByLabel("Categoría").selectOption({ label: "Cejas" });
+  await form.getByLabel("Minutos").fill("120");
+  await form.getByLabel("Precio (€)").fill("250");
+  await form.getByLabel(/Va sola/).check();
+  await form.getByRole("button", { name: "Añadir tratamiento" }).click();
+  await expect(pagina.getByText("Tratamiento añadido.")).toBeVisible();
+  await expect(pagina.getByText("120 min · va sola")).toBeVisible();
+});
+
 test("si una fecha de la serie choca, no se crea ninguna", async () => {
   await pagina.goto(`/gestion/agenda/nueva?fecha=${diaMadrid(8)}`);
   await elegirClienta("Carmen Ruiz");
-  await elegirTratamientos("Axilas");
-  await pagina.getByLabel("Hora").fill("17:00");
+  await elegirTratamientos("Microblading");
+  await pagina.getByLabel("Hora").fill("16:00");
   await pagina.getByRole("button", { name: "Guardar cita" }).click();
   await expect(pagina.getByText("Cita guardada.")).toBeVisible();
 
@@ -145,7 +167,7 @@ test("si una fecha de la serie choca, no se crea ninguna", async () => {
   await pagina.getByLabel("Se repite").check();
   await pagina.getByLabel("Veces en total").fill("2");
   await pagina.getByRole("button", { name: "Guardar cita" }).click();
-  await expect(alerta(pagina)).toHaveText(/ya hay otra cita a esa hora. No se ha creado ninguna./);
+  await expect(alerta(pagina)).toHaveText(/necesita a la profesional en exclusiva \(como el microblading\)\. No se ha creado ninguna\./);
   await pagina.goto(`/gestion/agenda?fecha=${manana}`);
   await expect(pagina.getByRole("link", { name: /17:00–17:10/ })).toHaveCount(0);
 });
@@ -174,8 +196,8 @@ test("la ficha de la clienta reúne sus citas y notas", async () => {
   await pagina.goto("/gestion/clientas?q=611");
   await pagina.getByRole("link", { name: /Carmen Ruiz/ }).click();
   await expect(pagina.getByRole("heading", { name: "Carmen Ruiz" })).toBeVisible();
-  // Mañana a las 9 y a las 11, y la de dentro de 8 días.
-  await expect(pagina.getByText(/3 citas próximas/)).toBeVisible();
+  // Mañana a las 9:00, 9:05 y 11:00, y el microblading de dentro de 8 días.
+  await expect(pagina.getByText(/4 citas próximas/)).toBeVisible();
   await pagina.getByLabel("Nueva nota").fill("Prefiere por la mañana");
   await pagina.getByRole("button", { name: "Añadir nota" }).click();
   await expect(pagina.getByText("Prefiere por la mañana")).toBeVisible();

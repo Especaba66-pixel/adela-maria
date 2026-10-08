@@ -1,6 +1,7 @@
 import "server-only";
 import {
   bloqueos,
+  centro,
   citas,
   citasServicios,
   clientes,
@@ -15,6 +16,7 @@ import {
 import {
   ANTELACION_MINUTOS_WEB,
   PASO_WEB,
+  cabeCita,
   diaSemana,
   duracionTotal,
   esFecha,
@@ -24,8 +26,8 @@ import {
   partesMadrid,
   puedeCambiarEstado,
   sumarDias,
+  type CitaOcupa,
   type EstadoCita,
-  type Intervalo,
   type Tramo,
 } from "@adela/dominio";
 import { and, asc, eq, gt, inArray, isNull, lt, ne, or } from "drizzle-orm";
@@ -33,10 +35,21 @@ import { db } from "./db";
 
 export type Resultado<T = undefined> = { ok: true; valor: T } | { ok: false; error: string };
 
-/** ¿Es el error de PostgreSQL de «dos citas solapadas»? */
-export function esSolape(e: unknown): boolean {
-  const err = e as { code?: string; cause?: { code?: string } };
-  return err.code === "23P01" || err.cause?.code === "23P01";
+/** Si el error es de la regla de cabinas o exclusivos de la base de datos, el mensaje para la pantalla. */
+export function mensajeSinHueco(e: unknown): string | null {
+  const err = e as { code?: string; message?: string; cause?: { code?: string; message?: string } };
+  const codigo = err.cause?.code ?? err.code;
+  if (codigo !== "23P01") return null;
+  const texto = err.cause?.message ?? err.message ?? "";
+  return texto.includes("cita_exclusiva")
+    ? "A esa hora coincide con un tratamiento que necesita a la profesional en exclusiva (como el microblading)."
+    : "No queda cabina libre a esa hora.";
+}
+
+/** Cuántas citas puede haber a la vez (cabinas). Sin indicar, 1. */
+export async function cabinas(): Promise<number> {
+  const [c] = await db().select({ cabinas: centro.cabinas }).from(centro).limit(1);
+  return c?.cabinas ?? 1;
 }
 
 // ── Equipo y horario ─────────────────────────────────────────────────────────
@@ -69,24 +82,12 @@ export async function horarioDe(profesionalId: string, fecha: string): Promise<T
   return filas.map((h) => ({ inicio: h.inicioMin, fin: h.finMin }));
 }
 
-/** Intervalos ocupados de una profesional en un rango: citas no canceladas y bloqueos (suyos o de todo el centro). */
-export async function ocupados(profesionalId: string, desde: Date, hasta: Date, excluirCita?: string): Promise<(Intervalo & { tipo: "cita" | "bloqueo" })[]> {
-  const [c, b] = await Promise.all([
-    db()
-      .select({ inicio: citas.inicio, fin: citas.fin })
-      .from(citas)
-      .where(
-        and(
-          eq(citas.profesionalId, profesionalId),
-          ne(citas.estado, "cancelada"),
-          lt(citas.inicio, hasta),
-          gt(citas.fin, desde),
-          excluirCita ? ne(citas.id, excluirCita) : undefined,
-        ),
-      ),
-    bloqueosEntre(desde, hasta, profesionalId),
-  ]);
-  return [...c.map((x) => ({ ...x, tipo: "cita" as const })), ...b.map((x) => ({ inicio: x.inicio, fin: x.fin, tipo: "bloqueo" as const }))];
+/** Citas no canceladas de todo el centro en un rango (cuentan para las cabinas). */
+export async function citasQueOcupan(desde: Date, hasta: Date, excluirCita?: string): Promise<CitaOcupa[]> {
+  return db()
+    .select({ inicio: citas.inicio, fin: citas.fin, exclusiva: citas.exclusiva, profesionalId: citas.profesionalId })
+    .from(citas)
+    .where(and(ne(citas.estado, "cancelada"), lt(citas.inicio, hasta), gt(citas.fin, desde), excluirCita ? ne(citas.id, excluirCita) : undefined));
 }
 
 export async function bloqueosEntre(desde: Date, hasta: Date, profesionalId?: string) {
@@ -106,22 +107,35 @@ export async function bloqueosEntre(desde: Date, hasta: Date, profesionalId?: st
 
 const limitesDia = (fecha: string) => ({ desde: instanteMadrid(fecha, 0), hasta: instanteMadrid(sumarDias(fecha, 1), 0) });
 
+/** Horas de comienzo libres para una profesional: horario, bloqueos, cabinas y exclusivos. */
+async function libresDe(profesionalId: string, fecha: string, duracion: number, exclusiva: boolean, paso: number, desdeMinimo?: Date, excluirCita?: string) {
+  const { desde, hasta } = limitesDia(fecha);
+  const [horario, bloq, ocupan, capacidad] = await Promise.all([
+    horarioDe(profesionalId, fecha),
+    bloqueosEntre(desde, hasta, profesionalId),
+    citasQueOcupan(desde, hasta, excluirCita),
+    cabinas(),
+  ]);
+  const libres = huecosLibres({
+    fecha,
+    horario,
+    ocupados: bloq,
+    duracion,
+    paso,
+    desde: desdeMinimo,
+    admite: (i) => cabeCita({ ...i, exclusiva, profesionalId }, ocupan, capacidad),
+  });
+  return { horario, libres };
+}
+
 /** Horas libres para la web: une los huecos de todas las profesionales que hacen el tratamiento. */
 export async function huecosWeb(tratamientoId: string, fecha: string): Promise<{ minutos: number; profesionalId: string }[]> {
   const [t] = await db().select().from(tratamientos).where(and(eq(tratamientos.id, tratamientoId), isNull(tratamientos.anuladoEn)));
   if (!t?.duracionMinutos || !esFecha(fecha)) return [];
-  const { desde, hasta } = limitesDia(fecha);
   const minimo = new Date(Date.now() + ANTELACION_MINUTOS_WEB * 60_000);
   const resultado = new Map<number, string>();
   for (const p of await profesionalesQueHacen([tratamientoId])) {
-    const libres = huecosLibres({
-      fecha,
-      horario: await horarioDe(p.id, fecha),
-      ocupados: await ocupados(p.id, desde, hasta),
-      duracion: t.duracionMinutos,
-      paso: PASO_WEB,
-      desde: minimo,
-    });
+    const { libres } = await libresDe(p.id, fecha, t.duracionMinutos, t.exclusivo, PASO_WEB, minimo);
     for (const m of libres) if (!resultado.has(m)) resultado.set(m, p.id);
   }
   return [...resultado.entries()].sort((a, b) => a[0] - b[0]).map(([minutos, profesionalId]) => ({ minutos, profesionalId }));
@@ -191,6 +205,7 @@ export async function crearCitas(nueva: NuevaCita, usuarioId: string | null, tx?
               inicio,
               fin,
               estado: nueva.estado,
+              exclusiva: servicios.some((s) => s.exclusivo),
               origen: nueva.origen,
               serieId,
               solicitudId: nueva.solicitudId ?? null,
@@ -200,7 +215,8 @@ export async function crearCitas(nueva: NuevaCita, usuarioId: string | null, tx?
             .returning(),
         );
       } catch (e) {
-        if (esSolape(e)) throw new ErrorSolape(f);
+        const mensaje = mensajeSinHueco(e);
+        if (mensaje) throw new ErrorSolape(f, mensaje);
         throw e;
       }
       await t.insert(citasServicios).values(
@@ -217,15 +233,18 @@ export async function crearCitas(nueva: NuevaCita, usuarioId: string | null, tx?
     return { ok: true, valor: ids };
   } catch (e) {
     if (e instanceof ErrorSolape) {
-      return { ok: false, error: fechas.length > 1 ? `El ${fechaCorta(e.fecha)} ya hay otra cita a esa hora. No se ha creado ninguna.` : "Ya hay otra cita a esa hora." };
+      return { ok: false, error: fechas.length > 1 ? `El ${fechaCorta(e.fecha)}: ${e.mensaje.charAt(0).toLowerCase()}${e.mensaje.slice(1)} No se ha creado ninguna.` : e.mensaje };
     }
     throw e;
   }
 }
 
 class ErrorSolape extends Error {
-  constructor(readonly fecha: string) {
-    super("solape");
+  constructor(
+    readonly fecha: string,
+    readonly mensaje: string,
+  ) {
+    super("sin hueco");
   }
 }
 
@@ -260,7 +279,8 @@ export async function moverCita(citaId: string, fecha: string, inicioMin: number
       await registrarActividad(tx, { usuarioId, accion: "cita.mover", entidad: "citas", entidadId: citaId, antes, despues });
     });
   } catch (e) {
-    if (esSolape(e)) return { ok: false, error: "Ya hay otra cita a esa hora." };
+    const mensaje = mensajeSinHueco(e);
+    if (mensaje) return { ok: false, error: mensaje };
     throw e;
   }
   return { ok: true, valor: undefined };
@@ -327,20 +347,25 @@ export function citasDelDia(fecha: string, opciones: { profesionalId?: string; i
 
 export { limitesDia, partesMadrid };
 
-/** Horas libres de una profesional un día, para un servicio de `duracion` minutos (pantalla del centro). */
-export async function huecosProfesional(profesionalId: string, fecha: string, duracion: number, excluirCita?: string) {
-  if (!esFecha(fecha) || duracion <= 0) return { horario: [] as Tramo[], libres: [] as number[] };
-  const { desde, hasta } = limitesDia(fecha);
-  const horario = await horarioDe(profesionalId, fecha);
-  const libres = huecosLibres({ fecha, horario, ocupados: await ocupados(profesionalId, desde, hasta, excluirCita), duracion, paso: 15 });
-  return { horario, libres };
+/** Horas libres de una profesional un día para esos tratamientos (pantalla del centro). */
+export async function huecosProfesional(profesionalId: string, fecha: string, tratamientoIds: string[]) {
+  const lista = tratamientoIds.length ? await db().select().from(tratamientos).where(inArray(tratamientos.id, tratamientoIds)) : [];
+  const duracion = duracionTotal(lista);
+  if (!esFecha(fecha) || !duracion) return { horario: [] as Tramo[], libres: [] as number[] };
+  return libresDe(profesionalId, fecha, duracion, lista.some((t) => t.exclusivo), 15);
 }
 
 /** Tratamientos que se pueden poner en una cita (los activos), con su categoría. */
 export async function catalogoParaCitas() {
   const { categorias } = await import("@adela/db");
   return db()
-    .select({ id: tratamientos.id, nombre: tratamientos.nombre, categoria: categorias.nombre, duracionMinutos: tratamientos.duracionMinutos })
+    .select({
+      id: tratamientos.id,
+      nombre: tratamientos.nombre,
+      categoria: categorias.nombre,
+      duracionMinutos: tratamientos.duracionMinutos,
+      exclusivo: tratamientos.exclusivo,
+    })
     .from(tratamientos)
     .innerJoin(categorias, eq(categorias.id, tratamientos.categoriaId))
     .where(isNull(tratamientos.anuladoEn))

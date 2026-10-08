@@ -159,3 +159,56 @@ describe("tramos libres del día", () => {
     expect(aMinutosDelDia(fecha, { inicio: new Date("2026-10-01T00:00:00Z"), fin: new Date("2026-10-20T00:00:00Z") })).toEqual({ inicio: 0, fin: 1440 });
   });
 });
+
+describe("cabinas y tratamientos exclusivos", () => {
+  const fecha = "2026-10-13";
+  const c = (desde: number, hasta: number, extra: Partial<{ exclusiva: boolean; profesionalId: string }> = {}) => ({
+    inicio: instanteMadrid(fecha, desde),
+    fin: instanteMadrid(fecha, hasta),
+    exclusiva: false,
+    profesionalId: "adela",
+    ...extra,
+  });
+
+  it("con dos cabinas caben dos citas a la vez, pero no tres", async () => {
+    const { cabeCita } = await import("./agenda");
+    const citas = [c(h(10), h(11)), c(h(10, 30), h(11, 30))];
+    expect(cabeCita(c(h(9), h(10)), citas, 2)).toBe(true);
+    expect(cabeCita(c(h(10, 15), h(10, 25)), [c(h(10), h(11))], 2)).toBe(true);
+    expect(cabeCita(c(h(10, 45), h(10, 50)), citas, 2)).toBe(false);
+    // Coincide con las dos, pero nunca con ambas a la vez (9:00–9:45 y 10:00–10:20): cabe.
+    expect(cabeCita(c(h(9, 30), h(10, 15)), [c(h(10), h(10, 20)), c(h(9), h(9, 45))], 2)).toBe(true);
+    // Aquí a las 9:30 ya hay dos (9:00–9:45 y 9:20–10:00): no cabe.
+    expect(cabeCita(c(h(9, 30), h(10, 15)), [c(h(9), h(9, 45)), c(h(9, 20), h(10))], 2)).toBe(false);
+  });
+
+  it("un tratamiento exclusivo va solo, aunque haya cabinas", async () => {
+    const { cabeCita } = await import("./agenda");
+    expect(cabeCita(c(h(10), h(10, 15)), [c(h(9), h(11), { exclusiva: true })], 2)).toBe(false);
+    expect(cabeCita(c(h(10), h(12), { exclusiva: true }), [c(h(11), h(11, 15))], 2)).toBe(false);
+    // Otra profesional sí podría, si queda cabina.
+    expect(cabeCita(c(h(10), h(10, 15), { profesionalId: "otra" }), [c(h(9), h(11), { exclusiva: true })], 2)).toBe(true);
+  });
+
+  it("los huecos de la vista de día tienen en cuenta cabinas, exclusivos y bloqueos", async () => {
+    const { tramosDisponibles } = await import("./agenda");
+    const libres = tramosDisponibles({
+      fecha,
+      horario: [{ inicio: h(9), fin: h(14) }],
+      bloqueos: [{ inicio: instanteMadrid(fecha, h(13)), fin: instanteMadrid(fecha, h(14)) }],
+      citas: [c(h(9), h(10)), c(h(9, 30), h(10, 30)), c(h(11), h(12), { exclusiva: true })],
+      cabinas: 2,
+      profesionalId: "adela",
+    });
+    expect(libres).toEqual([
+      { inicio: h(9), fin: h(9, 30) },
+      { inicio: h(10), fin: h(11) },
+      { inicio: h(12), fin: h(13) },
+    ]);
+  });
+
+  it("las horas libres aceptan una regla extra", () => {
+    const libres = huecosLibres({ fecha, horario: [{ inicio: h(9), fin: h(10) }], ocupados: [], duracion: 15, paso: 15, admite: (i) => i.inicio.getTime() !== instanteMadrid(fecha, h(9, 15)).getTime() });
+    expect(libres).toEqual([h(9), h(9, 30), h(9, 45)]);
+  });
+});

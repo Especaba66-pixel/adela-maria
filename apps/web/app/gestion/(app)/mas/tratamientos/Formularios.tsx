@@ -12,6 +12,7 @@ export interface ValoresTratamiento {
   duracion: string;
   precio: string;
   descripcion: string;
+  exclusivo: boolean;
   retirado: boolean;
 }
 
@@ -49,6 +50,10 @@ export function FormularioTratamiento({ valores, categorias }: { valores?: Valor
         <label className="col-span-2 block">
           Descripción para la web <span className="text-tinta-suave">(opcional)</span>
           <input name="descripcion" maxLength={300} defaultValue={valores?.descripcion} className={campo} />
+        </label>
+        <label className="col-span-2 flex min-h-toque items-center gap-3">
+          <input name="exclusivo" type="checkbox" defaultChecked={valores?.exclusivo} className="size-6 accent-dorado-oscuro" />
+          Va sola: necesita a la profesional en exclusiva (como el microblading)
         </label>
         {valores && (
           <label className="col-span-2 flex min-h-toque items-center gap-3">

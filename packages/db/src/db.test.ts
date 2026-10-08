@@ -5,6 +5,7 @@ import {
   categorias,
   registrarActividad,
   registroActividad,
+  centro,
   citas,
   clientes,
   consentimientos,
@@ -60,6 +61,8 @@ describe("datos iniciales", () => {
     expect(r).toMatchObject({ centroCreado: true, adminCreado: true, tratamientosNuevos: 3, bonosNuevos: 1, avisos: [] });
     const [prof] = await db.select().from(profesionales);
     expect(prof?.nombre).toBe("Adela");
+    const [c] = await db.select().from(centro);
+    expect(c?.cabinas).toBe(2);
 
     const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adela"));
     expect(adela?.rol).toBe("administrador");
@@ -134,23 +137,40 @@ describe("reglas que impone la base de datos", () => {
     expect(await errorDe(db.delete(solicitudesReserva))).toMatch(/No se borran filas de solicitudes_reserva/);
   });
 
-  it("no admite doble reserva para la misma profesional; sí citas seguidas, de otra profesional o canceladas", async () => {
+  it("admite tantas citas a la vez como cabinas, y nunca una más", async () => {
     const [adela] = await db.select().from(profesionales).limit(1);
     const [otra] = await db.insert(profesionales).values({ nombre: "Lucía" }).returning();
     const [cliente] = await db.insert(clientes).values({ nombre: "Marta", telefono: "+34600112233" }).returning();
-    const cita = (prof: string, desde: string, hasta: string, estado: "confirmada" | "cancelada" = "confirmada") =>
-      db.insert(citas).values({ clienteId: cliente!.id, profesionalId: prof, inicio: new Date(desde), fin: new Date(hasta), origen: "centro", estado });
+    const cita = (prof: string, desde: string, hasta: string, extra: { estado?: "confirmada" | "cancelada"; exclusiva?: boolean } = {}) =>
+      db.insert(citas).values({ clienteId: cliente!.id, profesionalId: prof, inicio: new Date(desde), fin: new Date(hasta), origen: "centro", ...extra });
 
+    await db.update(centro).set({ cabinas: 1 });
     expect(await errorDe(cita(adela!.id, "2026-11-02T09:00:00Z", "2026-11-02T10:30:00Z"))).toBeNull();
-    expect(await errorDe(cita(adela!.id, "2026-11-02T10:00:00Z", "2026-11-02T10:15:00Z"))).toMatch(/citas_sin_solape/);
+    expect(await errorDe(cita(adela!.id, "2026-11-02T10:00:00Z", "2026-11-02T10:15:00Z"))).toMatch(/cabinas_llenas/);
+    // Otra profesional también ocupa cabina.
+    expect(await errorDe(cita(otra!.id, "2026-11-02T10:00:00Z", "2026-11-02T10:15:00Z"))).toMatch(/cabinas_llenas/);
     expect(await errorDe(cita(adela!.id, "2026-11-02T10:30:00Z", "2026-11-02T10:45:00Z"))).toBeNull();
-    expect(await errorDe(cita(otra!.id, "2026-11-02T09:30:00Z", "2026-11-02T10:00:00Z"))).toBeNull();
-    expect(await errorDe(cita(adela!.id, "2026-11-02T09:30:00Z", "2026-11-02T09:45:00Z", "cancelada"))).toBeNull();
+    expect(await errorDe(cita(adela!.id, "2026-11-02T09:30:00Z", "2026-11-02T09:45:00Z", { estado: "cancelada" }))).toBeNull();
+
+    await db.update(centro).set({ cabinas: 2 });
+    expect(await errorDe(cita(adela!.id, "2026-11-02T09:15:00Z", "2026-11-02T09:45:00Z"))).toBeNull();
+    // Ya hay dos a las 9:30: la tercera no cabe.
+    expect(await errorDe(cita(adela!.id, "2026-11-02T09:30:00Z", "2026-11-02T09:40:00Z"))).toMatch(/cabinas_llenas/);
+    // Dos citas que no coinciden entre sí no suman: a las 9:50 solo está la primera.
+    expect(await errorDe(cita(adela!.id, "2026-11-02T09:50:00Z", "2026-11-02T10:00:00Z"))).toBeNull();
     expect(await errorDe(cita(adela!.id, "2026-11-02T11:00:00Z", "2026-11-02T11:07:00Z"))).toMatch(/citas_tramos_5/);
-    // Al cancelar una cita, su hueco queda libre.
-    await db.update(citas).set({ estado: "cancelada" }).where(eq(citas.inicio, new Date("2026-11-02T09:00:00Z")));
-    expect(await errorDe(cita(adela!.id, "2026-11-02T09:00:00Z", "2026-11-02T09:30:00Z"))).toBeNull();
     expect(await errorDe(db.delete(citas))).toMatch(/No se borran filas de citas/);
+  });
+
+  it("un microblading (exclusivo) no admite nada a la vez, aunque haya cabinas", async () => {
+    const [adela] = await db.select().from(profesionales).limit(1);
+    const [cliente] = await db.select().from(clientes).limit(1);
+    const cita = (desde: string, hasta: string, exclusiva = false) =>
+      db.insert(citas).values({ clienteId: cliente!.id, profesionalId: adela!.id, inicio: new Date(desde), fin: new Date(hasta), origen: "centro", exclusiva });
+    expect(await errorDe(cita("2026-11-03T09:00:00Z", "2026-11-03T11:00:00Z", true))).toBeNull();
+    expect(await errorDe(cita("2026-11-03T10:00:00Z", "2026-11-03T10:15:00Z"))).toMatch(/cita_exclusiva/);
+    expect(await errorDe(cita("2026-11-03T08:00:00Z", "2026-11-03T09:00:00Z"))).toBeNull();
+    expect(await errorDe(cita("2026-11-03T08:30:00Z", "2026-11-03T09:30:00Z", true))).toMatch(/cita_exclusiva/);
   });
 
   it("un teléfono no se repite entre clientas activas, y los consentimientos no se modifican", async () => {

@@ -1,0 +1,42 @@
+# Configuración para publicar en Render (https://render.com). Todo en Frankfurt (UE).
+# Al crear el «Blueprint» desde el panel de Render, pedirá los valores marcados con sync: false.
+services:
+  - type: web
+    name: adela-maria
+    runtime: node
+    region: frankfurt
+    plan: starter
+    branch: main
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    # Antes de cada publicación: aplica los cambios de la base de datos y los datos iniciales (no duplica nada).
+    preDeployCommand: pnpm db:migrate && pnpm db:seed
+    startCommand: pnpm --filter @adela/web start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: adela-maria-db
+          property: connectionString
+      - key: SESION_MINUTOS_INACTIVIDAD
+        value: "15"
+      - key: ADMIN_NOMBRE
+        value: Adela
+      - key: ADMIN_USUARIO
+        value: adela
+      # La contraseña de administración (mínimo 10 caracteres) y el PIN (4 a 6 números) los escribes tú al crear.
+      - key: ADMIN_CONTRASENA
+        sync: false
+      - key: ADMIN_PIN
+        sync: false
+
+databases:
+  - name: adela-maria-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+    databaseName: adela
+    user: adela
+    # Sin acceso desde fuera de Render: solo la app puede conectarse.
+    ipAllowList: []

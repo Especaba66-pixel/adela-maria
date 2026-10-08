@@ -14,6 +14,7 @@ export async function guardarTratamiento(d: {
   duracion: string;
   precio: string;
   descripcion: string;
+  exclusivo: boolean;
   retirado: boolean;
 }): Promise<Resultado> {
   const { usuario } = await requerirSesion("configuracion.gestionar");
@@ -46,6 +47,7 @@ export async function guardarTratamiento(d: {
     duracionMinutos,
     precioCentimos,
     descripcion: d.descripcion.trim() || null,
+    exclusivo: d.exclusivo,
     anuladoEn: d.retirado ? new Date() : null,
   };
   await db().transaction(async (tx) => {

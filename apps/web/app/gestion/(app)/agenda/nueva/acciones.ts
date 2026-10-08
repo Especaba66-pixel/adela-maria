@@ -13,9 +13,9 @@ export async function buscar(texto: string) {
   return lista.map((c) => ({ id: c.id, nombre: c.nombre, telefono: c.telefono }));
 }
 
-export async function huecos(profesionalId: string, fecha: string, duracion: number) {
+export async function huecos(profesionalId: string, fecha: string, tratamientoIds: string[]) {
   await requerirSesion("agenda.gestionar");
-  return huecosProfesional(profesionalId, fecha, duracion);
+  return huecosProfesional(profesionalId, fecha, tratamientoIds);
 }
 
 const texto = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
