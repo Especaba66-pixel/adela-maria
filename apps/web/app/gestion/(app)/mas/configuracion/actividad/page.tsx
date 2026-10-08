@@ -15,6 +15,10 @@ const ACCIONES: Record<string, string> = {
   "usuario.editar": "Modificó un usuario",
   "dispositivo.registrar": "Registró un equipo de confianza",
   "dispositivo.revocar": "Retiró un equipo de confianza",
+  "centro.editar": "Cambió los datos del centro",
+  "reserva.solicitar": "Una clienta pidió cita",
+  "reserva.confirmar": "Confirmó una petición de cita",
+  "reserva.rechazar": "Rechazó una petición de cita",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

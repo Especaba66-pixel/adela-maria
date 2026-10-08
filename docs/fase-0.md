@@ -15,6 +15,8 @@ Estado: **pendiente de tu aprobación.** No se empieza la fase 1 sin ella.
   tras 5 intentos fallidos.
 - **Usuarios y roles.** Administración, Recepción y Profesional, con los permisos de la tabla del plan. La administración
   crea usuarios (solo con PIN), cambia roles y PIN, y los desactiva (no se borran).
+- **Datos del centro.** La administración pone el teléfono y la dirección en Configuración y salen al pie de la web de
+  clientas, con botón de llamar y, si es un móvil, de WhatsApp.
 - **Equipos de confianza.** El TPV se registra al entrar con contraseña de administración; solo ahí funciona el PIN. Se
   puede retirar desde Configuración.
 - **Registro de actividad.** Entradas, salidas, fallos, bloqueos y cambios de usuarios y equipos, con el valor anterior y
@@ -56,7 +58,7 @@ Estado: **pendiente de tu aprobación.** No se empieza la fase 1 sin ella.
 | --- | --- |
 | Reglas de negocio (permisos, credenciales, cifrado, sesión, dinero, teléfonos, peticiones de cita) | 42 de 42 correctas |
 | Base de datos (datos iniciales, registro inalterable, sin borrados, contraseña de administración, peticiones) | 9 de 9 correctas |
-| Recorrido completo del centro en pantalla de TPV (registro del equipo, PIN, permisos, bloqueo, actividad) | 14 de 14 correctas |
+| Recorrido completo del centro en pantalla de TPV (registro del equipo, PIN, permisos, bloqueo, actividad, datos del centro) | 15 de 15 correctas |
 | Recorrido completo de la clienta en móvil y del centro confirmando (incluye cejas sin precio y frenos de abuso) | 7 de 7 correctas |
 | Copia y restauración comprobada | Correcta; y detecta una copia incompleta |
 
@@ -68,6 +70,8 @@ Es la primera fase, así que no hay pruebas de fases anteriores que repetir.
   del bloqueo hasta el sexto intento. Ahora avisa en el momento.
 - El botón «Cambiar de persona» no cabía en una línea en el menú lateral; se ha ensanchado el menú.
 - La parte de gestión no debe salir en buscadores, pero la web de clientas sí: antes estaba todo oculto. Corregido.
+- Algunas páginas de la web de clientas leían la base de datos al preparar la web para publicarla, lo que habría
+  fallado al ponerla en marcha. Ahora se leen en cada visita.
 
 ## 5. Qué queda pendiente
 
@@ -76,7 +80,8 @@ Es la primera fase, así que no hay pruebas de fases anteriores que repetir.
 - **Las tarifas.** Las fotos de las tarifas no están en tu Drive ni en Notion. Necesito el nombre, la duración y el
   precio de los 7 faciales y los 11 servicios de depilación. Se cargan en `packages/db/src/datos/tarifas.ts`.
 - **Precio y duración del diseño de cejas**, cuando los tengas.
-- **Dirección y teléfono del centro**, para el pie de la web de clientas.
+- **El número de WhatsApp del centro** (no el móvil personal de Adela). Cuando lo tengas, lo pones tú misma en
+  **Más → Configuración → Datos del centro**, junto con la dirección.
 - **El logo original** en buena calidad, para ajustar el dorado exacto y sustituir el nombre escrito por el logo.
 - **Resolución del TPV**, para afinar tamaños.
 - **Respuestas de la gestoría y de mantenimiento** de la lista del plan (régimen fiscal, quién mantiene y con qué

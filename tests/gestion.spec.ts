@@ -151,3 +151,21 @@ test("el personal sin administración no puede registrar equipos", async ({ brow
   await expect(alerta(otra)).toHaveText("Usuario o contraseña incorrectos.");
   await otra.close();
 });
+
+test("la administración pone el teléfono y la dirección, y la web de clientas los muestra", async () => {
+  await pagina.goto("/gestion/mas/configuracion/centro");
+  await pagina.getByLabel(/Teléfono y WhatsApp/).fill("12345");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(alerta(pagina)).toHaveText(/Revisa el teléfono/);
+
+  await pagina.getByLabel(/Teléfono y WhatsApp/).fill("600 99 88 77");
+  await pagina.getByLabel("Dirección").fill("Calle Mayor 1, Alicante");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Guardado. Ya se ve en la web de clientas.")).toBeVisible();
+
+  await pagina.goto("/");
+  const pie = pagina.getByRole("contentinfo");
+  await expect(pie).toContainText("Calle Mayor 1, Alicante");
+  await expect(pie.getByRole("link", { name: "Llamar al 600 99 88 77" })).toHaveAttribute("href", "tel:+34600998877");
+  await expect(pie.getByRole("link", { name: "Escríbenos por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/34600998877\?/);
+});

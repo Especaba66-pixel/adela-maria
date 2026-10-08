@@ -55,3 +55,8 @@ agenda, la clienta verá los huecos libres y la petición se convertirá en una 
 **Precio y duración pueden quedar por decidir.** Para poder ofrecer un servicio nuevo antes de fijar su precio (diseño
 de cejas). La web muestra «Precio a consultar», se puede pedir cita y el inicio avisa de lo que falta. En la fase 2 no
 se podrá cobrar un tratamiento sin precio.
+
+**Un número de WhatsApp propio del centro, no el móvil personal.** Con WhatsApp Business se puede usar a la vez la app
+del móvil y los envíos automáticos de Meta (fase 6) sobre el mismo número. Con el WhatsApp normal de una persona, no. Un
+número del centro también separa la vida privada de Adela de las clientas y protege su número personal si Meta
+bloqueara los envíos. El teléfono se guarda en **Datos del centro** y lo cambia la administración.

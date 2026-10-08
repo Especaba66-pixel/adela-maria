@@ -1,9 +1,12 @@
 import { centro } from "@adela/db";
-import { formatearTelefono } from "@adela/dominio";
+import { enlaceWhatsapp, formatearTelefono } from "@adela/dominio";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Marca } from "@/components/Marca";
 import { db } from "@/server/db";
+
+// Los datos del centro se leen en cada visita (nunca al preparar la web).
+export const dynamic = "force-dynamic";
 
 export default async function LayoutPublico({ children }: { children: ReactNode }) {
   const [c] = await db().select().from(centro).limit(1);
@@ -28,10 +31,20 @@ export default async function LayoutPublico({ children }: { children: ReactNode 
           <div className="font-titulo text-xl text-dorado-oscuro">Adela María · Belleza holística</div>
           {c?.direccion && <div>{c.direccion}</div>}
           {c?.telefono && (
-            <div>
-              <a href={`tel:${c.telefono}`} className="underline">
-                {c.telefono.startsWith("+34") ? formatearTelefono(c.telefono) : c.telefono}
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <a href={`tel:${c.telefono}`} className="inline-flex min-h-toque items-center underline">
+                Llamar al {formatearTelefono(c.telefono)}
               </a>
+              {/^\+34[67]/.test(c.telefono) && (
+                <a
+                  href={enlaceWhatsapp(c.telefono, "Hola, quería información sobre vuestros tratamientos.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-toque items-center underline"
+                >
+                  Escríbenos por WhatsApp
+                </a>
+              )}
             </div>
           )}
         </div>
