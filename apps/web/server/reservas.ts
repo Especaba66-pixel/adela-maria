@@ -1,7 +1,16 @@
 import "server-only";
-import { categorias, registrarActividad, solicitudesReserva, tratamientos } from "@adela/db";
-import { MAX_PENDIENTES_POR_TELEFONO, TEXTO_PRIVACIDAD, validarSolicitud, type DatosSolicitud } from "@adela/dominio";
+import { categorias, citas, clientes, consentimientos, registrarActividad, solicitudesReserva, tratamientos } from "@adela/db";
+import {
+  MAX_PENDIENTES_POR_TELEFONO,
+  TEXTO_PRIVACIDAD,
+  esFecha,
+  normalizarTelefono,
+  rangoFechasReserva,
+  validarSolicitud,
+  type DatosSolicitud,
+} from "@adela/dominio";
 import { and, asc, count, eq, gt, isNull } from "drizzle-orm";
+import { crearCitas, huecosWeb } from "./agenda";
 import { requerirSesion } from "./auth";
 import { db } from "./db";
 
@@ -11,7 +20,14 @@ const MAX_PETICIONES_10_MIN = 20;
 /** Tratamientos que se pueden reservar desde la web, con su categoría. */
 export async function tratamientosReservables() {
   return db()
-    .select({ id: tratamientos.id, nombre: tratamientos.nombre, categoria: categorias.nombre, precioCentimos: tratamientos.precioCentimos, duracionMinutos: tratamientos.duracionMinutos })
+    .select({
+      id: tratamientos.id,
+      nombre: tratamientos.nombre,
+      descripcion: tratamientos.descripcion,
+      categoria: categorias.nombre,
+      precioCentimos: tratamientos.precioCentimos,
+      duracionMinutos: tratamientos.duracionMinutos,
+    })
     .from(tratamientos)
     .innerJoin(categorias, eq(categorias.id, tratamientos.categoriaId))
     .where(and(isNull(tratamientos.anuladoEn), isNull(categorias.anuladoEn)))
@@ -57,10 +73,87 @@ export async function crearSolicitud(datos: DatosSolicitud, trampa: string): Pro
   return { ok: true };
 }
 
+/** Peticiones sin contestar: citas web por confirmar y peticiones sin hora. */
 export async function contarPendientes(): Promise<number> {
-  const [r] = await db().select({ n: count() }).from(solicitudesReserva).where(eq(solicitudesReserva.estado, "pendiente"));
-  return r!.n;
+  const [[s], [c]] = await Promise.all([
+    db().select({ n: count() }).from(solicitudesReserva).where(eq(solicitudesReserva.estado, "pendiente")),
+    db().select({ n: count() }).from(citas).where(eq(citas.estado, "pendiente")),
+  ]);
+  return s!.n + c!.n;
 }
+
+/** Peticiones pendientes de un teléfono (citas por confirmar + peticiones sin hora). */
+async function pendientesDeTelefono(telefono: string): Promise<number> {
+  const [[s], [c]] = await Promise.all([
+    db()
+      .select({ n: count() })
+      .from(solicitudesReserva)
+      .where(and(eq(solicitudesReserva.telefono, telefono), eq(solicitudesReserva.estado, "pendiente"))),
+    db()
+      .select({ n: count() })
+      .from(citas)
+      .innerJoin(clientes, eq(clientes.id, citas.clienteId))
+      .where(and(eq(clientes.telefono, telefono), eq(citas.estado, "pendiente"))),
+  ]);
+  return s!.n + c!.n;
+}
+
+/**
+ * Cita pedida desde la web con hora concreta. Pública: sin sesión ni clave. Ocupa el hueco al momento
+ * (nadie más puede cogerlo) y queda «por confirmar» hasta que el centro la confirme.
+ */
+export async function reservarConHora(
+  datos: { tratamientoId: string; fecha: string; minutos: number; nombre: string; telefono: string; nota: string; aceptaPrivacidad: boolean },
+  trampa: string,
+): Promise<ResultadoSolicitud> {
+  if (trampa) return { ok: true };
+  // Se reutilizan las reglas de la petición (nombre, teléfono, fecha, privacidad).
+  const v = validarSolicitud({ ...datos, fechaPreferida: datos.fecha, franja: "indiferente" }, new Date());
+  if (!v.ok) return v;
+  const { nombre, telefono, nota } = v.datos;
+  const { desde, hasta } = rangoFechasReserva(new Date());
+  if (!esFecha(datos.fecha) || datos.fecha < desde || datos.fecha > hasta) return { ok: false, error: "Elige otro día." };
+
+  const libre = (await huecosWeb(datos.tratamientoId, datos.fecha)).find((h) => h.minutos === datos.minutos);
+  if (!libre) return { ok: false, error: "Esa hora acaba de ocuparse. Elige otra, por favor." };
+  if ((await pendientesDeTelefono(telefono)) >= MAX_PENDIENTES_POR_TELEFONO) {
+    return { ok: false, error: "Ya tienes varias citas por confirmar. Te contestaremos enseguida; si es urgente, llámanos." };
+  }
+
+  try {
+    await db().transaction(async (tx) => {
+      let [cliente] = await tx.select().from(clientes).where(and(eq(clientes.telefono, telefono), isNull(clientes.anonimizadaEn)));
+      if (!cliente) {
+        [cliente] = await tx.insert(clientes).values({ nombre, telefono }).returning();
+        await registrarActividad(tx, { usuarioId: null, accion: "clienta.crear", entidad: "clientes", entidadId: cliente!.id, despues: { origen: "web" } });
+      }
+      await tx.insert(consentimientos).values({ clienteId: cliente!.id, tipo: "privacidad_reserva", aceptado: true, texto: TEXTO_PRIVACIDAD, canal: "web" });
+      const r = await crearCitas(
+        {
+          clienteId: cliente!.id,
+          profesionalId: libre.profesionalId,
+          fecha: datos.fecha,
+          inicioMin: datos.minutos,
+          tratamientoIds: [datos.tratamientoId],
+          nota: nombre === cliente!.nombre ? nota : [`Nombre dado en la web: ${nombre}`, nota].filter(Boolean).join(". "),
+          estado: "pendiente",
+          origen: "web",
+        },
+        null,
+        tx,
+      );
+      if (!r.ok) throw new ReservaFallida(r.error);
+    });
+  } catch (e) {
+    if (e instanceof ReservaFallida) return { ok: false, error: "Esa hora acaba de ocuparse. Elige otra, por favor." };
+    throw e;
+  }
+  return { ok: true };
+}
+
+class ReservaFallida extends Error {}
+
+export { normalizarTelefono };
 
 /** Confirmar o rechazar una petición. Solo personal con permiso de reservas. */
 export async function gestionarSolicitud(id: string, estado: "confirmada" | "rechazada"): Promise<void> {

@@ -29,6 +29,13 @@
       "when": 1791497757807,
       "tag": "0003_precio_y_duracion_por_decidir",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791499937238,
+      "tag": "0004_agenda_y_clientas",
+      "breakpoints": true
     }
   ]
 }

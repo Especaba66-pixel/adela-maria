@@ -5,7 +5,7 @@ import { cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, valida
 import { and, eq, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { categorias, centro, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { categorias, centro, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -58,6 +58,13 @@ export async function sembrar(
         .returning();
       await registrarActividad(tx, { usuarioId: null, accion: "usuario.crear", entidad: "usuarios", entidadId: nuevo!.id, despues: nuevo });
       resumen.adminCreado = true;
+    }
+
+    // La administración atiende citas: es la primera profesional (su horario se pone en Configuración).
+    const [hayProfesional] = await tx.select({ id: profesionales.id }).from(profesionales).limit(1);
+    if (!hayProfesional) {
+      const [admin] = await tx.select().from(usuarios).where(eq(usuarios.rol, "administrador")).limit(1);
+      await tx.insert(profesionales).values({ nombre: admin!.nombre, usuarioId: admin!.id });
     }
 
     for (const [i, cat] of tarifas.categorias.entries()) {

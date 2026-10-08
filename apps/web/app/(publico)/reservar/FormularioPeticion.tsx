@@ -12,7 +12,7 @@ interface Opcion {
 
 const campo = "mt-2 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-4 text-lg focus:border-dorado";
 
-export function Formulario({ tratamientos, elegido, desde, hasta }: { tratamientos: Opcion[]; elegido?: string; desde: string; hasta: string }) {
+export function FormularioPeticion({ tratamientos, elegido, desde, hasta }: { tratamientos: Opcion[]; elegido?: string; desde: string; hasta: string }) {
   const [estado, accion, pendiente] = useActionState(pedirCita, {});
   const categorias = [...new Set(tratamientos.map((t) => t.categoria))];
   return (

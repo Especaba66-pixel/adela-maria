@@ -60,3 +60,27 @@ se podrá cobrar un tratamiento sin precio.
 del móvil y los envíos automáticos de Meta (fase 6) sobre el mismo número. Con el WhatsApp normal de una persona, no. Un
 número del centro también separa la vida privada de Adela de las clientas y protege su número personal si Meta
 bloqueara los envíos. El teléfono se guarda en **Datos del centro** y lo cambia la administración.
+
+## Fase 1
+
+**La doble reserva la impide la base de datos.** Una restricción de exclusión de PostgreSQL rechaza dos citas no
+canceladas de la misma profesional que se solapen, aunque lleguen a la vez desde la web y desde el TPV. La aplicación
+solo traduce el error a «Ya hay otra cita a esa hora».
+
+**La cita guarda la duración y el precio de cada servicio en ese momento.** Si mañana cambia una tarifa, las citas ya
+dadas no cambian.
+
+**Horas de Madrid con cambio de hora.** Las citas se guardan como instantes reales y el horario como «minutos desde
+medianoche». La conversión tiene en cuenta el cambio de hora de marzo y octubre (probado).
+
+**Vista de día como lista con huecos, no como rejilla.** Con servicios de 5 minutos, una rejilla dejaría bloques
+demasiado pequeños para el dedo. La lista ordenada con los huecos libres como botones es más cómoda en el TPV.
+
+**Reserva web con hora real, por confirmar.** La hora queda ocupada al momento para que nadie más la coja, y el centro
+la confirma por WhatsApp. Si no la confirma, puede rechazarla y el hueco se libera. Hay una antelación mínima de 2 horas.
+
+**Profesionales separadas de usuarios.** Una profesional puede tener usuario (para ver su agenda) o no. Si no tiene
+tratamientos apuntados, hace todos.
+
+**Supresión de datos por anonimización.** Al eliminar los datos de una clienta no se borra la fila: se vacían sus datos
+personales y notas, y sus citas quedan sin nombre. Así la agenda y, más adelante, la facturación siguen cuadrando.

@@ -1,13 +1,15 @@
 import { categorias, tiposBono, tiposBonoTratamientos, tratamientos } from "@adela/db";
-import { formatearEuros, textoPrecio } from "@adela/dominio";
+import { formatearEuros, puede, textoPrecio } from "@adela/dominio";
 import { Aviso, Tarjeta } from "@adela/ui";
-import { asc, count, eq, isNull } from "drizzle-orm";
+import { asc, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
+import { FormularioCategoria, FormularioTratamiento } from "./Formularios";
 
 export default async function Tratamientos() {
-  await requerirSesion();
-  const [cats, lista, bonos] = await Promise.all([
+  const { usuario } = await requerirSesion();
+  const edita = puede(usuario.rol, "configuracion.gestionar");
+  const [cats, lista, bonos, retirados] = await Promise.all([
     db().select().from(categorias).where(isNull(categorias.anuladoEn)).orderBy(asc(categorias.orden)),
     db().select().from(tratamientos).where(isNull(tratamientos.anuladoEn)).orderBy(asc(tratamientos.orden)),
     db()
@@ -17,7 +19,18 @@ export default async function Tratamientos() {
       .where(isNull(tiposBono.anuladoEn))
       .groupBy(tiposBono.id)
       .orderBy(asc(tiposBono.sesiones)),
+    db().select().from(tratamientos).where(isNotNull(tratamientos.anuladoEn)).orderBy(asc(tratamientos.nombre)),
   ]);
+  const listaCats = cats.map((c) => ({ id: c.id, nombre: c.nombre }));
+  const valores = (t: typeof tratamientos.$inferSelect) => ({
+    id: t.id,
+    categoriaId: t.categoriaId,
+    nombre: t.nombre,
+    duracion: t.duracionMinutos === null ? "" : String(t.duracionMinutos),
+    precio: t.precioCentimos === null ? "" : (t.precioCentimos / 100).toFixed(2).replace(".", ","),
+    descripcion: t.descripcion ?? "",
+    retirado: t.anuladoEn !== null,
+  });
 
   return (
     <div className="space-y-8">
@@ -32,7 +45,8 @@ export default async function Tratamientos() {
             ) : (
               <Tarjeta className="divide-y divide-borde p-0">
                 {deCategoria.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                  <div key={t.id} className="px-6 py-4">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="font-medium">{t.nombre}</div>
                       <div className="text-sm text-tinta-suave">
@@ -41,12 +55,43 @@ export default async function Tratamientos() {
                     </div>
                     <div className={t.precioCentimos === null ? "text-pendiente" : "font-semibold"}>{textoPrecio(t.precioCentimos)}</div>
                   </div>
+                  {edita && (
+                    <details>
+                      <summary className="inline-flex min-h-toque cursor-pointer items-center text-dorado-oscuro" aria-label={`Editar ${t.nombre}`}>
+                        Editar
+                      </summary>
+                      <div className="pt-2">
+                        <FormularioTratamiento valores={valores(t)} categorias={listaCats} />
+                      </div>
+                    </details>
+                  )}
+                  </div>
                 ))}
               </Tarjeta>
             )}
           </section>
         );
       })}
+      {edita && (
+        <Tarjeta className="space-y-4">
+          <h2 className="text-3xl">Nuevo tratamiento</h2>
+          <FormularioTratamiento categorias={listaCats} />
+          <FormularioCategoria />
+        </Tarjeta>
+      )}
+      {edita && retirados.length > 0 && (
+        <details>
+          <summary className="inline-flex min-h-toque cursor-pointer items-center text-dorado-oscuro">Retirados ({retirados.length})</summary>
+          <Tarjeta className="mt-2 divide-y divide-borde p-0">
+            {retirados.map((t) => (
+              <div key={t.id} className="px-6 py-3">
+                <div className="font-medium">{t.nombre}</div>
+                <FormularioTratamiento valores={valores(t)} categorias={listaCats} />
+              </div>
+            ))}
+          </Tarjeta>
+        </details>
+      )}
       <section className="space-y-3">
         <h2 className="text-3xl">Bonos</h2>
         <Tarjeta className="divide-y divide-borde p-0">

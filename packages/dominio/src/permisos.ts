@@ -15,6 +15,7 @@ export const NOMBRE_ROL: Record<Rol, string> = {
 export const PERMISOS = [
   "agenda.ver_toda",
   "agenda.ver_propia",
+  "agenda.gestionar",
   "clientas.gestionar",
   "reservas.gestionar",
   "fichas.ver_propias",
@@ -30,7 +31,7 @@ export type Permiso = (typeof PERMISOS)[number];
 
 const PERMISOS_POR_ROL: Record<Rol, readonly Permiso[]> = {
   administrador: PERMISOS,
-  recepcion: ["agenda.ver_toda", "clientas.gestionar", "reservas.gestionar", "cobrar", "caja.abrir_cerrar"],
+  recepcion: ["agenda.ver_toda", "agenda.gestionar", "clientas.gestionar", "reservas.gestionar", "cobrar", "caja.abrir_cerrar"],
   profesional: ["agenda.ver_propia", "fichas.ver_propias"],
 };
 

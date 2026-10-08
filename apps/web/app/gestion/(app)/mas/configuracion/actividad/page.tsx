@@ -19,6 +19,21 @@ const ACCIONES: Record<string, string> = {
   "reserva.solicitar": "Una clienta pidió cita",
   "reserva.confirmar": "Confirmó una petición de cita",
   "reserva.rechazar": "Rechazó una petición de cita",
+  "cita.crear": "Dio una cita",
+  "cita.estado": "Cambió el estado de una cita",
+  "cita.mover": "Movió una cita",
+  "clienta.crear": "Creó una ficha de clienta",
+  "clienta.editar": "Modificó una ficha de clienta",
+  "clienta.exportar": "Descargó los datos de una clienta",
+  "clienta.suprimir": "Eliminó los datos de una clienta",
+  "bloqueo.crear": "Bloqueó horas de la agenda",
+  "bloqueo.quitar": "Quitó un bloqueo de la agenda",
+  "horario.editar": "Cambió un horario",
+  "profesional.crear": "Añadió una profesional",
+  "profesional.editar": "Modificó una profesional",
+  "tratamiento.crear": "Añadió un tratamiento",
+  "tratamiento.editar": "Modificó un tratamiento",
+  "categoria.crear": "Creó una categoría",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

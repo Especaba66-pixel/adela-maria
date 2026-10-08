@@ -235,3 +235,188 @@ export const solicitudesReserva = pgTable(
     check("solicitudes_reserva_nota", sql`${t.nota} is null or length(${t.nota}) <= 500`),
   ],
 );
+
+// ── Fase 1: personas, equipo y agenda ───────────────────────────────────────
+
+/** Clientas y clientes del centro. «Clientas» es solo la etiqueta del menú. */
+export const clientes = pgTable(
+  "clientes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    nombre: text().notNull(),
+    /** Normalizado: +34600111222. */
+    telefono: text(),
+    email: text(),
+    fechaNacimiento: date({ mode: "string" }),
+    notas: text(),
+    /** Permisos separados para WhatsApp: avisos de sus citas y promociones. */
+    aceptaAvisosCitas: boolean().notNull().default(false),
+    aceptaPromociones: boolean().notNull().default(false),
+    creadaEn: creadoEn(),
+    /** Supresión de datos a petición (RGPD): se anonimiza la ficha, no se borra. */
+    anonimizadaEn: fecha(),
+  },
+  (t) => [
+    uniqueIndex("clientes_telefono_unico").on(t.telefono).where(sql`${t.anonimizadaEn} is null and ${t.telefono} is not null`),
+    index("clientes_nombre").on(t.nombre),
+    check("clientes_nombre_valido", sql`length(trim(${t.nombre})) between 2 and 80`),
+  ],
+);
+
+/** Cada permiso que da (o retira) una clienta, con el texto exacto y por dónde. */
+export const consentimientos = pgTable("consentimientos", {
+  id: uuid().primaryKey().defaultRandom(),
+  clienteId: uuid()
+    .notNull()
+    .references(() => clientes.id),
+  tipo: text({ enum: ["privacidad_reserva", "avisos_citas", "promociones"] }).notNull(),
+  aceptado: boolean().notNull(),
+  texto: text(),
+  canal: text({ enum: ["web", "centro"] }).notNull(),
+  registradoPor: uuid().references(() => usuarios.id),
+  cuando: creadoEn(),
+});
+
+/** Notas de la línea temporal de la ficha. */
+export const notasClientes = pgTable("notas_clientes", {
+  id: uuid().primaryKey().defaultRandom(),
+  clienteId: uuid()
+    .notNull()
+    .references(() => clientes.id),
+  texto: text().notNull(),
+  autorId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  creadaEn: creadoEn(),
+});
+
+/** Quien atiende citas. Puede tener usuario (para ver su propia agenda) o no. */
+export const profesionales = pgTable("profesionales", {
+  id: uuid().primaryKey().defaultRandom(),
+  nombre: text().notNull().unique(),
+  usuarioId: uuid()
+    .unique()
+    .references(() => usuarios.id),
+  color: text().notNull().default("#b08d57"),
+  activo: boolean().notNull().default(true),
+  orden: integer().notNull().default(0),
+});
+
+/** Qué tratamientos hace cada profesional. Si no tiene ninguno apuntado, los hace todos. */
+export const profesionalesTratamientos = pgTable(
+  "profesionales_tratamientos",
+  {
+    profesionalId: uuid()
+      .notNull()
+      .references(() => profesionales.id),
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+  },
+  (t) => [primaryKey({ columns: [t.profesionalId, t.tratamientoId] })],
+);
+
+/** Horario semanal: uno o varios tramos por día (por ejemplo, mañana y tarde). */
+export const horarios = pgTable(
+  "horarios",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    profesionalId: uuid()
+      .notNull()
+      .references(() => profesionales.id),
+    /** 1 = lunes … 7 = domingo. */
+    diaSemana: integer().notNull(),
+    /** Minutos desde medianoche. */
+    inicioMin: integer().notNull(),
+    finMin: integer().notNull(),
+  },
+  (t) => [
+    index("horarios_profesional").on(t.profesionalId, t.diaSemana),
+    check("horarios_dia_valido", sql`${t.diaSemana} between 1 and 7`),
+    check(
+      "horarios_tramo_valido",
+      sql`${t.inicioMin} >= 0 and ${t.finMin} <= 1440 and ${t.inicioMin} < ${t.finMin} and ${t.inicioMin} % 5 = 0 and ${t.finMin} % 5 = 0`,
+    ),
+  ],
+);
+
+/** Vacaciones, descansos y horarios especiales. Sin profesional = todo el centro. */
+export const bloqueos = pgTable(
+  "bloqueos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    profesionalId: uuid().references(() => profesionales.id),
+    inicio: fecha().notNull(),
+    fin: fecha().notNull(),
+    tipo: text({ enum: ["vacaciones", "descanso", "otro"] }).notNull(),
+    motivo: text(),
+    creadoPor: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    creadoEn: creadoEn(),
+    anuladoEn: fecha(),
+  },
+  (t) => [check("bloqueos_intervalo", sql`${t.inicio} < ${t.fin}`), index("bloqueos_inicio").on(t.inicio)],
+);
+
+/** Citas que se repiten (cada N semanas, M veces). */
+export const series = pgTable("series", {
+  id: uuid().primaryKey().defaultRandom(),
+  cadaSemanas: integer().notNull(),
+  veces: integer().notNull(),
+  creadaPor: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  creadaEn: creadoEn(),
+});
+
+export const estadoCita = pgEnum("estado_cita", ["pendiente", "confirmada", "realizada", "no_presentada", "cancelada"]);
+
+/**
+ * Citas. La base de datos rechaza dos citas no canceladas que se solapen para la misma profesional
+ * (restricción de exclusión `citas_sin_solape`, en la migración).
+ */
+export const citas = pgTable(
+  "citas",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clienteId: uuid()
+      .notNull()
+      .references(() => clientes.id),
+    profesionalId: uuid()
+      .notNull()
+      .references(() => profesionales.id),
+    inicio: fecha().notNull(),
+    fin: fecha().notNull(),
+    estado: estadoCita().notNull().default("confirmada"),
+    origen: text({ enum: ["centro", "web"] }).notNull(),
+    serieId: uuid().references(() => series.id),
+    solicitudId: uuid().references(() => solicitudesReserva.id),
+    nota: text(),
+    creadaPor: uuid().references(() => usuarios.id),
+    creadaEn: creadoEn(),
+    actualizadaEn: creadoEn(),
+  },
+  (t) => [
+    index("citas_inicio").on(t.inicio),
+    index("citas_cliente").on(t.clienteId, t.inicio),
+    check("citas_intervalo", sql`${t.inicio} < ${t.fin}`),
+  ],
+);
+
+/** Servicios de una cita, con la duración y el precio de ese momento. */
+export const citasServicios = pgTable(
+  "citas_servicios",
+  {
+    citaId: uuid()
+      .notNull()
+      .references(() => citas.id),
+    orden: integer().notNull(),
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+    duracionMinutos: integer().notNull(),
+    precioCentimos: integer(),
+  },
+  (t) => [primaryKey({ columns: [t.citaId, t.orden] })],
+);

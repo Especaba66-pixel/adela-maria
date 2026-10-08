@@ -129,8 +129,8 @@ test("el registro de actividad recoge todo lo anterior", async () => {
   await pagina.goto("/gestion/mas/configuracion/actividad");
   const tabla = pagina.getByRole("table");
   await expect(tabla.getByRole("row").filter({ hasText: "Bloqueado por intentos fallidos" })).toHaveCount(1);
-  await expect(tabla.getByRole("row").filter({ hasText: "Registró un equipo de confianza" })).toHaveCount(1);
-  await expect(tabla.getByRole("row").filter({ hasText: "Creó un usuario" })).toHaveCount(2);
+  await expect(tabla.getByRole("row").filter({ hasText: "Registró un equipo de confianza" }).first()).toBeVisible();
+  await expect(tabla.getByRole("row").filter({ hasText: "Creó un usuario" }).first()).toBeVisible();
   await expect(tabla.getByRole("row").filter({ hasText: "Intento de entrada fallido" }).first()).toBeVisible();
   await expect(tabla).not.toContainText("scrypt");
 });

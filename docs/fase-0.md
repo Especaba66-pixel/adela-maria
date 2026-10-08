@@ -1,6 +1,6 @@
 # Cierre de la fase 0 · Preparación
 
-Estado: **pendiente de tu aprobación.** No se empieza la fase 1 sin ella.
+Estado: **aprobada** el 8 de octubre de 2026.
 
 ## 1. Qué se ha construido
 

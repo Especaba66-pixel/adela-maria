@@ -4,6 +4,8 @@ import { requerirSesion } from "@/server/auth";
 
 const SECCIONES = [
   { href: "/gestion/mas/configuracion/centro", nombre: "Datos del centro", texto: "Teléfono y dirección que ven las clientas." },
+  { href: "/gestion/mas/configuracion/horario", nombre: "Horario", texto: "Qué días y horas atiende cada profesional." },
+  { href: "/gestion/mas/configuracion/profesionales", nombre: "Profesionales", texto: "Quién atiende citas y qué tratamientos hace." },
   { href: "/gestion/mas/configuracion/usuarios", nombre: "Usuarios", texto: "Quién entra, con qué rol, contraseña y PIN." },
   { href: "/gestion/mas/configuracion/equipos", nombre: "Equipos", texto: "Equipos de confianza donde se entra con PIN." },
   { href: "/gestion/mas/configuracion/actividad", nombre: "Registro de actividad", texto: "Quién hizo qué y cuándo." },

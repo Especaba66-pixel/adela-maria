@@ -1,5 +1,5 @@
 import "server-only";
-import { copiasSeguridad, tratamientos } from "@adela/db";
+import { copiasSeguridad, horarios, profesionales, tratamientos } from "@adela/db";
 import type { Prioridad } from "@adela/ui";
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { db } from "./db";
@@ -46,6 +46,20 @@ export async function avisosSistema(): Promise<AvisoSistema[]> {
     .limit(1);
   if (!hayTratamiento) {
     avisos.push({ prioridad: "pendiente", texto: "Faltan por cargar los tratamientos de las tarifas.", enlace: "/gestion/mas/tratamientos" });
+  }
+
+  const [conHorario] = await db()
+    .select({ id: horarios.id })
+    .from(horarios)
+    .innerJoin(profesionales, eq(profesionales.id, horarios.profesionalId))
+    .where(eq(profesionales.activo, true))
+    .limit(1);
+  if (!conHorario) {
+    avisos.push({
+      prioridad: "importante",
+      texto: "Falta el horario: sin él, las clientas no ven horas libres en la web.",
+      enlace: "/gestion/mas/configuracion/horario",
+    });
   }
 
   const sinPrecio = await db()
