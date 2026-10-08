@@ -8,9 +8,10 @@
 
 export interface TarifaTratamiento {
   nombre: string;
-  /** Múltiplo de 5. */
-  duracionMinutos: number;
-  precioCentimos: number;
+  /** Múltiplo de 5. Sin indicar = por decidir. */
+  duracionMinutos?: number;
+  /** Sin indicar = precio por decidir («Precio a consultar»). */
+  precioCentimos?: number;
   descripcion?: string;
 }
 
@@ -30,6 +31,8 @@ export interface TarifaBono {
 export const CATEGORIAS: TarifaCategoria[] = [
   { nombre: "Faciales", tratamientos: [] },
   { nombre: "Depilación", tratamientos: [] },
+  // PENDIENTE: precio y duración del diseño de cejas.
+  { nombre: "Cejas", tratamientos: [{ nombre: "Diseño de cejas" }] },
 ];
 
 /** "Adaptados a las necesidades de tu piel": valen para cualquier facial. */

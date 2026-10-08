@@ -12,3 +12,8 @@ export function saludo(d: Date): string {
   if (hora < 14) return "Buenos días";
   return "Buenas tardes";
 }
+
+const formatoDia = new Intl.DateTimeFormat("es-ES", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+
+/** "2026-10-10" → "sábado, 10 de octubre". La fecha es un día del calendario, sin hora. */
+export const diaLargo = (fechaIso: string) => formatoDia.format(new Date(`${fechaIso}T12:00:00Z`));

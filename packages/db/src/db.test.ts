@@ -6,6 +6,7 @@ import {
   registrarActividad,
   registroActividad,
   sembrar,
+  solicitudesReserva,
   tiposBono,
   tiposBonoTratamientos,
   tratamientos,
@@ -57,7 +58,7 @@ describe("datos iniciales", () => {
     expect(adela?.rol).toBe("administrador");
     expect(adela?.hashPin).not.toContain("2468");
     expect(await comprobarSecreto("2468", adela!.hashPin!)).toBe(true);
-    expect(await comprobarSecreto("contrasena-de-prueba", adela!.hashContrasena)).toBe(true);
+    expect(await comprobarSecreto("contrasena-de-prueba", adela!.hashContrasena!)).toBe(true);
 
     const cubiertos = await db
       .select({ nombre: tratamientos.nombre })
@@ -104,6 +105,26 @@ describe("reglas que impone la base de datos", () => {
     expect(
       await errorDe(db.insert(tratamientos).values({ ...base, nombre: "c", duracionMinutos: 5, precioCentimos: -1 })),
     ).toMatch(/precio_no_negativo/);
+  });
+
+  it("la administración siempre tiene contraseña; el resto del personal puede no tenerla", async () => {
+    const [adela] = await db.select().from(usuarios).limit(1);
+    expect(await errorDe(db.update(usuarios).set({ hashContrasena: null }).where(eq(usuarios.id, adela!.id)))).toMatch(
+      /usuarios_admin_con_contrasena/,
+    );
+    const sinClave = { ...adela!, id: undefined, usuario: "lucia", rol: "recepcion" as const, hashContrasena: null, creadoEn: undefined, actualizadoEn: undefined };
+    expect(await errorDe(db.insert(usuarios).values(sinClave))).toBeNull();
+  });
+
+  it("las peticiones de cita no se borran ni se piden para días pasados", async () => {
+    const [t] = await db.select().from(tratamientos).limit(1);
+    const base = { tratamientoId: t!.id, franja: "tarde" as const, nombre: "Marta", telefono: "+34600112233", consentimientoTexto: "texto" };
+    expect(await errorDe(db.insert(solicitudesReserva).values({ ...base, fechaPreferida: "2020-01-01" }))).toMatch(/fecha_futura/);
+    expect(await errorDe(db.insert(solicitudesReserva).values({ ...base, fechaPreferida: "2099-01-01" }))).toBeNull();
+    expect(await errorDe(db.insert(solicitudesReserva).values({ ...base, nombre: " ", fechaPreferida: "2099-01-01" }))).toMatch(
+      /solicitudes_reserva_nombre/,
+    );
+    expect(await errorDe(db.delete(solicitudesReserva))).toMatch(/No se borran filas de solicitudes_reserva/);
   });
 
   it("el nombre de usuario es único", async () => {

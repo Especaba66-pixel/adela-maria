@@ -13,7 +13,7 @@ pnpm install
 cp .env.example .env        # y cambia la contraseña y el PIN de la administradora
 pnpm db:migrate             # crea las tablas
 pnpm db:seed                # centro, primera administradora y tarifas
-pnpm dev                    # http://localhost:3000
+pnpm dev                    # web de clientas: http://localhost:3000 · gestión: http://localhost:3000/gestion
 ```
 
 ## Comprobaciones
@@ -39,7 +39,7 @@ Nunca se edita una migración ya aplicada en producción: se añade otra.
 ## Carpetas
 
 ```text
-apps/web/            App web (Next.js): pantallas en app/, lógica de servidor en server/
+apps/web/            App web (Next.js): web de clientas en app/(publico), gestión en app/gestion, servidor en server/
 packages/dominio/    Reglas puras: permisos, credenciales, sesión, dinero (con pruebas)
 packages/db/         Esquema, migraciones, datos iniciales (tarifas en src/datos/tarifas.ts)
 packages/ui/         Colores, tipografía y componentes táctiles

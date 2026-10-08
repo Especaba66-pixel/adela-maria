@@ -15,6 +15,20 @@
       "when": 1791496096580,
       "tag": "0001_reglas_inalterables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791497407157,
+      "tag": "0002_reservas_y_acceso_con_pin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791497757807,
+      "tag": "0003_precio_y_duracion_por_decidir",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import {
   bigserial,
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -50,7 +51,9 @@ export const usuarios = pgTable(
       .references(() => centro.id),
     nombre: text().notNull(),
     usuario: text().notNull(),
-    hashContrasena: text().notNull(),
+    /** Solo la administración tiene contraseña: la usa para registrar equipos de confianza. */
+    hashContrasena: text(),
+    /** El personal entra con PIN en los equipos de confianza. */
     hashPin: text(),
     rol: rol().notNull(),
     activo: boolean().notNull().default(true),
@@ -59,7 +62,10 @@ export const usuarios = pgTable(
     creadoEn: creadoEn(),
     actualizadoEn: creadoEn(),
   },
-  (t) => [uniqueIndex("usuarios_usuario_unico").on(t.usuario)],
+  (t) => [
+    uniqueIndex("usuarios_usuario_unico").on(t.usuario),
+    check("usuarios_admin_con_contrasena", sql`${t.rol} <> 'administrador' or ${t.hashContrasena} is not null`),
+  ],
 );
 
 /** Equipos de confianza (el TPV): solo en ellos se puede entrar con PIN. */
@@ -140,9 +146,10 @@ export const tratamientos = pgTable(
       .references(() => categorias.id),
     nombre: text().notNull(),
     descripcion: text(),
-    /** La agenda trabaja en tramos de 5 minutos. */
-    duracionMinutos: integer().notNull(),
-    precioCentimos: integer().notNull(),
+    /** La agenda trabaja en tramos de 5 minutos. Vacío mientras esté por decidir. */
+    duracionMinutos: integer(),
+    /** Vacío mientras el precio esté por decidir: se muestra «Precio a consultar» y no se puede cobrar. */
+    precioCentimos: integer(),
     /**
      * Tipo de IVA en centésimas de punto (2100 = 21 %). Vacío hasta que la gestoría lo confirme:
      * no se puede facturar un tratamiento sin IVA asignado.
@@ -190,4 +197,41 @@ export const tiposBonoTratamientos = pgTable(
       .references(() => tratamientos.id),
   },
   (t) => [primaryKey({ columns: [t.tipoBonoId, t.tratamientoId] })],
+);
+
+// ── Reservas de clientas ────────────────────────────────────────────────────
+
+export const franja = pgEnum("franja", ["manana", "tarde", "indiferente"]);
+export const estadoSolicitud = pgEnum("estado_solicitud", ["pendiente", "confirmada", "rechazada"]);
+
+/**
+ * Peticiones de cita que hacen las clientas desde la web, sin clave. El centro las confirma o rechaza.
+ * En la fase 1 se convierten en citas de la agenda, con hueco libre comprobado.
+ */
+export const solicitudesReserva = pgTable(
+  "solicitudes_reserva",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+    fechaPreferida: date({ mode: "string" }).notNull(),
+    franja: franja().notNull(),
+    nombre: text().notNull(),
+    /** Normalizado en formato internacional: +34600111222. */
+    telefono: text().notNull(),
+    nota: text(),
+    /** Texto de privacidad que aceptó la clienta, tal cual se le mostró. */
+    consentimientoTexto: text().notNull(),
+    estado: estadoSolicitud().notNull().default("pendiente"),
+    gestionadaPor: uuid().references(() => usuarios.id),
+    gestionadaEn: fecha(),
+    creadaEn: creadoEn(),
+  },
+  (t) => [
+    index("solicitudes_reserva_estado").on(t.estado, t.creadaEn),
+    index("solicitudes_reserva_telefono").on(t.telefono),
+    check("solicitudes_reserva_nombre", sql`length(trim(${t.nombre})) between 2 and 80`),
+    check("solicitudes_reserva_nota", sql`${t.nota} is null or length(${t.nota}) <= 500`),
+  ],
 );

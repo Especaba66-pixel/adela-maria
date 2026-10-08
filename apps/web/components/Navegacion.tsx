@@ -9,7 +9,7 @@ export function Navegacion() {
   return (
     <nav aria-label="Menú principal" className="flex flex-col gap-1">
       {MENU.map((e) => {
-        const activa = e.href === "/" ? ruta === "/" : ruta.startsWith(e.href);
+        const activa = e.href === "/gestion" ? ruta === "/gestion" : ruta.startsWith(e.href);
         return (
           <Link
             key={e.href}

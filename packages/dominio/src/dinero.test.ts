@@ -18,3 +18,11 @@ describe("dinero", () => {
     expect(eurosACentimos("")).toBeNull();
   });
 });
+
+describe("precio por decidir", () => {
+  it("muestra «Precio a consultar»", async () => {
+    const { textoPrecio } = await import("./dinero");
+    expect(textoPrecio(null)).toBe("Precio a consultar");
+    expect(textoPrecio(4500)).toBe("45,00 €");
+  });
+});

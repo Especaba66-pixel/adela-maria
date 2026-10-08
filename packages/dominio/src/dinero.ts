@@ -14,3 +14,8 @@ export function eurosACentimos(texto: string): number | null {
   const [enteros, decimales = ""] = limpio.split(".") as [string, string?];
   return Number(enteros) * 100 + Number(decimales.padEnd(2, "0"));
 }
+
+/** Precio para mostrar; si aún no está decidido, «Precio a consultar». */
+export function textoPrecio(centimos: number | null): string {
+  return centimos === null ? "Precio a consultar" : formatearEuros(centimos);
+}

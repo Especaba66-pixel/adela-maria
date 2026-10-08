@@ -8,6 +8,7 @@ describe("permisos", () => {
 
   it("recepción cobra y lleva la caja, pero no configura, ni ve informes, ni anula facturas", () => {
     expect(puede("recepcion", "cobrar")).toBe(true);
+    expect(puede("recepcion", "reservas.gestionar")).toBe(true);
     expect(puede("recepcion", "caja.abrir_cerrar")).toBe(true);
     expect(puede("recepcion", "agenda.ver_toda")).toBe(true);
     expect(puede("recepcion", "configuracion.gestionar")).toBe(false);
@@ -21,6 +22,7 @@ describe("permisos", () => {
     expect(puede("profesional", "fichas.ver_propias")).toBe(true);
     expect(puede("profesional", "agenda.ver_toda")).toBe(false);
     expect(puede("profesional", "cobrar")).toBe(false);
+    expect(puede("profesional", "reservas.gestionar")).toBe(false);
     expect(puede("profesional", "caja.abrir_cerrar")).toBe(false);
   });
 

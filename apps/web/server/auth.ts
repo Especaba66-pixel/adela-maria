@@ -83,8 +83,8 @@ export const obtenerSesion = cache(async (): Promise<Sesion | null> => {
 /** Para páginas y acciones: exige sesión y, si se indica, un permiso. */
 export async function requerirSesion(permiso?: Permiso): Promise<Sesion> {
   const sesion = await obtenerSesion();
-  if (!sesion) redirect((await dispositivoActual()) ? "/pin" : "/entrar");
-  if (permiso && !puede(sesion.usuario.rol, permiso)) redirect("/sin-permiso");
+  if (!sesion) redirect((await dispositivoActual()) ? "/gestion/pin" : "/gestion/registrar-equipo");
+  if (permiso && !puede(sesion.usuario.rol, permiso)) redirect("/gestion/sin-permiso");
   return sesion;
 }
 
@@ -137,13 +137,13 @@ function mensajeBloqueo(hasta: Date): string {
   return `Demasiados intentos. Prueba de nuevo en ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`;
 }
 
-export async function entrarConContrasena(datos: {
-  usuario: string;
-  contrasena: string;
-  recordarComoTpv: boolean;
-}): Promise<Resultado> {
+/**
+ * Registrar un equipo de confianza (el TPV, o el móvil de la administración). Es el único uso de la contraseña:
+ * solo la administración la tiene. En un equipo ya registrado, abre sesión sin registrar otro.
+ */
+export async function registrarEquipo(datos: { usuario: string; contrasena: string; nombreEquipo: string }): Promise<Resultado> {
   const [u] = await db().select().from(usuarios).where(eq(usuarios.usuario, normalizarUsuario(datos.usuario)));
-  if (!u || !u.activo) {
+  if (!u || !u.activo || u.rol !== "administrador" || !u.hashContrasena) {
     await comprobarSecreto(datos.contrasena, await relleno());
     return { ok: false, error: ERROR_GENERICO };
   }
@@ -155,18 +155,24 @@ export async function entrarConContrasena(datos: {
 
   await db().update(usuarios).set({ intentosFallidos: 0, bloqueadoHasta: null }).where(eq(usuarios.id, u.id));
   let dispositivo = await dispositivoActual();
-  // Solo la administración puede marcar un equipo como TPV de confianza.
-  if (datos.recordarComoTpv && !dispositivo && u.rol === "administrador") {
+  if (!dispositivo) {
     const token = nuevoToken();
+    const nombre = datos.nombreEquipo.trim().slice(0, 40) || "TPV";
     const [nuevo] = await db()
       .insert(dispositivos)
-      .values({ hashToken: huella(token), nombre: "TPV", registradoPor: u.id })
+      .values({ hashToken: huella(token), nombre, registradoPor: u.id })
       .returning();
     dispositivo = nuevo!;
     (await cookies()).set(COOKIE_DISPOSITIVO, token, await opcionesCookie(UN_ANO));
-    await registrarActividad(db(), { usuarioId: u.id, accion: "dispositivo.registrar", entidad: "dispositivos", entidadId: dispositivo.id });
+    await registrarActividad(db(), {
+      usuarioId: u.id,
+      accion: "dispositivo.registrar",
+      entidad: "dispositivos",
+      entidadId: dispositivo.id,
+      despues: { nombre },
+    });
   }
-  const sesionId = await crearSesion(u.id, "contrasena", dispositivo?.id ?? null);
+  const sesionId = await crearSesion(u.id, "contrasena", dispositivo.id);
   await registrarActividad(db(), { usuarioId: u.id, accion: "sesion.entrar", entidad: "sesiones", entidadId: sesionId, despues: { metodo: "contraseña" } });
   return { ok: true };
 }
@@ -189,12 +195,12 @@ export async function entrarConPin(usuarioId: string, pin: string): Promise<Resu
 }
 
 /** Cierra la sesión. Devuelve adónde ir: al PIN si es el TPV, si no a la pantalla de entrada. */
-export async function salir(): Promise<"/pin" | "/entrar"> {
+export async function salir(): Promise<"/gestion/pin" | "/gestion/registrar-equipo"> {
   const sesion = await obtenerSesion();
   if (sesion) {
     await db().update(sesiones).set({ cerradaEn: new Date() }).where(eq(sesiones.id, sesion.id));
     await registrarActividad(db(), { usuarioId: sesion.usuario.id, accion: "sesion.salir", entidad: "sesiones", entidadId: sesion.id });
   }
   (await cookies()).delete(COOKIE_SESION);
-  return (await dispositivoActual()) ? "/pin" : "/entrar";
+  return (await dispositivoActual()) ? "/gestion/pin" : "/gestion/registrar-equipo";
 }

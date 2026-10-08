@@ -16,9 +16,11 @@ borrar: se desactivan o se marcan como anulados. Los tratamientos duran tramos d
 compilar en el servidor. Cada secreto lleva su propia sal y el formato guarda los parámetros, para poder endurecerlos más
 adelante sin invalidar los existentes.
 
-**El PIN solo sirve en equipos de confianza.** Un PIN de 4 cifras es cómodo pero débil. Por eso solo se acepta en un
-equipo que la administración ha marcado como TPV al entrar con contraseña. Desde cualquier otro sitio (el móvil, por
-ejemplo) hay que usar usuario y contraseña. Los equipos se pueden retirar desde Configuración.
+**El personal entra solo con PIN, sin contraseñas** (decidido por Espe). La única contraseña es la de la administración y
+solo sirve para registrar un equipo de confianza (el TPV, o su móvil) una vez. A partir de ahí, en ese equipo se entra
+tocando el nombre y escribiendo el PIN. Un PIN de 4 cifras es débil por sí solo, así que solo vale en equipos
+registrados: desde cualquier otro sitio no se puede entrar. Los equipos se pueden retirar desde Configuración, y la base
+de datos impide que la administración se quede sin contraseña.
 
 **Bloqueo por intentos.** Cinco fallos seguidos (de contraseña o de PIN) bloquean a esa persona 5 minutos. El mensaje de
 error no dice si el usuario existe.
@@ -40,3 +42,16 @@ seguro que estén en código revisado que en datos editables. Si se necesita, se
 restaura la copia en una base de datos aparte y comprueba que cada tabla tiene al menos esas filas (como nada se borra,
 nunca debería tener menos) y que las reglas de la base de datos siguen activas. El resultado se ve en Configuración y,
 si falla, sale un aviso rojo en el inicio.
+
+**Las clientas no necesitan claves** (decidido por Espe). La web pública (`/`) muestra los tratamientos y permite pedir
+cita con nombre y teléfono. Como cualquiera podría pedir una cita falsa, la petición entra como «por confirmar»: el
+centro la ve en el inicio, escribe a la clienta por WhatsApp con un toque y la confirma o la rechaza. Para frenar abusos:
+un campo trampa invisible para programas automáticos, un máximo de 3 peticiones sin contestar por teléfono y un freno
+si llegan más de 20 en 10 minutos. Se guarda el texto de privacidad que aceptó cada clienta. En la fase 1, con la
+agenda, la clienta verá los huecos libres y la petición se convertirá en una cita.
+
+**La gestión del centro vive en `/gestion`** y no aparece en buscadores; la web pública sí.
+
+**Precio y duración pueden quedar por decidir.** Para poder ofrecer un servicio nuevo antes de fijar su precio (diseño
+de cejas). La web muestra «Precio a consultar», se puede pedir cita y el inicio avisa de lo que falta. En la fase 2 no
+se podrá cobrar un tratamiento sin precio.

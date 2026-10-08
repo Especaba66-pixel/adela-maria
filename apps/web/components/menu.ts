@@ -1,3 +1,5 @@
+import type { Permiso } from "@adela/dominio";
+
 /** Menú del plan: 7 entradas fijas; el resto se agrupa en "Más". */
 export interface EntradaMenu {
   href: string;
@@ -8,21 +10,22 @@ export interface EntradaMenu {
 }
 
 export const MENU: EntradaMenu[] = [
-  { href: "/", nombre: "Inicio", icono: "⌂", fase: 0 },
-  { href: "/agenda", nombre: "Agenda", icono: "▦", fase: 1 },
-  { href: "/clientas", nombre: "Clientas", icono: "☺", fase: 1 },
-  { href: "/tpv", nombre: "TPV", icono: "€", fase: 2 },
-  { href: "/caja", nombre: "Caja", icono: "▤", fase: 2 },
-  { href: "/avisos", nombre: "Avisos", icono: "⚑", fase: 5 },
-  { href: "/mas", nombre: "Más", icono: "⋯", fase: 0 },
+  { href: "/gestion", nombre: "Inicio", icono: "⌂", fase: 0 },
+  { href: "/gestion/agenda", nombre: "Agenda", icono: "▦", fase: 1 },
+  { href: "/gestion/clientas", nombre: "Clientas", icono: "☺", fase: 1 },
+  { href: "/gestion/tpv", nombre: "TPV", icono: "€", fase: 2 },
+  { href: "/gestion/caja", nombre: "Caja", icono: "▤", fase: 2 },
+  { href: "/gestion/avisos", nombre: "Avisos", icono: "⚑", fase: 5 },
+  { href: "/gestion/mas", nombre: "Más", icono: "⋯", fase: 0 },
 ];
 
-export const MAS: (EntradaMenu & { soloAdmin?: boolean })[] = [
-  { href: "/mas/tratamientos", nombre: "Tratamientos", icono: "✿", fase: 0 },
-  { href: "/mas/configuracion", nombre: "Configuración", icono: "⚙", fase: 0, soloAdmin: true },
-  { href: "/mas/facturacion", nombre: "Facturación", icono: "▣", fase: 2 },
-  { href: "/mas/stock", nombre: "Stock", icono: "▥", fase: 4 },
-  { href: "/mas/proveedores", nombre: "Proveedores", icono: "⛟", fase: 4 },
-  { href: "/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 5 },
-  { href: "/mas/informes", nombre: "Informes", icono: "▲", fase: 7 },
+export const MAS: (EntradaMenu & { permiso?: Permiso })[] = [
+  { href: "/gestion/reservas", nombre: "Reservas web", icono: "✉", fase: 0, permiso: "reservas.gestionar" },
+  { href: "/gestion/mas/tratamientos", nombre: "Tratamientos", icono: "✿", fase: 0 },
+  { href: "/gestion/mas/configuracion", nombre: "Configuración", icono: "⚙", fase: 0, permiso: "configuracion.gestionar" },
+  { href: "/gestion/mas/facturacion", nombre: "Facturación", icono: "▣", fase: 2 },
+  { href: "/gestion/mas/stock", nombre: "Stock", icono: "▥", fase: 4 },
+  { href: "/gestion/mas/proveedores", nombre: "Proveedores", icono: "⛟", fase: 4 },
+  { href: "/gestion/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 5 },
+  { href: "/gestion/mas/informes", nombre: "Informes", icono: "▲", fase: 7 },
 ];

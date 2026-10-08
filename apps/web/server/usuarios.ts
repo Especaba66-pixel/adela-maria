@@ -19,15 +19,21 @@ export async function crearUsuario(datos: {
   const usuario = normalizarUsuario(datos.usuario);
   if (!nombre) return { ok: false, error: "Escribe el nombre." };
   if (!esRol(datos.rol)) return { ok: false, error: "Elige un rol." };
-  const error = validarUsuario(usuario) ?? validarContrasena(datos.contrasena) ?? (datos.pin ? validarPin(datos.pin) : null);
+  const esAdmin = datos.rol === "administrador";
+  if (!datos.pin) return { ok: false, error: "Escribe un PIN: es como entra el personal." };
+  const error =
+    validarUsuario(usuario) ??
+    validarPin(datos.pin) ??
+    (esAdmin ? validarContrasena(datos.contrasena) : null);
   if (error) return { ok: false, error };
 
   const [existe] = await db().select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.usuario, usuario));
   if (existe) return { ok: false, error: "Ya hay alguien con ese usuario." };
 
   const [c] = await db().select({ id: centro.id }).from(centro).limit(1);
-  const hashContrasena = await cifrarSecreto(datos.contrasena);
-  const hashPin = datos.pin ? await cifrarSecreto(datos.pin) : null;
+  // Solo la administración tiene contraseña (para registrar equipos).
+  const hashContrasena = esAdmin ? await cifrarSecreto(datos.contrasena) : null;
+  const hashPin = await cifrarSecreto(datos.pin);
   await db().transaction(async (tx) => {
     const [nuevo] = await tx
       .insert(usuarios)
@@ -67,6 +73,9 @@ export async function editarUsuario(
     valores.hashPin = await cifrarSecreto(cambios.pin);
   }
   if (Object.keys(valores).length === 0) return { ok: true, mensaje: "No había nada que cambiar." };
+  if (valores.rol === "administrador" && !antes.hashContrasena && !valores.hashContrasena) {
+    return { ok: false, error: "Para dar administración hay que ponerle también una contraseña." };
+  }
 
   // Siempre debe quedar al menos una persona con administración activa.
   const dejaDeSerAdmin = antes.rol === "administrador" && ((valores.rol && valores.rol !== "administrador") || valores.activo === false);
