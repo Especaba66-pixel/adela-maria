@@ -83,14 +83,15 @@ export async function sembrar(
       if (nuevo) resumen.bonosNuevos++;
       const [tipo] = await tx.select().from(tiposBono).where(eq(tiposBono.nombre, bono.nombre));
       const cubiertos = await tx
-        .select({ id: tratamientos.id })
+        .select({ id: tratamientos.id, nombre: tratamientos.nombre })
         .from(tratamientos)
         .innerJoin(categorias, eq(categorias.id, tratamientos.categoriaId))
         .where(and(eq(categorias.nombre, bono.categoria), isNull(tratamientos.anuladoEn)));
-      if (cubiertos.length > 0) {
+      const incluidos = cubiertos.filter((t) => !bono.excepto?.includes(t.nombre));
+      if (incluidos.length > 0) {
         await tx
           .insert(tiposBonoTratamientos)
-          .values(cubiertos.map((t) => ({ tipoBonoId: tipo!.id, tratamientoId: t.id })))
+          .values(incluidos.map((t) => ({ tipoBonoId: tipo!.id, tratamientoId: t.id })))
           .onConflictDoNothing();
       }
     }

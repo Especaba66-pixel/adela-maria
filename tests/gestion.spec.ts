@@ -43,10 +43,12 @@ test("el menú tiene las 7 entradas fijas, con botones de al menos 64 px de alto
 
 test("las tarifas muestran los tratamientos y los dos bonos faciales", async () => {
   await pagina.goto("/gestion/mas/tratamientos");
-  await expect(pagina.getByText("Higiene facial")).toBeVisible();
+  await expect(pagina.getByText("Verse limpia y purificada (higiene facial)")).toBeVisible();
   await expect(pagina.getByText("Bono facial 3 sesiones")).toBeVisible();
   await expect(pagina.getByText("120,00 €")).toBeVisible();
   await expect(pagina.getByText("240,00 €")).toBeVisible();
+  // Los bonos cubren los 6 faciales de hora y media (no «Unos labios más gruesos»).
+  await expect(pagina.getByText("6 sesiones · vale para 6 tratamientos")).toBeVisible();
   await expect(pagina.getByText("Diseño de cejas")).toBeVisible();
   await expect(pagina.getByText("Precio a consultar")).toBeVisible();
 });

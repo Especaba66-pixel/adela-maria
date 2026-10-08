@@ -21,8 +21,8 @@ test.describe("clienta", () => {
   test("ve los tratamientos y los bonos sin entrar con ninguna clave", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Tratamientos" })).toBeVisible();
-    await expect(page.getByText("Higiene facial")).toBeVisible();
-    await expect(page.getByText("60 min · 45,00 €")).toBeVisible();
+    await expect(page.getByText("Verse limpia y purificada (higiene facial)")).toBeVisible();
+    await expect(page.getByText("90 min · 30,00 €")).toBeVisible();
     await expect(page.getByText("Bono facial 6 sesiones")).toBeVisible();
     // Servicio nuevo sin precio todavía: se ve y se puede pedir.
     const cejas = page.getByRole("listitem").filter({ hasText: "Diseño de cejas" });
@@ -33,8 +33,8 @@ test.describe("clienta", () => {
 
   test("pide cita desde un tratamiento, en el móvil", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Pedir cita: Higiene facial" }).click();
-    await expect(page.getByLabel("Tratamiento").locator("option:checked")).toHaveText("Higiene facial");
+    await page.getByRole("link", { name: "Pedir cita: Verse limpia y purificada (higiene facial)" }).click();
+    await expect(page.getByLabel("Tratamiento").locator("option:checked")).toHaveText("Verse limpia y purificada (higiene facial)");
     await page.getByLabel("Comentario").fill("Tengo la piel sensible");
     await rellenarCita(page, { nombre: "Marta López", telefono: "600 11 22 33" });
     await page.getByRole("button", { name: "Pedir cita" }).click();
@@ -52,7 +52,7 @@ test.describe("clienta", () => {
 
   test("avisa si el teléfono no es válido", async ({ page }) => {
     await page.goto("/reservar");
-    await page.getByLabel("Tratamiento").selectOption({ label: "Labio superior" });
+    await page.getByLabel("Tratamiento").selectOption({ label: "Labio, mentón o patilla" });
     await rellenarCita(page, { nombre: "Ana", telefono: "12345" });
     await page.getByRole("button", { name: "Pedir cita" }).click();
     await expect(alerta(page)).toHaveText(/Revisa el teléfono/);
@@ -61,7 +61,7 @@ test.describe("clienta", () => {
   test("un mismo teléfono no puede acumular más de 3 peticiones sin contestar", async ({ page }) => {
     for (let i = 1; i <= 4; i++) {
       await page.goto("/reservar");
-      await page.getByLabel("Tratamiento").selectOption({ label: "Labio superior" });
+      await page.getByLabel("Tratamiento").selectOption({ label: "Labio, mentón o patilla" });
       await rellenarCita(page, { nombre: `Prueba ${i}`, telefono: "699 00 00 00" });
       await page.getByRole("button", { name: "Pedir cita" }).click();
       if (i <= 3) await expect(page.getByRole("heading", { name: "¡Petición recibida!" })).toBeVisible();
@@ -71,7 +71,7 @@ test.describe("clienta", () => {
 
   test("los programas automáticos que rellenan el campo trampa no crean peticiones", async ({ page }) => {
     await page.goto("/reservar");
-    await page.getByLabel("Tratamiento").selectOption({ label: "Labio superior" });
+    await page.getByLabel("Tratamiento").selectOption({ label: "Labio, mentón o patilla" });
     await rellenarCita(page, { nombre: "Robot", telefono: "611 22 33 44" });
     await page.locator('input[name="web"]').fill("http://spam.example", { force: true });
     await page.getByRole("button", { name: "Pedir cita" }).click();
@@ -88,7 +88,7 @@ test.describe("centro", () => {
     await expect(page.getByRole("region", { name: /Robot/ })).toHaveCount(0);
 
     const marta = page.getByRole("region", { name: "Petición de Marta López" });
-    await expect(marta).toContainText("Higiene facial");
+    await expect(marta).toContainText("Verse limpia y purificada (higiene facial)");
     await expect(marta).toContainText("por la tarde");
     await expect(marta).toContainText("600 11 22 33");
     await expect(marta).toContainText("Tengo la piel sensible");
@@ -101,10 +101,10 @@ test.describe("centro", () => {
     await expect(marta).toHaveCount(0);
     const contestada = (quien: string, estado: string) =>
       page.locator("div").filter({ hasText: quien }).filter({ hasText: estado }).last();
-    await expect(contestada("Marta López · Higiene facial", "Confirmada por Adela")).toBeVisible();
+    await expect(contestada("Marta López · Verse limpia y purificada (higiene facial)", "Confirmada por Adela")).toBeVisible();
 
     await page.getByRole("region", { name: "Petición de Prueba 1" }).getByRole("button", { name: "Rechazar" }).click();
-    await expect(contestada("Prueba 1 · Labio superior", "Rechazada por Adela")).toBeVisible();
+    await expect(contestada("Prueba 1 · Labio, mentón o patilla", "Rechazada por Adela")).toBeVisible();
 
     await page.goto("/gestion");
     await expect(page.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("3");

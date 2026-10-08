@@ -26,9 +26,9 @@ Estado: **pendiente de tu aprobación.** No se empieza la fase 1 sin ella.
 - **Estilo visual.** Dorado sobre blanco roto, títulos en Cormorant Garamond, texto de 18 px, botones de 64 px y menú de
   7 entradas fijas: Inicio, Agenda, Clientas, TPV, Caja, Avisos y Más. Las pantallas de fases futuras ya están en el
   menú e indican en qué fase llegan.
-- **Tarifas.** Categorías Faciales, Depilación y Cejas; los dos bonos faciales (3 sesiones por 120 € y 6 por 240 €), que
-  valen para cualquier facial; y **Diseño de cejas**, con precio y duración por decidir («Precio a consultar»).
-  **Faltan los 18 tratamientos** de faciales y depilación (ver punto 5).
+- **Tarifas completas**, copiadas de las hojas de tarifas: 7 faciales, 11 servicios de depilación y los dos bonos
+  faciales (3 sesiones por 120 € y 6 por 240 €), que cubren los faciales de hora y media. Además, **Diseño de cejas**,
+  con precio y duración por decidir («Precio a consultar»).
 - **Pruebas automáticas** en GitHub en cada cambio.
 
 ## 2. Cómo probarlo paso a paso
@@ -57,9 +57,9 @@ Estado: **pendiente de tu aprobación.** No se empieza la fase 1 sin ella.
 | Conjunto | Resultado |
 | --- | --- |
 | Reglas de negocio (permisos, credenciales, cifrado, sesión, dinero, teléfonos, peticiones de cita) | 42 de 42 correctas |
-| Base de datos (datos iniciales, registro inalterable, sin borrados, contraseña de administración, peticiones) | 9 de 9 correctas |
+| Base de datos y tarifas (datos iniciales, registro inalterable, sin borrados, contraseña de administración, peticiones, tarifas completas y coherentes) | 13 de 13 correctas |
 | Recorrido completo del centro en pantalla de TPV (registro del equipo, PIN, permisos, bloqueo, actividad, datos del centro) | 15 de 15 correctas |
-| Recorrido completo de la clienta en móvil y del centro confirmando (incluye cejas sin precio y frenos de abuso) | 7 de 7 correctas |
+| Recorrido completo de la clienta en móvil y del centro confirmando, con las tarifas reales (incluye cejas sin precio y frenos de abuso) | 7 de 7 correctas |
 | Copia y restauración comprobada | Correcta; y detecta una copia incompleta |
 
 Es la primera fase, así que no hay pruebas de fases anteriores que repetir.
@@ -77,9 +77,11 @@ Es la primera fase, así que no hay pruebas de fases anteriores que repetir.
 
 **Necesito de ti:**
 
-- **Las tarifas.** Las fotos de las tarifas no están en tu Drive ni en Notion. Necesito el nombre, la duración y el
-  precio de los 7 faciales y los 11 servicios de depilación. Se cargan en `packages/db/src/datos/tarifas.ts`.
-- **Precio y duración del diseño de cejas**, cuando los tengas.
+- **Diseño de cejas.** ¿Es un servicio distinto de «Diseño y depilación de cejas» (10 min, 5 €)? Si es distinto,
+  necesito su precio y duración; si es el mismo, lo quito.
+- **Bonos faciales.** He dejado fuera de los bonos «Unos labios más gruesos» (30 min, 18 €), porque los bonos son de
+  1:30 h por sesión. Confírmalo.
+- **Caducidad de los bonos**, si la tienen.
 - **El número de WhatsApp del centro** (no el móvil personal de Adela). Cuando lo tengas, lo pones tú misma en
   **Más → Configuración → Datos del centro**, junto con la dirección.
 - **El logo original** en buena calidad, para ajustar el dorado exacto y sustituir el nombre escrito por el logo.
