@@ -1,0 +1,61 @@
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres@localhost:5432/adela_dev
+      DATABASE_URL_TEST: postgres://postgres@localhost:5432/adela_test
+      RESTAURAR_URL: postgres://postgres@localhost:5432/adela_restauracion
+      ADMIN_NOMBRE: Adela
+      ADMIN_USUARIO: adela
+      ADMIN_CONTRASENA: contrasena-de-ci
+      ADMIN_PIN: "2468"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Cliente de PostgreSQL 16
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+      - name: Bases de datos
+        run: psql postgres://postgres@localhost:5432/postgres -f infra/crear-bases.sql
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - name: Pruebas de reglas y de base de datos
+        run: pnpm test
+      - name: Copia de seguridad y prueba de restauración
+        run: |
+          pnpm db:migrate && pnpm db:seed
+          DIR_COPIAS=$RUNNER_TEMP/copias infra/copias/copia.sh
+          DIR_COPIAS=$RUNNER_TEMP/copias infra/copias/probar-restauracion.sh
+      - name: Navegador para las pruebas de recorrido
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Pruebas de recorrido completo
+        run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: informe-playwright
+          path: playwright-report/
+          retention-days: 7

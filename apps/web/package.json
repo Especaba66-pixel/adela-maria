@@ -1,0 +1,29 @@
+{
+  "name": "@adela/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "next typegen && tsc -p ."
+  },
+  "dependencies": {
+    "@adela/db": "workspace:*",
+    "@adela/dominio": "workspace:*",
+    "@adela/ui": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "next": "16.4.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "dotenv": "17.4.2",
+    "tailwindcss": "4.3.3"
+  }
+}

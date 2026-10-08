@@ -1,0 +1,28 @@
+{
+  "name": "@adela/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./esquema": "./src/esquema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/scripts/migrar.ts",
+    "seed": "tsx src/scripts/sembrar.ts"
+  },
+  "dependencies": {
+    "@adela/dominio": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "dotenv": "17.4.2",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "vitest": "4.1.11"
+  }
+}

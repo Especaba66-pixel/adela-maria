@@ -1,0 +1,61 @@
+/*
+ * Sistema de diseño de Adela María · Belleza holística.
+ * Dorado del logo sobre blanco roto. Pensado para un TPV táctil de 15 a 15,6 pulgadas.
+ * PENDIENTE: ajustar el dorado exacto cuando llegue el logo original.
+ */
+@theme {
+  --color-fondo: #fffdf9;
+  --color-superficie: #ffffff;
+  --color-crema: #f7f1e6;
+  --color-borde: #e6dccb;
+  --color-tinta: #2b2620;
+  --color-tinta-suave: #6b6156;
+
+  --color-dorado: #b08d57;
+  --color-dorado-claro: #ead9b9;
+  /* Dorado oscuro para texto y botones: contraste suficiente sobre blanco. */
+  --color-dorado-oscuro: #7a5c2e;
+
+  /* Avisos por prioridad. */
+  --color-urgente: #b42318;
+  --color-urgente-fondo: #fef3f2;
+  --color-importante: #c4570a;
+  --color-importante-fondo: #fff6ed;
+  --color-pendiente: #8a6a00;
+  --color-pendiente-fondo: #fefbe8;
+  --color-informativo: #1d5fa8;
+  --color-informativo-fondo: #eff6ff;
+  --color-correcto: #2f7d4f;
+  --color-correcto-fondo: #ecfdf3;
+
+  --font-titulo: var(--fuente-titulo), "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --font-sans: var(--fuente-texto), "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+
+  /* Texto base de 18 px. */
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.6;
+
+  /* Elementos tocables: mínimo 48 px; botones principales: 64 px. */
+  --spacing-toque: 3rem;
+  --spacing-boton: 4rem;
+
+  --radius-tarjeta: 1rem;
+}
+
+@layer base {
+  html {
+    background: var(--color-fondo);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-titulo);
+    font-weight: 600;
+    color: var(--color-tinta);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-dorado);
+    outline-offset: 2px;
+  }
+}
