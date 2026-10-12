@@ -149,7 +149,7 @@ test("la administración añade el microblading, que va solo", async () => {
   await pagina.goto("/gestion/mas/tratamientos");
   await pagina.getByLabel("Nueva categoría").fill("Micropigmentación");
   await pagina.getByRole("button", { name: "Crear", exact: true }).click();
-  await expect(pagina.getByText("Categoría creada.")).toBeVisible();
+  await expect(pagina.getByText("Categoría «Micropigmentación» creada.")).toBeVisible();
   const form = pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Añadir tratamiento" }) });
   await form.getByLabel("Nombre").fill("Microblading");
   await form.getByLabel("Categoría").selectOption({ label: "Micropigmentación" });
@@ -157,7 +157,7 @@ test("la administración añade el microblading, que va solo", async () => {
   await form.getByLabel("Precio (€)").fill("250");
   await form.getByLabel(/Va sola/).check();
   await form.getByRole("button", { name: "Añadir tratamiento" }).click();
-  await expect(pagina.getByText("Tratamiento añadido.")).toBeVisible();
+  await expect(pagina.getByText("«Microblading» añadido.")).toBeVisible();
   await expect(pagina.getByText("120 min · va sola")).toBeVisible();
 });
 

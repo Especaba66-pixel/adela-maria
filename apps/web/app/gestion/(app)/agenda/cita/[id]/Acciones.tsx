@@ -2,6 +2,7 @@
 import { NOMBRE_ESTADO, type EstadoCita } from "@adela/dominio";
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
+import { sinReinicio } from "@/components/sinReinicio";
 import { cambiarEstado, cancelarSerie, mover } from "./acciones";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg";
@@ -48,7 +49,7 @@ export function BotonesEstado({ id, posibles, actual }: { id: string; posibles: 
 export function FormularioMover({ id, fecha, hora, profesionalId, equipo }: { id: string; fecha: string; hora: string; profesionalId: string; equipo: { id: string; nombre: string }[] }) {
   const [estado, accion, pendiente] = useActionState(mover, {});
   return (
-    <form action={accion} className="space-y-3">
+    <form onSubmit={sinReinicio(accion)} className="space-y-3">
       <Mensaje e={estado} />
       <input type="hidden" name="id" value={id} />
       <div className="grid grid-cols-3 gap-3">

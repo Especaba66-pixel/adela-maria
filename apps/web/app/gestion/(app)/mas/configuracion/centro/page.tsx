@@ -13,7 +13,13 @@ export default async function DatosCentro() {
       <h1 className="text-4xl">Datos del centro</h1>
       <p className="text-tinta-suave">El teléfono y la dirección aparecen al pie de la web de clientas; si los dejas vacíos, no se muestran.</p>
       <Tarjeta>
-        <Formulario telefono={c?.telefono ? formatearTelefono(c.telefono) : ""} direccion={c?.direccion ?? ""} cabinas={c?.cabinas ?? 1} />
+        <Formulario telefono={c?.telefono ? formatearTelefono(c.telefono) : ""} direccion={c?.direccion ?? ""}
+          cabinas={c?.cabinas ?? 1}
+          nombreFiscal={c?.nombreFiscal ?? ""}
+          nif={c?.nif ?? ""}
+          direccionFiscal={c?.direccionFiscal ?? ""}
+          pieTicket={c?.pieTicket ?? ""}
+        />
       </Tarjeta>
     </div>
   );

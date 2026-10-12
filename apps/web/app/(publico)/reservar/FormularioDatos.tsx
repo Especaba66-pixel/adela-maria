@@ -3,6 +3,7 @@ import { TEXTO_PRIVACIDAD } from "@adela/dominio";
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { reservarCita } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-2 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-4 text-lg focus:border-dorado";
 
@@ -10,7 +11,7 @@ const campo = "mt-2 block w-full min-h-toque rounded-xl border-2 border-borde bg
 export function FormularioDatos({ tratamiento, fecha, hora }: { tratamiento: string; fecha: string; hora: number }) {
   const [estado, accion, pendiente] = useActionState(reservarCita, {});
   return (
-    <form action={accion} className="space-y-6">
+    <form onSubmit={sinReinicio(accion)} className="space-y-6">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
       <input type="hidden" name="tratamiento" value={tratamiento} />
       <input type="hidden" name="fecha" value={fecha} />

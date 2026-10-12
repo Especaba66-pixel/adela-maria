@@ -2,13 +2,14 @@
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { registrar } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-2 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-4 text-lg focus:border-dorado";
 
 export function Formulario({ yaRegistrado }: { yaRegistrado: boolean }) {
   const [estado, accion, pendiente] = useActionState(registrar, {});
   return (
-    <form action={accion} className="space-y-5">
+    <form onSubmit={sinReinicio(accion)} className="space-y-5">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
       {!yaRegistrado && (
         <label className="block font-medium">

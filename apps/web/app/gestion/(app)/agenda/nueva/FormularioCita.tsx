@@ -3,6 +3,7 @@ import { horaATexto } from "@adela/dominio";
 import { Aviso, Boton, Tarjeta, clases } from "@adela/ui";
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { buscar, guardarCita, huecos } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 interface Tratamiento {
   id: string;
@@ -75,7 +76,7 @@ export function FormularioCita({ tratamientos, equipo, inicial }: { tratamientos
   const categorias = [...new Set(tratamientos.map((t) => t.categoria))];
 
   return (
-    <form action={accion} className="space-y-6">
+    <form onSubmit={sinReinicio(accion)} className="space-y-6">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
       {inicial.solicitudId && <input type="hidden" name="solicitud" value={inicial.solicitudId} />}
 

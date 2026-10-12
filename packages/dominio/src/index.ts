@@ -6,3 +6,6 @@ export * from "./dinero";
 export * from "./reservas";
 export * from "./agenda";
 export * from "./clientas";
+export * from "./ventas";
+export * from "./facturacion";
+export * from "./ticket";

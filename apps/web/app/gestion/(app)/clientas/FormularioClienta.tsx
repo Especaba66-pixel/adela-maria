@@ -2,6 +2,7 @@
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { crear, editar } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg focus:border-dorado";
 
@@ -19,7 +20,7 @@ export interface ValoresClienta {
 export function FormularioClienta({ valores }: { valores?: ValoresClienta }) {
   const [estado, accion, pendiente] = useActionState(valores?.id ? editar : crear, {});
   return (
-    <form action={accion} className="space-y-4">
+    <form onSubmit={sinReinicio(accion)} className="space-y-4">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
       {estado.ok && <Aviso prioridad="correcto">{estado.ok}</Aviso>}
       {valores?.id && <input type="hidden" name="id" value={valores.id} />}

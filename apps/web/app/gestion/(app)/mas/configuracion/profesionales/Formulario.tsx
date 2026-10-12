@@ -2,6 +2,7 @@
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { guardar } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg";
 
@@ -17,7 +18,7 @@ export function FormularioProfesional({
   const [estado, accion, pendiente] = useActionState(guardar, null);
   const categorias = [...new Set(tratamientos.map((t) => t.categoria))];
   return (
-    <form action={accion} className="space-y-4">
+    <form key={!valores && estado?.ok ? estado.mensaje : "profesional"} onSubmit={sinReinicio(accion)} className="space-y-4">
       {estado && (estado.ok ? <Aviso prioridad="correcto">{estado.mensaje}</Aviso> : <Aviso prioridad="urgente">{estado.error}</Aviso>)}
       {valores && <input type="hidden" name="id" value={valores.id} />}
       <div className="grid grid-cols-2 gap-3">

@@ -4,10 +4,11 @@ import { Aviso, Tarjeta } from "@adela/ui";
 import { asc, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
-import { FormularioCategoria, FormularioTratamiento } from "./Formularios";
+import { FormularioCategoria, FormularioIvaTodos, FormularioTratamiento } from "./Formularios";
 
-export default async function Tratamientos() {
+export default async function Tratamientos({ searchParams }: { searchParams: Promise<{ iva?: string; cambiados?: string }> }) {
   const { usuario } = await requerirSesion();
+  const q = await searchParams;
   const edita = puede(usuario.rol, "configuracion.gestionar");
   const [cats, lista, bonos, retirados] = await Promise.all([
     db().select().from(categorias).where(isNull(categorias.anuladoEn)).orderBy(asc(categorias.orden)),
@@ -28,6 +29,7 @@ export default async function Tratamientos() {
     nombre: t.nombre,
     duracion: t.duracionMinutos === null ? "" : String(t.duracionMinutos),
     precio: t.precioCentimos === null ? "" : (t.precioCentimos / 100).toFixed(2).replace(".", ","),
+    iva: t.ivaCentesimas === null ? "" : String(t.ivaCentesimas / 100).replace(".", ","),
     descripcion: t.descripcion ?? "",
     exclusivo: t.exclusivo,
     retirado: t.anuladoEn !== null,
@@ -36,6 +38,16 @@ export default async function Tratamientos() {
   return (
     <div className="space-y-8">
       <h1 className="text-4xl">Tratamientos</h1>
+      {q.iva && q.cambiados && (
+        <Aviso prioridad="correcto">
+          IVA del {q.iva.replace(".", ",")} % puesto a {q.cambiados} tratamientos.
+        </Aviso>
+      )}
+      {edita && lista.some((t) => t.ivaCentesimas === null) && (
+        <Tarjeta className="border-pendiente bg-pendiente-fondo">
+          <FormularioIvaTodos sinIva={lista.filter((t) => t.ivaCentesimas === null).length} />
+        </Tarjeta>
+      )}
       {cats.map((c) => {
         const deCategoria = lista.filter((t) => t.categoriaId === c.id);
         return (
@@ -53,6 +65,7 @@ export default async function Tratamientos() {
                       <div className="text-sm text-tinta-suave">
                         {t.duracionMinutos === null ? "Duración por decidir" : `${t.duracionMinutos} min`}
                         {t.exclusivo && " · va sola"}
+                        {t.ivaCentesimas === null ? " · sin IVA" : ` · IVA ${(t.ivaCentesimas / 100).toLocaleString("es-ES")} %`}
                       </div>
                     </div>
                     <div className={t.precioCentimos === null ? "text-pendiente" : "font-semibold"}>{textoPrecio(t.precioCentimos)}</div>

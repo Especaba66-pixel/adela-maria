@@ -2,6 +2,7 @@
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { guardar } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const hora = "min-h-toque rounded-xl border-2 border-borde bg-superficie px-2 text-lg";
@@ -10,7 +11,7 @@ const hora = "min-h-toque rounded-xl border-2 border-borde bg-superficie px-2 te
 export function FormularioHorario({ profesionalId, nombre, valores }: { profesionalId: string; nombre: string; valores: Record<number, [string, string][]> }) {
   const [estado, accion, pendiente] = useActionState(guardar, null);
   return (
-    <form action={accion} className="space-y-3" aria-label={`Horario de ${nombre}`}>
+    <form onSubmit={sinReinicio(accion)} className="space-y-3" aria-label={`Horario de ${nombre}`}>
       {estado && (estado.ok ? <Aviso prioridad="correcto">{estado.mensaje}</Aviso> : <Aviso prioridad="urgente">{estado.error}</Aviso>)}
       <input type="hidden" name="profesional" value={profesionalId} />
       <table className="w-full">

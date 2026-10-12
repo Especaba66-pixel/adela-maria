@@ -1,7 +1,8 @@
 "use client";
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
-import { categoria, guardar } from "./acciones";
+import { categoria, guardar, ivaTodos } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg";
 
@@ -11,6 +12,7 @@ export interface ValoresTratamiento {
   nombre: string;
   duracion: string;
   precio: string;
+  iva: string;
   descripcion: string;
   exclusivo: boolean;
   retirado: boolean;
@@ -19,7 +21,7 @@ export interface ValoresTratamiento {
 export function FormularioTratamiento({ valores, categorias }: { valores?: ValoresTratamiento; categorias: { id: string; nombre: string }[] }) {
   const [estado, accion, pendiente] = useActionState(guardar, null);
   return (
-    <form action={accion} className="space-y-3">
+    <form key={!valores && estado?.ok ? estado.mensaje : "tratamiento"} onSubmit={sinReinicio(accion)} className="space-y-3">
       {estado && (estado.ok ? <Aviso prioridad="correcto">{estado.mensaje}</Aviso> : <Aviso prioridad="urgente">{estado.error}</Aviso>)}
       {valores && <input type="hidden" name="id" value={valores.id} />}
       <div className="grid grid-cols-2 gap-3">
@@ -37,7 +39,7 @@ export function FormularioTratamiento({ valores, categorias }: { valores?: Valor
             ))}
           </select>
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <label className="block">
             Minutos
             <input name="duracion" inputMode="numeric" placeholder="por decidir" defaultValue={valores?.duracion} className={campo} />
@@ -45,6 +47,10 @@ export function FormularioTratamiento({ valores, categorias }: { valores?: Valor
           <label className="block">
             Precio (€)
             <input name="precio" inputMode="decimal" placeholder="a consultar" defaultValue={valores?.precio} className={campo} />
+          </label>
+          <label className="block">
+            IVA (%)
+            <input name="iva" inputMode="decimal" placeholder="sin poner" defaultValue={valores?.iva} className={campo} />
           </label>
         </div>
         <label className="col-span-2 block">
@@ -72,7 +78,7 @@ export function FormularioTratamiento({ valores, categorias }: { valores?: Valor
 export function FormularioCategoria() {
   const [estado, accion, pendiente] = useActionState(categoria, null);
   return (
-    <form action={accion} className="flex flex-wrap items-end gap-3">
+    <form key={estado?.ok ? estado.mensaje : "categoria"} onSubmit={sinReinicio(accion)} className="flex flex-wrap items-end gap-3">
       {estado && (estado.ok ? <Aviso prioridad="correcto">{estado.mensaje}</Aviso> : <Aviso prioridad="urgente">{estado.error}</Aviso>)}
       <label className="block flex-1">
         Nueva categoría
@@ -81,6 +87,28 @@ export function FormularioCategoria() {
       <Boton type="submit" variante="secundario" disabled={pendiente}>
         Crear
       </Boton>
+    </form>
+  );
+}
+
+export function FormularioIvaTodos({ sinIva }: { sinIva: number }) {
+  const [estado, accion, pendiente] = useActionState(ivaTodos, null);
+  return (
+    <form onSubmit={sinReinicio(accion)} className="space-y-3">
+      {estado && (estado.ok ? <Aviso prioridad="correcto">{estado.mensaje}</Aviso> : <Aviso prioridad="urgente">{estado.error}</Aviso>)}
+      <p>
+        {sinIva} {sinIva === 1 ? "tratamiento no tiene" : "tratamientos no tienen"} IVA y no se pueden cobrar. Cuando la gestoría te
+        confirme el tipo, ponlo aquí para todos de una vez.
+      </p>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="block">
+          IVA (%)
+          <input name="iva" inputMode="decimal" required className={campo} />
+        </label>
+        <Boton type="submit" disabled={pendiente}>
+          Poner a todos
+        </Boton>
+      </div>
     </form>
   );
 }

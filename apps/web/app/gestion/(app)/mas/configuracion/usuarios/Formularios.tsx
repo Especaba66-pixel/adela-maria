@@ -4,6 +4,7 @@ import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import type { Resultado } from "@/server/usuarios";
 import { accionCrear, accionEditar } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 focus:border-dorado";
 
@@ -32,7 +33,7 @@ function SelectorRol({ valor }: { valor?: Rol }) {
 export function NuevoUsuario() {
   const [estado, accion, pendiente] = useActionState(accionCrear, null);
   return (
-    <form action={accion} className="space-y-4">
+    <form key={estado?.ok ? estado.mensaje : "nuevo"} onSubmit={sinReinicio(accion)} className="space-y-4">
       <Mensaje estado={estado} />
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
@@ -66,7 +67,7 @@ export function NuevoUsuario() {
 export function EditarUsuario({ id, rol, activo, esYo }: { id: string; rol: Rol; activo: boolean; esYo: boolean }) {
   const [estado, accion, pendiente] = useActionState(accionEditar, null);
   return (
-    <form action={accion} className="space-y-3">
+    <form onSubmit={sinReinicio(accion)} className="space-y-3">
       <input type="hidden" name="id" value={id} />
       <Mensaje estado={estado} />
       <div className="grid grid-cols-2 gap-3">

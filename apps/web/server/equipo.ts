@@ -51,7 +51,7 @@ export async function guardarProfesional(datos: {
       await tx.insert(profesionalesTratamientos).values(datos.tratamientoIds.map((t) => ({ profesionalId: id!, tratamientoId: t })));
     }
   });
-  return { ok: true, mensaje: "Guardado." };
+  return { ok: true, mensaje: datos.id ? "Guardado." : `«${nombre}» añadida.` };
 }
 
 /** Sustituye el horario semanal de una profesional. `dias[d]` = tramos del día d (1 = lunes). */

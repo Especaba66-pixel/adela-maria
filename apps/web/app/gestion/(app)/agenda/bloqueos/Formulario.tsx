@@ -2,6 +2,7 @@
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState, useState } from "react";
 import { crearBloqueo } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 const campo = "mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg";
 
@@ -9,7 +10,7 @@ export function FormularioBloqueo({ equipo, hoy }: { equipo: { id: string; nombr
   const [estado, accion, pendiente] = useActionState(crearBloqueo, {});
   const [diaEntero, setDiaEntero] = useState(true);
   return (
-    <form action={accion} className="space-y-4">
+    <form onSubmit={sinReinicio(accion)} className="space-y-4">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
       {estado.ok && <Aviso prioridad="correcto">{estado.ok}</Aviso>}
       <div className="grid grid-cols-2 gap-3">

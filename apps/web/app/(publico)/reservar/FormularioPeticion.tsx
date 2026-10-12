@@ -3,6 +3,7 @@ import { FRANJAS, NOMBRE_FRANJA, TEXTO_PRIVACIDAD } from "@adela/dominio";
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { pedirCita } from "./acciones";
+import { sinReinicio } from "@/components/sinReinicio";
 
 interface Opcion {
   id: string;
@@ -16,7 +17,7 @@ export function FormularioPeticion({ tratamientos, elegido, desde, hasta }: { tr
   const [estado, accion, pendiente] = useActionState(pedirCita, {});
   const categorias = [...new Set(tratamientos.map((t) => t.categoria))];
   return (
-    <form action={accion} className="space-y-6">
+    <form onSubmit={sinReinicio(accion)} className="space-y-6">
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}
 
       <label className="block font-medium">

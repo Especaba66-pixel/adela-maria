@@ -82,6 +82,15 @@ export default async function Cita({ params, searchParams }: { params: Promise<{
         </Tarjeta>
       )}
 
+      {puede(usuario.rol, "cobrar") && (d.c.estado === "confirmada" || d.c.estado === "realizada") && (
+        <Link
+          href={`/gestion/tpv?cita=${d.c.id}`}
+          className="mr-3 inline-flex min-h-boton items-center rounded-xl bg-dorado-oscuro px-6 text-xl font-semibold text-white hover:bg-tinta"
+        >
+          Cobrar
+        </Link>
+      )}
+
       {gestiona && d.cliente.telefono && (d.c.estado === "pendiente" || d.c.estado === "confirmada") && (
         <a
           href={enlaceWhatsapp(d.cliente.telefono, mensaje)}

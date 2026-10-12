@@ -1,5 +1,5 @@
 import "server-only";
-import { copiasSeguridad, horarios, profesionales, tratamientos } from "@adela/db";
+import { centro, copiasSeguridad, horarios, profesionales, tratamientos } from "@adela/db";
 import type { Prioridad } from "@adela/ui";
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { db } from "./db";
@@ -60,6 +60,19 @@ export async function avisosSistema(): Promise<AvisoSistema[]> {
       texto: "Falta el horario: sin él, las clientas no ven horas libres en la web.",
       enlace: "/gestion/mas/configuracion/horario",
     });
+  }
+
+  const [c] = await db().select().from(centro).limit(1);
+  if (!c?.nif || !c.nombreFiscal || !c.direccionFiscal) {
+    avisos.push({ prioridad: "importante", texto: "Faltan los datos fiscales del centro: sin ellos no se puede cobrar.", enlace: "/gestion/mas/configuracion/centro" });
+  }
+  const [sinIva] = await db()
+    .select({ id: tratamientos.id })
+    .from(tratamientos)
+    .where(and(isNull(tratamientos.anuladoEn), isNull(tratamientos.ivaCentesimas)))
+    .limit(1);
+  if (sinIva) {
+    avisos.push({ prioridad: "importante", texto: "Hay tratamientos sin IVA: no se pueden cobrar hasta ponérselo.", enlace: "/gestion/mas/tratamientos" });
   }
 
   const sinPrecio = await db()

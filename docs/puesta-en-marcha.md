@@ -1,4 +1,8 @@
-# Poner la app en marcha (Render, en Frankfurt)
+# Poner la app en internet (Render, en Frankfurt) · alternativa de pago
+
+> **Decisión del 12 de octubre de 2026:** por ahora la app se instala gratis en el ordenador del TPV
+> ([instalacion-tpv.md](instalacion-tpv.md)) y la web de clientas es la [landing](landing.md). Esta guía queda para
+> cuando se quiera usar desde el móvil o con reserva de hora en la web.
 
 Guía paso a paso. Tardarás unos 20 minutos. Necesitas tu cuenta de GitHub y una tarjeta para el pago mensual.
 

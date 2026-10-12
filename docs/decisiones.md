@@ -84,3 +84,33 @@ tratamientos apuntados, hace todos.
 
 **Supresión de datos por anonimización.** Al eliminar los datos de una clienta no se borra la fila: se vacían sus datos
 personales y notas, y sus citas quedan sin nombre. Así la agenda y, más adelante, la facturación siguen cuadrando.
+
+## Fase 2
+
+**La gestión se instala en el TPV, gratis** (decidido por Espe). La web de clientas es una landing estática gratuita
+en GitHub Pages, con cita por WhatsApp. Al estar la app en el mismo ordenador que la impresora, el servidor le habla
+directamente: no hace falta el «agente» que preveía el plan.
+
+**Lo cobrado no se toca.** Ventas, líneas, pagos, movimientos de caja, facturas y registros de facturación solo
+admiten añadir filas: lo impone la base de datos. Un error se corrige con una devolución, que genera una venta en
+negativo y una factura rectificativa enlazadas a la original.
+
+**Numeración sin saltos y registro encadenado.** Cada factura se numera dentro de su serie (T = tickets, F = facturas
+con datos, R = rectificativas, una por año) en la misma transacción que la venta. Cada factura genera un registro con
+una huella SHA-256 que incluye la del anterior; la base de datos no admite dos registros con la misma «anterior», así
+que la cadena no puede bifurcarse. La pantalla de Facturación comprueba la cadena entera. El formato exacto que pide
+VERI\*FACTU se ajusta en la fase 8.
+
+**Los precios e IVA los pone el servidor.** El TPV solo manda qué tratamientos y cuántos; el precio y el IVA salen del
+catálogo. No se puede cobrar un tratamiento sin precio o sin IVA, ni facturar sin los datos fiscales del centro.
+
+**El desglose de IVA se calcula por tipo, no por línea**, para que base más cuota cuadre siempre con lo cobrado.
+
+**Pagos.** Efectivo (con cambio), tarjeta (en el datáfono del banco, sin integrar) y Bizum; varios pagos en una venta;
+y «a deber» lo que falte, que aparece en el TPV y en el inicio hasta cobrarlo. Todo pago va a una caja abierta.
+
+**Si la impresora falla, el cobro no se pierde.** Se guarda primero y se imprime después; el ticket se puede
+reimprimir o enviar por WhatsApp.
+
+**Los formularios no se vacían si hay un error.** React vacía los formularios al enviarlos; ahora solo se vacían los
+de alta tras guardar bien.

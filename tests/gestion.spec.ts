@@ -160,7 +160,7 @@ test("la administración pone el teléfono y la dirección, y la web de clientas
   await expect(alerta(pagina)).toHaveText(/Revisa el teléfono/);
 
   await pagina.getByLabel(/Teléfono y WhatsApp/).fill("600 99 88 77");
-  await pagina.getByLabel("Dirección").fill("Calle Mayor 1, Alicante");
+  await pagina.getByLabel("Dirección", { exact: true }).fill("Calle Mayor 1, Alicante");
   await pagina.getByRole("button", { name: "Guardar" }).click();
   await expect(pagina.getByText("Guardado. Ya se ve en la web de clientas.")).toBeVisible();
 

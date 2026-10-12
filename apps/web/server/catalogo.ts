@@ -1,7 +1,7 @@
 import "server-only";
 import { categorias, registrarActividad, tratamientos } from "@adela/db";
 import { eurosACentimos } from "@adela/dominio";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { requerirSesion } from "./auth";
 import { db } from "./db";
 
@@ -13,6 +13,7 @@ export async function guardarTratamiento(d: {
   nombre: string;
   duracion: string;
   precio: string;
+  iva: string;
   descripcion: string;
   exclusivo: boolean;
   retirado: boolean;
@@ -33,6 +34,12 @@ export async function guardarTratamiento(d: {
     precioCentimos = eurosACentimos(d.precio);
     if (precioCentimos === null) return { ok: false, error: "Revisa el precio (por ejemplo: 45 o 12,50)." };
   }
+  let ivaCentesimas: number | null = null;
+  if (d.iva.trim()) {
+    const n = Number(d.iva.trim().replace(",", "."));
+    if (!Number.isFinite(n) || n < 0 || n > 100) return { ok: false, error: "Revisa el IVA (por ejemplo: 21)." };
+    ivaCentesimas = Math.round(n * 100);
+  }
   const [cat] = await db().select().from(categorias).where(eq(categorias.id, d.categoriaId));
   if (!cat) return { ok: false, error: "Elige la categoría." };
   const [repetido] = await db()
@@ -46,6 +53,7 @@ export async function guardarTratamiento(d: {
     nombre,
     duracionMinutos,
     precioCentimos,
+    ivaCentesimas,
     descripcion: d.descripcion.trim() || null,
     exclusivo: d.exclusivo,
     anuladoEn: d.retirado ? new Date() : null,
@@ -62,7 +70,7 @@ export async function guardarTratamiento(d: {
       await registrarActividad(tx, { usuarioId: usuario.id, accion: "tratamiento.crear", entidad: "tratamientos", entidadId: nuevo!.id, despues: nuevo });
     }
   });
-  return { ok: true, mensaje: d.id ? "Tratamiento guardado." : "Tratamiento añadido." };
+  return { ok: true, mensaje: d.id ? "Tratamiento guardado." : `«${nombre}» añadido.` };
 }
 
 export async function crearCategoria(nombre: string): Promise<Resultado> {
@@ -73,5 +81,19 @@ export async function crearCategoria(nombre: string): Promise<Resultado> {
   if (existe) return { ok: false, error: "Esa categoría ya existe." };
   const [c] = await db().insert(categorias).values({ nombre: n, orden: 99 }).returning();
   await registrarActividad(db(), { usuarioId: usuario.id, accion: "categoria.crear", entidad: "categorias", entidadId: c!.id, despues: c });
-  return { ok: true, mensaje: "Categoría creada." };
+  return { ok: true, mensaje: `Categoría «${n}» creada.` };
+}
+
+/** Pone un tipo de IVA a todos los tratamientos que aún no lo tienen (tras confirmarlo con la gestoría). */
+export async function ivaParaTodos(iva: string): Promise<Resultado & { cambiados?: number; iva?: number }> {
+  const { usuario } = await requerirSesion("configuracion.gestionar");
+  const n = Number(iva.trim().replace(",", "."));
+  if (!iva.trim() || !Number.isFinite(n) || n < 0 || n > 100) return { ok: false, error: "Revisa el IVA (por ejemplo: 21)." };
+  const cambiados = await db()
+    .update(tratamientos)
+    .set({ ivaCentesimas: Math.round(n * 100) })
+    .where(isNull(tratamientos.ivaCentesimas))
+    .returning({ id: tratamientos.id });
+  await registrarActividad(db(), { usuarioId: usuario.id, accion: "tratamiento.iva", entidad: "tratamientos", despues: { iva: n, tratamientos: cambiados.length } });
+  return { ok: true, mensaje: `IVA del ${n} % puesto a ${cambiados.length} tratamientos.`, cambiados: cambiados.length, iva: n };
 }

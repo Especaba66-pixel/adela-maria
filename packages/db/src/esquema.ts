@@ -41,6 +41,12 @@ export const centro = pgTable("centro", {
   zonaHoraria: text().notNull().default("Europe/Madrid"),
   /** Cabinas: cuántas citas puede haber a la vez en el centro. Vacío = por indicar (se cuenta 1). */
   cabinas: integer(),
+  /** Datos fiscales del emisor de las facturas. Sin ellos no se puede cobrar. */
+  nombreFiscal: text(),
+  direccionFiscal: text(),
+  pieTicket: text(),
+  /** Impresora de tickets: { tipo: "ninguna" | "simulador" | "red" | "windows", host?, puerto?, nombre?, ancho? }. */
+  impresora: jsonb(),
   creadoEn: creadoEn(),
 });
 
@@ -426,3 +432,150 @@ export const citasServicios = pgTable(
   },
   (t) => [primaryKey({ columns: [t.citaId, t.orden] })],
 );
+
+// ── Fase 2: cobros, caja y facturación ──────────────────────────────────────
+
+export const metodoPago = pgEnum("metodo_pago", ["efectivo", "tarjeta", "bizum"]);
+
+/** Una sesión de caja por jornada: se abre con un fondo y se cierra contando el efectivo. Solo una abierta a la vez. */
+export const sesionesCaja = pgTable("sesiones_caja", {
+  id: uuid().primaryKey().defaultRandom(),
+  abiertaEn: creadoEn(),
+  abiertaPor: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  fondoInicial: integer().notNull(),
+  cerradaEn: fecha(),
+  cerradaPor: uuid().references(() => usuarios.id),
+  efectivoEsperado: integer(),
+  efectivoContado: integer(),
+  notasCierre: text(),
+});
+
+/** Ventas: lo que se cobra en el TPV. Las devoluciones son otra venta en negativo enlazada a la original. */
+export const ventas = pgTable(
+  "ventas",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clienteId: uuid().references(() => clientes.id),
+    citaId: uuid().references(() => citas.id),
+    devolucionDe: uuid(),
+    total: integer().notNull(),
+    creadaPor: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    creadaEn: creadoEn(),
+  },
+  (t) => [
+    uniqueIndex("ventas_una_por_cita").on(t.citaId),
+    uniqueIndex("ventas_una_devolucion").on(t.devolucionDe),
+    index("ventas_creada").on(t.creadaEn),
+  ],
+);
+
+export const lineasVenta = pgTable(
+  "lineas_venta",
+  {
+    ventaId: uuid()
+      .notNull()
+      .references(() => ventas.id),
+    orden: integer().notNull(),
+    tratamientoId: uuid().references(() => tratamientos.id),
+    descripcion: text().notNull(),
+    cantidad: integer().notNull(),
+    precioUnitario: integer().notNull(),
+    descuentoCentesimas: integer().notNull().default(0),
+    ivaCentesimas: integer().notNull(),
+    total: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.ventaId, t.orden] })],
+);
+
+/** Pagos de una venta (varios = pago mixto). Las devoluciones van en negativo. */
+export const pagos = pgTable("pagos", {
+  id: uuid().primaryKey().defaultRandom(),
+  ventaId: uuid()
+    .notNull()
+    .references(() => ventas.id),
+  metodo: metodoPago().notNull(),
+  importe: integer().notNull(),
+  /** Efectivo entregado por la clienta (para calcular el cambio). */
+  entregado: integer(),
+  sesionCajaId: uuid()
+    .notNull()
+    .references(() => sesionesCaja.id),
+  usuarioId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  cuando: creadoEn(),
+});
+
+/** Movimientos de efectivo del cajón: fondo, ventas y devoluciones en efectivo, entradas y salidas. */
+export const movimientosCaja = pgTable(
+  "movimientos_caja",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    sesionCajaId: uuid()
+      .notNull()
+      .references(() => sesionesCaja.id),
+    tipo: text({ enum: ["fondo", "venta", "devolucion", "entrada", "salida"] }).notNull(),
+    importe: integer().notNull(),
+    concepto: text(),
+    pagoId: uuid().references(() => pagos.id),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    cuando: creadoEn(),
+  },
+  (t) => [index("movimientos_caja_sesion").on(t.sesionCajaId)],
+);
+
+/** Contador de cada serie de facturas (una por tipo y año), para numerar sin saltos. */
+export const seriesFacturacion = pgTable("series_facturacion", {
+  codigo: text().primaryKey(),
+  tipo: text({ enum: ["simplificada", "completa", "rectificativa"] }).notNull(),
+  anio: integer().notNull(),
+  ultimoNumero: integer().notNull().default(0),
+});
+
+/** Facturas emitidas. No se modifican ni se borran nunca: un error se corrige con una rectificativa. */
+export const facturas = pgTable(
+  "facturas",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    serie: text()
+      .notNull()
+      .references(() => seriesFacturacion.codigo),
+    numero: integer().notNull(),
+    numeroCompleto: text().notNull().unique(),
+    tipo: text({ enum: ["simplificada", "completa", "rectificativa"] }).notNull(),
+    fechaExpedicion: date({ mode: "string" }).notNull(),
+    expedidaEn: creadoEn(),
+    ventaId: uuid()
+      .notNull()
+      .references(() => ventas.id),
+    rectificaA: uuid(),
+    /** Copia de los datos del emisor en ese momento. */
+    emisor: jsonb().notNull(),
+    /** Datos de la clienta (solo facturas completas). */
+    destinatario: jsonb(),
+    desglose: jsonb().notNull(),
+    baseTotal: integer().notNull(),
+    cuotaTotal: integer().notNull(),
+    total: integer().notNull(),
+  },
+  (t) => [uniqueIndex("facturas_serie_numero").on(t.serie, t.numero), index("facturas_venta").on(t.ventaId)],
+);
+
+/** Registro de facturación: cada alta genera un registro con huella encadenada al anterior. */
+export const registrosFacturacion = pgTable("registros_facturacion", {
+  id: bigserial({ mode: "number" }).primaryKey(),
+  facturaId: uuid()
+    .notNull()
+    .references(() => facturas.id),
+  tipo: text({ enum: ["alta", "anulacion"] }).notNull(),
+  huella: text().notNull().unique(),
+  huellaAnterior: text(),
+  datos: jsonb().notNull(),
+  creadoEn: creadoEn(),
+});

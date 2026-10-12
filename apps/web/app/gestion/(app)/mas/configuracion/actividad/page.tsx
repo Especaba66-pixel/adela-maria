@@ -34,6 +34,15 @@ const ACCIONES: Record<string, string> = {
   "tratamiento.crear": "Añadió un tratamiento",
   "tratamiento.editar": "Modificó un tratamiento",
   "categoria.crear": "Creó una categoría",
+  "tratamiento.iva": "Puso el IVA a los tratamientos",
+  "venta.cobrar": "Cobró una venta",
+  "venta.cobrar_pendiente": "Cobró algo pendiente",
+  "venta.devolver": "Devolvió una venta",
+  "caja.abrir": "Abrió la caja",
+  "caja.cerrar": "Cerró la caja",
+  "caja.entrada": "Metió efectivo en la caja",
+  "caja.salida": "Sacó efectivo de la caja",
+  "impresora.configurar": "Configuró la impresora",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */
