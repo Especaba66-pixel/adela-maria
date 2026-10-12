@@ -146,3 +146,6 @@ es un historial de movimientos que nunca queda en negativo (lo impone la base de
 no caduca. Solo se puede devolver sin estrenar; si se devuelve una venta pagada con ella, el saldo vuelve a la tarjeta.
 
 **Devoluciones.** Una venta con un bono solo se devuelve si el bono no se ha usado, y el bono queda anulado.
+
+**Decidido por Espe (12 de octubre de 2026):** los bonos faciales valen para todos los faciales, también «Unos labios
+más gruesos», y las tarjetas regalo no caducan.

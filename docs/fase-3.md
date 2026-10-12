@@ -98,8 +98,8 @@ factura al usarla** (punto 1 de `docs/decisiones.md`, fase 3). Si dice otra cosa
 
 **Para decidir tú:**
 
-- Si los bonos excluyen «Unos labios más gruesos» (ahora lo excluyen).
-- Si las tarjetas regalo deberían caducar (ahora no caducan, como los bonos).
+- ~~Bonos y labios~~: decidido, los bonos valen también para «Unos labios más gruesos».
+- ~~Caducidad de las tarjetas regalo~~: decidido, no caducan.
 
 **Para la web:** las fotos y el logo de su Instagram. Instagram no deja copiarlas desde fuera, así que hace falta que
 me las mandes (guardadas desde el móvil o el original del logo). Las pongo en la propia página, sin cargar nada de

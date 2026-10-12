@@ -61,11 +61,10 @@ export const CATEGORIAS: TarifaCategoria[] = [
 ];
 
 /**
- * «Adaptados a las necesidades de tu piel», 1:30 h cada sesión: cubren los faciales de hora y media.
- * No caducan (confirmado por Espe el 12 de octubre de 2026).
- * PENDIENTE de confirmar: se deja fuera «Unos labios más gruesos» (30 min, 18 €).
+ * «Adaptados a las necesidades de tu piel»: valen para cualquier facial, también «Unos labios más gruesos».
+ * No caducan (las dos cosas confirmadas por Espe el 12 de octubre de 2026).
  */
 export const BONOS: TarifaBono[] = [
-  { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
-  { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
+  { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales" },
+  { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales" },
 ];

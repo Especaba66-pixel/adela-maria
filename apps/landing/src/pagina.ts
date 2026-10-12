@@ -86,7 +86,7 @@ export function construirPagina(d: DatosLanding): string {
             <div class="bono-sesiones">${b.sesiones}</div>
             <div>
               <div class="nombre">${esc(b.nombre)}</div>
-              <div class="detalle">1 h 30 min cada sesión · adaptados a tu piel</div>
+              <div class="detalle">Para cualquier tratamiento facial · adaptados a tu piel</div>
             </div>
             <div class="bono-precio">${precioTexto(b.precioCentimos)}</div>
           </li>`,

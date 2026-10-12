@@ -47,8 +47,8 @@ test("las tarifas muestran los tratamientos y los dos bonos faciales", async () 
   await expect(pagina.getByText("Bono facial 3 sesiones")).toBeVisible();
   await expect(pagina.getByText("120,00 €")).toBeVisible();
   await expect(pagina.getByText("240,00 €")).toBeVisible();
-  // Los bonos cubren los 6 faciales de hora y media (no «Unos labios más gruesos»).
-  await expect(pagina.getByText("6 sesiones · vale para 6 tratamientos")).toBeVisible();
+  // Los bonos valen para los 7 faciales, también «Unos labios más gruesos».
+  await expect(pagina.getByText("6 sesiones · vale para 7 tratamientos")).toBeVisible();
   await expect(pagina.getByText("Diseño y depilación de cejas")).toBeVisible();
 });
 
