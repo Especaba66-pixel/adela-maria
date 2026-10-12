@@ -149,3 +149,7 @@ no caduca. Solo se puede devolver sin estrenar; si se devuelve una venta pagada 
 
 **Decidido por Espe (12 de octubre de 2026):** los bonos faciales valen para todos los faciales, también «Unos labios
 más gruesos», y las tarjetas regalo no caducan.
+
+**Fotos de trabajos en la landing (12 de octubre de 2026).** Espe confirma que las clientas que aparecen en las fotos
+de microblading, maquillaje y uñas han dado su permiso para publicarlas en la web. Se publican reducidas y sin los
+datos ocultos de la cámara (modelo, fecha, ubicación).
