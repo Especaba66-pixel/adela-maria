@@ -190,7 +190,7 @@ test("caja: salida de efectivo y cierre con descuadre", async () => {
   await teclear("Efectivo contado", 4400);
   await expect(pagina.getByTestId("diferencia")).toHaveText("Faltan 1,00 €.");
   await pagina.getByRole("button", { name: "Cerrar caja" }).click();
-  await expect(pagina.getByText(/Caja cerrada con faltante de 1,00 €/)).toBeVisible();
+  await expect(pagina.getByText(/Caja cerrada con faltante de 1,00\s€/)).toBeVisible();
   await expect(pagina.getByRole("heading", { name: "Abrir caja" })).toBeVisible();
 });
 

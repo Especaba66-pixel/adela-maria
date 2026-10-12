@@ -69,7 +69,14 @@ cajón abierto y caja cuadrada**. Para eso falta instalarla en el TPV y conectar
 
 ## 3. Pruebas ejecutadas
 
-RESULTADOS
+| Conjunto | Resultado |
+| --- | --- |
+| Reglas (importes, descuentos, IVA por tipo, pagos y cambio, arqueo, numeración, huella encadenada, NIF/NIE/CIF, ticket y ESC/POS, y todo lo de las fases 0 y 1) | 85 de 85 correctas |
+| Base de datos (cobro todo o nada, sin datos fiscales no se factura, pago mixto y a deber, factura completa, números seguidos incluso con dos cobros a la vez, nada cobrado se edita ni se borra, cadena intacta y sin bifurcaciones, devolución con rectificativa, caja con descuadre, una sola caja abierta) | 27 de 27 correctas |
+| Landing (todos los tratamientos y precios, bonos, WhatsApp con mensaje, nada de terceros) | 7 de 7 correctas |
+| Recorridos del TPV en pantalla de 15" (IVA, datos fiscales, impresora simulada, abrir caja, cobrar una cita con cambio, descuento y pago mixto, a deber, factura con datos, devolución, cerrar caja con descuadre, registro de actividad) | 12 de 12 correctas |
+| Recorridos de las fases 0 y 1 (acceso, agenda, cabinas, clientas, reservas) | 45 de 45 correctas |
+| Copia de seguridad de Windows ejecutada de verdad (copia y restauración de las 29 tablas) | Correcta |
 
 ## 4. Errores encontrados y corregidos
 
@@ -81,6 +88,8 @@ RESULTADOS
 - El script de copias para Windows pasaba mal una consulta a PostgreSQL. Se corrigió y se ha ejecutado de verdad:
   copia y restauración correctas.
 - «Diseño de cejas» estaba duplicado con «Diseño y depilación de cejas». Quitado.
+- En la pantalla de 15", al pagar en efectivo el teclado dejaba el botón **Cobrar** fuera de la vista. Ahora el botón
+  va justo debajo de las formas de pago y el teclado debajo.
 
 ## 5. Qué queda pendiente
 

@@ -246,22 +246,6 @@ export function Tpv({
           </div>
         )}
 
-        {metodo && (
-          <div className="space-y-2">
-            {metodo === "efectivo" ? (
-              <>
-                <TecladoImporte centimos={entregado} onCambio={setEntregado} etiqueta="Entregado" atajos={[importe, 1000, 2000, 5000].filter((v, i, a) => v >= importe && a.indexOf(v) === i)} />
-                <div className="flex justify-between text-xl">
-                  <span>Cambio</span>
-                  <strong data-testid="cambio">{formatearEuros(cambio(importe, entregado))}</strong>
-                </div>
-              </>
-            ) : (
-              <p className="text-tinta-suave">Cobra {formatearEuros(importe)} en el datáfono y pulsa Cobrar.</p>
-            )}
-          </div>
-        )}
-
         {lineas.length > 0 && (
           <label className="flex min-h-toque items-center gap-3">
             <input type="checkbox" checked={conFactura} onChange={(e) => setConFactura(e.target.checked)} className="size-6 accent-dorado-oscuro" />
@@ -283,6 +267,13 @@ export function Tpv({
           </div>
         )}
 
+        {metodo === "efectivo" && (
+          <div className="flex justify-between rounded-xl bg-crema px-4 py-2 text-xl">
+            <span>Cambio</span>
+            <strong data-testid="cambio">{formatearEuros(cambio(importe, entregado))}</strong>
+          </div>
+        )}
+        {metodo && metodo !== "efectivo" && <p className="text-tinta-suave">Cobra {formatearEuros(importe)} en el datáfono y pulsa Cobrar.</p>}
         {lineas.length > 0 && (
           <div className="space-y-2">
             <Boton
@@ -312,6 +303,14 @@ export function Tpv({
               </Boton>
             )}
           </div>
+        )}
+        {metodo === "efectivo" && (
+          <TecladoImporte
+            centimos={entregado}
+            onCambio={setEntregado}
+            etiqueta="Entregado"
+            atajos={[importe, 1000, 2000, 5000].filter((v, i, a) => v >= importe && a.indexOf(v) === i)}
+          />
         )}
       </section>
     </div>
