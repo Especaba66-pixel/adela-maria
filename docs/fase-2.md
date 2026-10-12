@@ -1,6 +1,6 @@
 # Cierre de la fase 2 · TPV, caja y facturación base
 
-Estado: **pendiente de tu aprobación.** El plan la da por terminada con **un día completo cobrado, con ticket impreso,
+Estado: **aprobada de forma provisional** el 12 de octubre de 2026, para instalarla y probar un día real. **Pendiente de la aprobación final.** El plan la da por terminada con **un día completo cobrado, con ticket impreso,
 cajón abierto y caja cuadrada**. Para eso falta instalarla en el TPV y conectar la impresora (punto 5).
 
 ## 1. Qué se ha construido
