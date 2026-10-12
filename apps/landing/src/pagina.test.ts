@@ -30,6 +30,24 @@ describe("landing", () => {
     expect(html).not.toMatch(/<(script|img|iframe)[^>]+instagram/);
   });
 
+  it("lleva el logo del centro, servido desde la propia página", () => {
+    expect(html).toContain('src="logotipo.png" alt="Adela María · Belleza holística"');
+    expect(html).toContain('src="sello.png"');
+    expect(html).toContain('rel="icon" type="image/png" href="favicon.png"');
+  });
+
+  it("galería de trabajos solo si hay fotos, con texto alternativo", () => {
+    expect(html).not.toContain('id="trabajos"');
+    const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, trabajos: [{ titulo: "Uñas", fotos: [{ archivo: "trabajos/unas/1.jpg", alt: "Uñas: trabajo 1" }] }, { titulo: "Maquillaje", fotos: [] }] });
+    expect(con).toContain('<img src="trabajos/unas/1.jpg" alt="Uñas: trabajo 1" loading="lazy"');
+    expect(con).not.toContain(">Maquillaje</h3>");
+  });
+
+  it("consejos para preparar la piel antes del maquillaje", () => {
+    expect(html).toContain("Prepara tu piel para un maquillaje perfecto");
+    expect(html).toContain("El día D");
+  });
+
   it("ofrece tarjetas regalo por WhatsApp", () => {
     expect(html).toContain("Tarjeta regalo");
     expect(html).toContain(`href="https://wa.me/34600112233?text=${encodeURIComponent("Hola, me gustaría una tarjeta regalo de ")}"`);

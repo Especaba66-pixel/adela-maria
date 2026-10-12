@@ -9,6 +9,7 @@ const texto = Inter({ subsets: ["latin"], variable: "--fuente-texto" });
 export const metadata: Metadata = {
   title: "Adela María · Belleza holística",
   description: "Centro de belleza holística. Consulta nuestros tratamientos y pide cita.",
+  icons: { icon: "/favicon.png", apple: "/icono.png" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fffdf9" };

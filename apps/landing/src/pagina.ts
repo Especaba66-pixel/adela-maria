@@ -9,6 +9,8 @@ import { enlaceWhatsapp, formatearEuros, normalizarTelefono } from "@adela/domin
 export interface DatosLanding {
   categorias: TarifaCategoria[];
   bonos: TarifaBono[];
+  /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
+  trabajos?: { titulo: string; fotos: { archivo: string; alt: string }[] }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
   url?: string;
@@ -111,6 +113,9 @@ export function construirPagina(d: DatosLanding): string {
 <meta property="og:description" content="${esc(descripcion)}">
 <meta property="og:type" content="website">
 ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonical" href="${esc(d.url)}">` : ""}
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icono.png">
+<meta property="og:image" content="${esc(d.url ? `${d.url.replace(/\/$/, "")}/sello.png` : "sello.png")}">
 <link rel="preload" href="fuentes/cormorant-garamond-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>${ESTILOS}</style>
 </head>
@@ -118,8 +123,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <header class="cabecera">
   <div class="contenedor cabecera-fila">
     <a href="#inicio" class="marca" aria-label="Adela María · Belleza holística">
-      <span class="marca-nombre">Adela María</span>
-      <span class="marca-lema">Belleza holística</span>
+      <img src="logotipo.png" alt="Adela María · Belleza holística" width="155" height="48">
     </a>
     ${enlaceCita() ? `<a class="boton boton-principal boton-pequeno" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita</a>` : ""}
   </div>
@@ -128,6 +132,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <main id="inicio">
   <section class="portada">
     <div class="contenedor">
+      <img class="sello" src="sello.png" alt="" width="240" height="240">
       <h1>Tu momento de cuidado</h1>
       <p class="entrada">Tratamientos faciales y depilación pensados para ti. Elige lo que te apetece y escríbenos: te confirmamos la hora por WhatsApp.</p>
       ${ctaPrincipal}
@@ -149,6 +154,32 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   </section>`
       : ""
   }
+
+  ${
+    d.trabajos?.some((t) => t.fotos.length)
+      ? `<section id="trabajos" class="contenedor bloque" aria-labelledby="titulo-trabajos">
+    <h2 id="titulo-trabajos">Nuestros trabajos</h2>
+    ${d.trabajos
+      .filter((t) => t.fotos.length)
+      .map(
+        (t) => `<h3 class="categoria">${esc(t.titulo)}</h3>
+    <div class="galeria">${t.fotos.map((f) => `<img src="${esc(f.archivo)}" alt="${esc(f.alt)}" loading="lazy" decoding="async">`).join("")}</div>`,
+      )
+      .join("\n    ")}
+  </section>`
+      : ""
+  }
+
+  <section id="maquillaje" class="contenedor bloque" aria-labelledby="titulo-maquillaje">
+    <h2 id="titulo-maquillaje">Prepara tu piel para un maquillaje perfecto</h2>
+    <ol class="preparacion">
+      <li><strong>10 días antes</strong> Higiene facial profunda, ideal para una piel limpia y luminosa.</li>
+      <li><strong>3 días antes</strong> Exfoliación suave y mucha hidratación. Evita productos nuevos y no uses labiales permanentes o de larga duración.</li>
+      <li><strong>2 días antes</strong> Bebe 2 litros de agua y duerme 8 horas. Aplica bálsamo hidratante en los labios varias veces al día.</li>
+      <li><strong>1 día antes</strong> No depiles cejas ni labio. Hidratante y contorno de ojos. Mucho bálsamo en los labios, sin labial permanente.</li>
+      <li><strong>El día D</strong> Piel limpia e hidratada, sin exfoliar. Labios exfoliados y mucho bálsamo hidratante.</li>
+    </ol>
+  </section>
 
   <section id="regalo" class="contenedor bloque" aria-labelledby="titulo-regalo">
     <h2 id="titulo-regalo">Tarjeta regalo</h2>
@@ -211,6 +242,13 @@ a{color:var(--dorado-oscuro)}
 .marca-nombre{font-size:1.6rem;color:var(--dorado-oscuro)}
 .marca-lema{font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dorado)}
 .portada{text-align:center;padding:4rem 0 3rem;background:linear-gradient(var(--fondo),var(--crema))}
+.marca img{display:block;height:48px;width:auto}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr));gap:.75rem;margin:1rem 0 2rem}
+.galeria img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block}
+.preparacion{list-style:none;padding:0;margin:1.5rem auto 0;max-width:40rem;display:grid;gap:1rem}
+.preparacion li{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:1rem 1.25rem}
+.preparacion strong{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;color:var(--dorado-oscuro)}
+.sello{display:block;width:min(240px,60vw);height:auto;margin:0 auto 1.5rem}
 .portada h1{font-size:clamp(2.6rem,9vw,4rem)}
 .entrada{color:var(--suave);font-size:1.15rem;max-width:32rem;margin:1rem auto 2rem}
 .boton{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.4rem;border-radius:.75rem;font-weight:600;text-decoration:none;white-space:nowrap}

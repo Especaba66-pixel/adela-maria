@@ -1,11 +1,10 @@
-/** Nombre del centro con su tipografía. PENDIENTE: sustituir por el logo original cuando llegue. */
+/** Logo del centro: el sello en las pantallas de entrada y el logotipo en una línea en las cabeceras. */
 export function Marca({ grande = false }: { grande?: boolean }) {
-  return (
-    <div className="leading-tight">
-      <div className={`font-titulo font-semibold text-dorado-oscuro ${grande ? "text-5xl" : "text-2xl"}`}>Adela María</div>
-      <div className={`tracking-[0.25em] uppercase text-dorado ${grande ? "text-sm mt-1" : "text-[0.65rem]"}`}>
-        Belleza holística
-      </div>
-    </div>
+  return grande ? (
+    // eslint-disable-next-line @next/next/no-img-element -- imagen pequeña y fija, sin optimizar
+    <img src="/sello.png" alt="Adela María · Belleza holística" width={160} height={160} className="mx-auto size-40" />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element -- imagen pequeña y fija, sin optimizar
+    <img src="/logotipo.png" alt="Adela María · Belleza holística" width={129} height={40} className="h-10 w-auto" />
   );
 }

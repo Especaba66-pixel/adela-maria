@@ -20,7 +20,8 @@ Listo. Cada vez que cambien las tarifas o la página, se vuelve a publicar sola 
 - **El WhatsApp del centro.** Hasta que lo tenga, la página muestra «Muy pronto podrás pedir cita por WhatsApp» en
   lugar de los botones. Se pone en `packages/db/src/datos/centro.ts` (o me lo dices y lo pongo yo).
 - ~~La dirección~~: ya puesta (C/ Francisco Pizarro 13, 1.ª planta, Torremejía).
-- **El logo**, cuando tengas el original.
+- ~~El logo~~: puesto (originales en `infra/marca`).
+- **Fotos de trabajos**: van en `apps/landing/publico/trabajos/<tipo>/` (microblading, maquillaje, unas, faciales) y salen solas en «Nuestros trabajos».
 - **Aviso legal.** Una web de un negocio en España debe mostrar el nombre del titular, NIF y forma de contacto (Ley
   de Servicios de la Sociedad de la Información). Necesito esos datos para añadirlo.
 
