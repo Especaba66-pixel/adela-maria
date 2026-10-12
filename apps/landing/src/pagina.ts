@@ -10,7 +10,7 @@ export interface DatosLanding {
   categorias: TarifaCategoria[];
   bonos: TarifaBono[];
   /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
-  trabajos?: { titulo: string; fotos: { archivo: string; alt: string }[] }[];
+  trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
   url?: string;
@@ -163,7 +163,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       .filter((t) => t.fotos.length)
       .map(
         (t) => `<h3 class="categoria">${esc(t.titulo)}</h3>
-    <div class="galeria">${t.fotos.map((f) => `<img src="${esc(f.archivo)}" alt="${esc(f.alt)}" loading="lazy" decoding="async">`).join("")}</div>`,
+    <div class="galeria">${t.fotos.map((f) => `<img src="${esc(f.archivo)}" alt="${esc(f.alt)}"${f.ancho && f.alto ? ` width="${f.ancho}" height="${f.alto}"` : ""} loading="lazy" decoding="async">`).join("")}</div>`,
       )
       .join("\n    ")}
   </section>`
@@ -243,8 +243,8 @@ a{color:var(--dorado-oscuro)}
 .marca-lema{font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dorado)}
 .portada{text-align:center;padding:4rem 0 3rem;background:linear-gradient(var(--fondo),var(--crema))}
 .marca img{display:block;height:48px;width:auto}
-.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr));gap:.75rem;margin:1rem 0 2rem}
-.galeria img{width:100%;aspect-ratio:3/4;object-fit:cover;object-position:center 30%;border-radius:12px;display:block}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr));gap:.75rem;align-items:start;margin:1rem 0 2rem}
+.galeria img{width:100%;height:auto;border-radius:12px;display:block}
 .preparacion{list-style:none;padding:0;margin:1.5rem auto 0;max-width:40rem;display:grid;gap:1rem}
 .preparacion li{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:1rem 1.25rem}
 .preparacion strong{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;color:var(--dorado-oscuro)}
