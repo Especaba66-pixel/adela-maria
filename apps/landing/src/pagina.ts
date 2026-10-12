@@ -244,7 +244,7 @@ a{color:var(--dorado-oscuro)}
 .portada{text-align:center;padding:4rem 0 3rem;background:linear-gradient(var(--fondo),var(--crema))}
 .marca img{display:block;height:48px;width:auto}
 .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr));gap:.75rem;margin:1rem 0 2rem}
-.galeria img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block}
+.galeria img{width:100%;aspect-ratio:3/4;object-fit:cover;object-position:center 30%;border-radius:12px;display:block}
 .preparacion{list-style:none;padding:0;margin:1.5rem auto 0;max-width:40rem;display:grid;gap:1rem}
 .preparacion li{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:1rem 1.25rem}
 .preparacion strong{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;color:var(--dorado-oscuro)}
