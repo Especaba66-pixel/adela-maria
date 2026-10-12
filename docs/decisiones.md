@@ -114,3 +114,35 @@ reimprimir o enviar por WhatsApp.
 
 **Los formularios no se vacían si hay un error.** React vacía los formularios al enviarlos; ahora solo se vacían los
 de alta tras guardar bien.
+
+## Fase 3
+
+**Bono: se factura al venderlo.** Un bono vale para unos tratamientos concretos (los faciales), así que se trata como
+bono «univalente»: el IVA se paga al venderlo, con su factura, y cada sesión que se usa se descuenta sin volver a
+cobrar ni facturar. **Tarjeta regalo: se factura al usarla.** Vale para cualquier cosa, así que es «polivalente»: al
+venderla no hay factura (se entrega un vale) y lo que se paga con ella se factura entonces, como cualquier venta. Es
+el criterio general; **lo tiene que confirmar la gestoría**. Si dijera que el bono se factura al usarlo, el cambio es
+acotado: la venta del bono pasaría a no llevar factura, como la tarjeta regalo.
+
+**Los bonos no caducan** (decidido por Espe), pero el sistema admite caducidad por si algún día se quiere: cada tipo
+de bono puede llevar días de validez.
+
+**Cada bono vendido guarda lo que cubre en ese momento.** Si mañana cambia la tarifa o el tipo de bono, los bonos ya
+vendidos siguen valiendo para lo que se compró.
+
+**Las sesiones son un historial que solo crece.** Una sesión gastada es una fila; una sesión devuelta por error es otra
+fila en negativo con su motivo (solo administración). La base de datos bloquea el bono al gastar una sesión, así que
+dos cobros a la vez no pueden gastar la misma ni pasar del total, ni usar un bono anulado, caducado o que no cubra ese
+tratamiento.
+
+**El TPV aplica el bono solo.** Al cobrar una cita, lo que cubre un bono de la clienta se marca «con bono» (se puede
+quitar con «Cobrarlo»). Si se usan varios, va primero el que caduca antes y, si no caducan, el más antiguo. Si la
+clienta compra el bono ese día, la sesión de ese día ya va con él. Si todo va con bono no hay venta ni factura: solo
+se descuentan las sesiones y la cita queda cobrada.
+
+**Tarjeta regalo con código «AM-XXXX-XXXX».** Al azar (8 caracteres de un alfabeto sin letras que se confundan: unos
+500 000 millones de combinaciones), se acepta escrito de cualquier forma y se puede pagar una parte con ella. Su saldo
+es un historial de movimientos que nunca queda en negativo (lo impone la base de datos). Se paga entera al venderla y
+no caduca. Solo se puede devolver sin estrenar; si se devuelve una venta pagada con ella, el saldo vuelve a la tarjeta.
+
+**Devoluciones.** Una venta con un bono solo se devuelve si el bono no se ha usado, y el bono queda anulado.

@@ -1,5 +1,5 @@
 import "server-only";
-import { categorias, registrarActividad, tratamientos } from "@adela/db";
+import { categorias, registrarActividad, tiposBono, tratamientos } from "@adela/db";
 import { eurosACentimos } from "@adela/dominio";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { requerirSesion } from "./auth";
@@ -84,7 +84,7 @@ export async function crearCategoria(nombre: string): Promise<Resultado> {
   return { ok: true, mensaje: `Categoría «${n}» creada.` };
 }
 
-/** Pone un tipo de IVA a todos los tratamientos que aún no lo tienen (tras confirmarlo con la gestoría). */
+/** Pone un tipo de IVA a todos los tratamientos y bonos que aún no lo tienen (tras confirmarlo con la gestoría). */
 export async function ivaParaTodos(iva: string): Promise<Resultado & { cambiados?: number; iva?: number }> {
   const { usuario } = await requerirSesion("configuracion.gestionar");
   const n = Number(iva.trim().replace(",", "."));
@@ -94,6 +94,11 @@ export async function ivaParaTodos(iva: string): Promise<Resultado & { cambiados
     .set({ ivaCentesimas: Math.round(n * 100) })
     .where(isNull(tratamientos.ivaCentesimas))
     .returning({ id: tratamientos.id });
-  await registrarActividad(db(), { usuarioId: usuario.id, accion: "tratamiento.iva", entidad: "tratamientos", despues: { iva: n, tratamientos: cambiados.length } });
+  const bonos = await db()
+    .update(tiposBono)
+    .set({ ivaCentesimas: Math.round(n * 100) })
+    .where(isNull(tiposBono.ivaCentesimas))
+    .returning({ id: tiposBono.id });
+  await registrarActividad(db(), { usuarioId: usuario.id, accion: "tratamiento.iva", entidad: "tratamientos", despues: { iva: n, tratamientos: cambiados.length, bonos: bonos.length } });
   return { ok: true, mensaje: `IVA del ${n} % puesto a ${cambiados.length} tratamientos.`, cambiados: cambiados.length, iva: n };
 }

@@ -1,5 +1,5 @@
 import { categorias, tiposBono, tiposBonoTratamientos, tratamientos } from "@adela/db";
-import { formatearEuros, puede, textoPrecio } from "@adela/dominio";
+import { formatearEuros, puede, textoPorcentaje, textoPrecio } from "@adela/dominio";
 import { Aviso, Tarjeta } from "@adela/ui";
 import { asc, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { requerirSesion } from "@/server/auth";
@@ -115,7 +115,8 @@ export default async function Tratamientos({ searchParams }: { searchParams: Pro
               <div>
                 <div className="font-medium">{bono.nombre}</div>
                 <div className="text-sm text-tinta-suave">
-                  {bono.sesiones} sesiones · vale para {cubiertos} {cubiertos === 1 ? "tratamiento" : "tratamientos"}
+                  {bono.sesiones} sesiones · vale para {cubiertos} {cubiertos === 1 ? "tratamiento" : "tratamientos"} ·{" "}
+                  {bono.ivaCentesimas === null ? <span className="text-urgente">sin IVA</span> : `IVA ${textoPorcentaje(bono.ivaCentesimas)}`} · {bono.validezDias ? `vale ${bono.validezDias} días` : "no caduca"}
                 </div>
               </div>
               <div className="font-semibold">{formatearEuros(bono.precioCentimos)}</div>

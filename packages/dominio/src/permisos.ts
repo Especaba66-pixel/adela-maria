@@ -22,6 +22,7 @@ export const PERMISOS = [
   "cobrar",
   "caja.abrir_cerrar",
   "facturas.anular",
+  "bonos.corregir",
   "informes.ver",
   "configuracion.gestionar",
   "usuarios.gestionar",

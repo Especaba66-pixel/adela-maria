@@ -4,13 +4,14 @@ import { Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
-import { catalogoTpv, citasPorCobrar, ventasPendientes } from "@/server/tpv";
+import { bonosALaVenta, catalogoTpv, citasPorCobrar, ventasPendientes } from "@/server/tpv";
 import { Tpv } from "./Tpv";
 
 export default async function PaginaTpv({ searchParams }: { searchParams: Promise<{ cita?: string }> }) {
   await requerirSesion("cobrar");
-  const [catalogo, citas, deudas, caja, { cita }] = await Promise.all([
+  const [catalogo, bonosVenta, citas, deudas, caja, { cita }] = await Promise.all([
     catalogoTpv(),
+    bonosALaVenta(),
     citasPorCobrar(hoyEnMadrid(new Date())),
     ventasPendientes(),
     cobros.cajaAbierta(db()),
@@ -28,7 +29,7 @@ export default async function PaginaTpv({ searchParams }: { searchParams: Promis
   return (
     <div className="space-y-4">
       <h1 className="text-4xl">TPV</h1>
-      <Tpv key={primero?.id ?? "tpv"} catalogo={catalogo} citas={paraCobrar} cajaAbierta={Boolean(caja)} inicial={primero} />
+      <Tpv key={primero?.id ?? "tpv"} catalogo={catalogo} bonosVenta={bonosVenta} citas={paraCobrar} cajaAbierta={Boolean(caja)} inicial={primero} />
       {deudas.length > 0 && (
         <Tarjeta className="divide-y divide-borde p-0">
           <h2 className="px-6 py-3 text-2xl">A deber</h2>

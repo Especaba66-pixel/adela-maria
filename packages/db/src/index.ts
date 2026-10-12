@@ -7,7 +7,7 @@ export { registrarActividad, type Actividad } from "./actividad";
 export { sembrar, NOMBRE_CENTRO, type AdminInicial, type ResumenSiembra } from "./sembrar";
 export { esquema };
 export * as cobros from "./cobros";
-export type { Emisor, Cobro } from "./cobros";
+export type { Emisor, Cobro, PagoEntrada, ResultadoCobro, UsoBono } from "./cobros";
 
 export type BaseDatos = PostgresJsDatabase<typeof esquema>;
 /** Una transacción admite las mismas operaciones que la base de datos. */

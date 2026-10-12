@@ -1,5 +1,5 @@
 "use client";
-import { METODOS_PAGO, NOMBRE_METODO, formatearEuros } from "@adela/dominio";
+import { METODOS_CAJA, NOMBRE_METODO, formatearEuros } from "@adela/dominio";
 import { Aviso, Boton } from "@adela/ui";
 import { useActionState } from "react";
 import { devolver } from "./acciones";
@@ -19,7 +19,7 @@ export function Devolver({ facturaId, total }: { facturaId: string; total: numbe
         <label className="block">
           Cómo se devuelve el dinero
           <select name="metodo" className={campo}>
-            {METODOS_PAGO.map((m) => (
+            {METODOS_CAJA.map((m) => (
               <option key={m} value={m}>
                 {NOMBRE_METODO[m]}
               </option>

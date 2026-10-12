@@ -19,6 +19,8 @@ export interface DatosTicket {
   entregado?: number;
   cambio?: number;
   atendidaPor: string;
+  /** Avisos para la clienta: sesiones que le quedan en sus bonos, saldo de su tarjeta regalo… */
+  notas?: string[];
   pie?: string;
 }
 
@@ -82,8 +84,32 @@ export function lineasTicket(t: DatosTicket, ancho = 48): string[] {
   l.push(raya);
   for (const p of t.pagos) l.push(fila(p.metodo, euros(p.importe), ancho));
   if (t.entregado !== undefined) l.push(fila("Entregado", euros(t.entregado), ancho), fila("Cambio", euros(t.cambio ?? 0), ancho));
+  if (t.notas?.length) l.push(raya, ...t.notas.flatMap((n) => partir(n, ancho)));
   l.push(raya, `Le atendió: ${t.atendidaPor}`);
   if (t.pie) l.push("", ...partir(t.pie, ancho).map((x) => centrar(x, ancho)));
+  return l;
+}
+
+export interface DatosVale {
+  centro: string;
+  codigo: string;
+  importe: number;
+  para?: string;
+  deParte?: string;
+  fecha: string;
+  pie?: string;
+}
+
+/** Vale de tarjeta regalo: no es una factura (se factura al usarla). */
+export function lineasVale(v: DatosVale, ancho = 48): string[] {
+  const raya = "-".repeat(ancho);
+  const l = [centrar(v.centro, ancho), raya, centrar("TARJETA REGALO", ancho), "", centrar(euros(v.importe), ancho), ""];
+  if (v.para) l.push(centrar(`Para: ${v.para}`, ancho));
+  if (v.deParte) l.push(centrar(`De parte de: ${v.deParte}`, ancho));
+  l.push("", centrar(`Código: ${v.codigo}`, ancho), centrar(v.fecha, ancho), raya);
+  l.push(...partir("Válida para cualquier tratamiento del centro. No caduca. Enseña este código al pagar.", ancho));
+  l.push(...partir("Documento sin valor de factura: la factura se entrega al usarla.", ancho));
+  if (v.pie) l.push("", ...partir(v.pie, ancho).map((x) => centrar(x, ancho)));
   return l;
 }
 

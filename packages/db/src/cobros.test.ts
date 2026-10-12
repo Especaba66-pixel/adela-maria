@@ -52,7 +52,7 @@ describe("cobrar", () => {
     expect(r).toMatchObject({ ok: true, valor: { total: 5400, pendiente: 0, cambio: 600 } });
     if (!r.ok) return;
     expect(r.valor.numero).toMatch(/^T\d{4}-000001$/);
-    const [f] = await db.select().from(facturas).where(eq(facturas.id, r.valor.facturaId));
+    const [f] = await db.select().from(facturas).where(eq(facturas.id, r.valor.facturaId!));
     expect(f).toMatchObject({ tipo: "simplificada", total: 5400, baseTotal: 4463, cuotaTotal: 937 });
     const caja = await cobros.cajaAbierta(db);
     expect((await cobros.resumenCaja(db, caja!.id)).esperado).toBe(5000 + 5400);
@@ -65,10 +65,10 @@ describe("cobrar", () => {
     });
     expect(r).toMatchObject({ ok: true, valor: { pendiente: 1500 } });
     if (!r.ok) return;
-    expect(await cobros.pendienteDeVenta(db, r.valor.ventaId)).toBe(1500);
-    expect(await cobros.cobrarPendiente(db, adela, r.valor.ventaId, [{ metodo: "efectivo", importe: 2000 }])).toMatchObject({ ok: false, error: /más que el total/ });
-    expect(await cobros.cobrarPendiente(db, adela, r.valor.ventaId, [{ metodo: "efectivo", importe: 1500, entregado: 2000 }])).toMatchObject({ ok: true, valor: { pendiente: 0, cambio: 500 } });
-    expect(await cobros.pendienteDeVenta(db, r.valor.ventaId)).toBe(0);
+    expect(await cobros.pendienteDeVenta(db, r.valor.ventaId!)).toBe(1500);
+    expect(await cobros.cobrarPendiente(db, adela, r.valor.ventaId!, [{ metodo: "efectivo", importe: 2000 }])).toMatchObject({ ok: false, error: /más que el total/ });
+    expect(await cobros.cobrarPendiente(db, adela, r.valor.ventaId!, [{ metodo: "efectivo", importe: 1500, entregado: 2000 }])).toMatchObject({ ok: true, valor: { pendiente: 0, cambio: 500 } });
+    expect(await cobros.pendienteDeVenta(db, r.valor.ventaId!)).toBe(0);
   });
 
   it("factura completa con datos de la clienta, en su propia serie", async () => {

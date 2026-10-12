@@ -4,7 +4,7 @@
 import { cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
-import { CABINAS, HORARIO_INICIAL } from "./datos/centro";
+import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
 import { categorias, centro, horarios, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
@@ -37,7 +37,7 @@ export async function sembrar(
   await db.transaction(async (tx) => {
     let [c] = await tx.select().from(centro).limit(1);
     if (!c) {
-      [c] = await tx.insert(centro).values({ nombre: NOMBRE_CENTRO }).returning();
+      [c] = await tx.insert(centro).values({ nombre: NOMBRE_CENTRO, direccion: CONTACTO.direccion }).returning();
       resumen.centroCreado = true;
     }
     const centroId = c!.id;

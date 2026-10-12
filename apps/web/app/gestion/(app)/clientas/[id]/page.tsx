@@ -1,10 +1,11 @@
-import { NOMBRE_ESTADO, enlaceWhatsapp, formatearTelefono, horaATexto, partesMadrid, puede, type EstadoCita } from "@adela/dominio";
+import { NOMBRE_ESTADO, NOMBRE_ESTADO_BONO, enlaceWhatsapp, textoQuedan, formatearTelefono, horaATexto, partesMadrid, puede, type EstadoCita } from "@adela/dominio";
 import { Boton, Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { diaLargo, fechaHora } from "@/lib/fechas";
 import { requerirSesion } from "@/server/auth";
 import { fichaClienta } from "@/server/clientas";
+import { bonosDeClienta } from "@/server/bonos";
 import { suprimir } from "../acciones";
 import { FormularioClienta } from "../FormularioClienta";
 import { NuevaNota } from "./Nota";
@@ -26,6 +27,7 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
     );
   }
   const esAdmin = puede(usuario.rol, "configuracion.gestionar");
+  const bonos = puede(usuario.rol, "cobrar") ? await bonosDeClienta(id) : [];
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -52,6 +54,20 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
           + Nueva cita
         </Link>
       </header>
+
+      {bonos.length > 0 && (
+        <section aria-label="Bonos" className="space-y-2">
+          <h2 className="text-2xl">Bonos</h2>
+          <Tarjeta className="divide-y divide-borde p-0">
+            {bonos.map((b) => (
+              <Link key={b.id} href={`/gestion/mas/bonos/${b.id}`} className="flex min-h-toque flex-wrap items-center justify-between gap-2 px-6 py-2 hover:bg-crema">
+                <span className="font-semibold">{b.nombre}</span>
+                <span>{b.estado === "activo" ? `Le ${textoQuedan(b.sesiones - b.usadas)}` : NOMBRE_ESTADO_BONO[b.estado]}</span>
+              </Link>
+            ))}
+          </Tarjeta>
+        </section>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section aria-labelledby="historial" className="space-y-3">

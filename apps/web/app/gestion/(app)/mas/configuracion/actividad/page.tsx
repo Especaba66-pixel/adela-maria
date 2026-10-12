@@ -43,6 +43,10 @@ const ACCIONES: Record<string, string> = {
   "caja.entrada": "Metió efectivo en la caja",
   "caja.salida": "Sacó efectivo de la caja",
   "impresora.configurar": "Configuró la impresora",
+  "bono.usar": "Usó un bono",
+  "bono.devolver_sesion": "Devolvió una sesión de bono",
+  "tarjeta_regalo.vender": "Vendió una tarjeta regalo",
+  "tarjeta_regalo.devolver": "Devolvió una tarjeta regalo",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

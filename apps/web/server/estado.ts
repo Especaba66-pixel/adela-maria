@@ -1,5 +1,5 @@
 import "server-only";
-import { centro, copiasSeguridad, horarios, profesionales, tratamientos } from "@adela/db";
+import { centro, copiasSeguridad, horarios, profesionales, tiposBono, tratamientos } from "@adela/db";
 import type { Prioridad } from "@adela/ui";
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { db } from "./db";
@@ -71,7 +71,12 @@ export async function avisosSistema(): Promise<AvisoSistema[]> {
     .from(tratamientos)
     .where(and(isNull(tratamientos.anuladoEn), isNull(tratamientos.ivaCentesimas)))
     .limit(1);
-  if (sinIva) {
+  const [bonoSinIva] = await db()
+    .select({ id: tiposBono.id })
+    .from(tiposBono)
+    .where(and(isNull(tiposBono.anuladoEn), isNull(tiposBono.ivaCentesimas)))
+    .limit(1);
+  if (sinIva || bonoSinIva) {
     avisos.push({ prioridad: "importante", texto: "Hay tratamientos sin IVA: no se pueden cobrar hasta ponérselo.", enlace: "/gestion/mas/tratamientos" });
   }
 

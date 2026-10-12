@@ -20,6 +20,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  type AnyPgColumn,
   uuid,
 } from "drizzle-orm/pg-core";
 import { ROLES } from "@adela/dominio";
@@ -185,6 +186,8 @@ export const tiposBono = pgTable(
     nombre: text().notNull().unique(),
     sesiones: integer().notNull(),
     precioCentimos: integer().notNull(),
+    /** IVA del bono (se factura al venderlo). Vacío hasta que lo confirme la gestoría: sin él no se vende. */
+    ivaCentesimas: integer(),
     /** Días de validez desde la compra; vacío si no caduca o aún no se ha decidido. */
     validezDias: integer(),
     anuladoEn: fecha(),
@@ -193,6 +196,7 @@ export const tiposBono = pgTable(
   (t) => [
     check("tipos_bono_sesiones_positivas", sql`${t.sesiones} > 0`),
     check("tipos_bono_precio_no_negativo", sql`${t.precioCentimos} >= 0`),
+    check("tipos_bono_iva_valido", sql`${t.ivaCentesimas} is null or ${t.ivaCentesimas} between 0 and 10000`),
   ],
 );
 
@@ -435,7 +439,7 @@ export const citasServicios = pgTable(
 
 // ── Fase 2: cobros, caja y facturación ──────────────────────────────────────
 
-export const metodoPago = pgEnum("metodo_pago", ["efectivo", "tarjeta", "bizum"]);
+export const metodoPago = pgEnum("metodo_pago", ["efectivo", "tarjeta", "bizum", "tarjeta_regalo"]);
 
 /** Una sesión de caja por jornada: se abre con un fondo y se cierra contando el efectivo. Solo una abierta a la vez. */
 export const sesionesCaja = pgTable("sesiones_caja", {
@@ -461,6 +465,8 @@ export const ventas = pgTable(
     citaId: uuid().references(() => citas.id),
     devolucionDe: uuid(),
     total: integer().notNull(),
+    /** La venta de una tarjeta regalo no lleva factura: se factura lo que se paga con ella al usarla. */
+    conFactura: boolean().notNull().default(true),
     creadaPor: uuid()
       .notNull()
       .references(() => usuarios.id),
@@ -481,6 +487,7 @@ export const lineasVenta = pgTable(
       .references(() => ventas.id),
     orden: integer().notNull(),
     tratamientoId: uuid().references(() => tratamientos.id),
+    tipoBonoId: uuid().references(() => tiposBono.id),
     descripcion: text().notNull(),
     cantidad: integer().notNull(),
     precioUnitario: integer().notNull(),
@@ -499,6 +506,8 @@ export const pagos = pgTable("pagos", {
     .references(() => ventas.id),
   metodo: metodoPago().notNull(),
   importe: integer().notNull(),
+  /** Tarjeta regalo con la que se paga (solo si el método es tarjeta regalo). */
+  tarjetaRegaloId: uuid().references((): AnyPgColumn => tarjetasRegalo.id),
   /** Efectivo entregado por la clienta (para calcular el cambio). */
   entregado: integer(),
   sesionCajaId: uuid()
@@ -579,3 +588,114 @@ export const registrosFacturacion = pgTable("registros_facturacion", {
   datos: jsonb().notNull(),
   creadoEn: creadoEn(),
 });
+
+// ── Fase 3: bonos y tarjetas regalo ─────────────────────────────────────────
+
+/** Bonos vendidos: uno por unidad vendida, con los datos del tipo de bono en ese momento. */
+export const bonos = pgTable(
+  "bonos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    tipoBonoId: uuid()
+      .notNull()
+      .references(() => tiposBono.id),
+    clienteId: uuid()
+      .notNull()
+      .references(() => clientes.id),
+    ventaId: uuid()
+      .notNull()
+      .references(() => ventas.id),
+    nombre: text().notNull(),
+    sesiones: integer().notNull(),
+    compradoEn: creadoEn(),
+    /** Último día en que vale, incluido. Vacío: no caduca. */
+    caducaEn: date({ mode: "string" }),
+    /** Se anula al devolver la venta (solo si no se ha usado). */
+    anuladoEn: fecha(),
+  },
+  (t) => [index("bonos_cliente").on(t.clienteId), index("bonos_venta").on(t.ventaId), check("bonos_sesiones_positivas", sql`${t.sesiones} > 0`)],
+);
+
+/** Tratamientos para los que vale cada bono vendido (copia del tipo de bono al venderlo). */
+export const bonosTratamientos = pgTable(
+  "bonos_tratamientos",
+  {
+    bonoId: uuid()
+      .notNull()
+      .references(() => bonos.id),
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+  },
+  (t) => [primaryKey({ columns: [t.bonoId, t.tratamientoId] })],
+);
+
+/**
+ * Sesiones gastadas de cada bono. Solo se añaden filas: una sesión gastada es +1 y una corrección (sesión
+ * devuelta) es −1, con su motivo. La base de datos impide gastar más sesiones de las que tiene el bono.
+ */
+export const usosBono = pgTable(
+  "usos_bono",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    bonoId: uuid()
+      .notNull()
+      .references(() => bonos.id),
+    cantidad: integer().notNull(),
+    tratamientoId: uuid().references(() => tratamientos.id),
+    citaId: uuid().references(() => citas.id),
+    ventaId: uuid().references(() => ventas.id),
+    motivo: text(),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    cuando: creadoEn(),
+  },
+  (t) => [
+    index("usos_bono_bono").on(t.bonoId),
+    index("usos_bono_cita").on(t.citaId),
+    check("usos_bono_cantidad", sql`${t.cantidad} in (1, -1)`),
+    check("usos_bono_correccion_con_motivo", sql`${t.cantidad} = 1 or ${t.motivo} is not null`),
+  ],
+);
+
+/** Tarjetas regalo: un saldo en euros con un código para canjearlo. */
+export const tarjetasRegalo = pgTable(
+  "tarjetas_regalo",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    codigo: text().notNull().unique(),
+    importeInicial: integer().notNull(),
+    /** Quien la recibe y quien la regala (para el vale). */
+    para: text(),
+    deParte: text(),
+    /** Clienta que la compra, si se sabe. */
+    clienteId: uuid().references(() => clientes.id),
+    ventaId: uuid()
+      .notNull()
+      .references(() => ventas.id),
+    creadaEn: creadoEn(),
+    /** Se anula al devolverla sin haberla usado. */
+    anuladaEn: fecha(),
+  },
+  (t) => [uniqueIndex("tarjetas_regalo_venta").on(t.ventaId), check("tarjetas_regalo_importe_positivo", sql`${t.importeInicial} > 0`)],
+);
+
+/** Movimientos del saldo de cada tarjeta: la carga inicial (+), los pagos (−) y lo que vuelve si se devuelve una venta (+). */
+export const movimientosTarjetaRegalo = pgTable(
+  "movimientos_tarjeta_regalo",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    tarjetaId: uuid()
+      .notNull()
+      .references(() => tarjetasRegalo.id),
+    tipo: text({ enum: ["carga", "pago", "devolucion", "anulacion"] }).notNull(),
+    importe: integer().notNull(),
+    pagoId: uuid().references(() => pagos.id),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    cuando: creadoEn(),
+  },
+  (t) => [index("movimientos_tarjeta_regalo_tarjeta").on(t.tarjetaId), check("movimientos_tarjeta_regalo_no_cero", sql`${t.importe} <> 0`)],
+);

@@ -9,3 +9,4 @@ export * from "./clientas";
 export * from "./ventas";
 export * from "./facturacion";
 export * from "./ticket";
+export * from "./bonos";

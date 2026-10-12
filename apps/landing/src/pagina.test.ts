@@ -2,7 +2,7 @@ import { BONOS, CATEGORIAS } from "@adela/db/datos";
 import { describe, expect, it } from "vitest";
 import { construirPagina, duracionTexto } from "./pagina";
 
-const contacto = { whatsapp: "600 11 22 33", direccion: "Calle Mayor 1", horario: "De lunes a viernes, de 9:00 a 14:00" };
+const contacto = { whatsapp: "600 11 22 33", direccion: "Calle Mayor 1", horario: "De lunes a viernes, de 9:00 a 14:00", instagram: "adela_maria_bellezaholistica" };
 
 describe("landing", () => {
   const html = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto });
@@ -23,6 +23,16 @@ describe("landing", () => {
     expect(html).toContain("Bono facial 3 sesiones");
     expect(html).toContain("240 €");
     expect(html).toContain("No caducan.");
+  });
+
+  it("enlaza a su Instagram (sin cargar nada de Instagram)", () => {
+    expect(html).toContain('href="https://www.instagram.com/adela_maria_bellezaholistica/"');
+    expect(html).not.toMatch(/<(script|img|iframe)[^>]+instagram/);
+  });
+
+  it("ofrece tarjetas regalo por WhatsApp", () => {
+    expect(html).toContain("Tarjeta regalo");
+    expect(html).toContain(`href="https://wa.me/34600112233?text=${encodeURIComponent("Hola, me gustaría una tarjeta regalo de ")}"`);
   });
 
   it("cada tratamiento tiene su botón de WhatsApp con el mensaje escrito", () => {

@@ -1,6 +1,6 @@
 "use server";
 import { cobros, facturas } from "@adela/db";
-import { METODOS_PAGO, type MetodoPago } from "@adela/dominio";
+import { METODOS_CAJA, type MetodoPago } from "@adela/dominio";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -13,7 +13,7 @@ export async function devolver(_: { error?: string }, f: FormData): Promise<{ er
   const { usuario } = await requerirSesion("facturas.anular");
   const facturaId = String(f.get("factura"));
   const metodo = String(f.get("metodo"));
-  if (!(METODOS_PAGO as readonly string[]).includes(metodo)) return { error: "Elige cómo se devuelve el dinero." };
+  if (!(METODOS_CAJA as readonly string[]).includes(metodo)) return { error: "Elige cómo se devuelve el dinero." };
   const [original] = await db().select().from(facturas).where(eq(facturas.id, facturaId));
   if (!original) return { error: "No existe esa factura." };
   const r = await cobros.devolver(db(), usuario.id, original.ventaId, metodo as MetodoPago, String(f.get("motivo") ?? ""));

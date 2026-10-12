@@ -9,7 +9,7 @@ import { enlaceWhatsapp, formatearEuros, normalizarTelefono } from "@adela/domin
 export interface DatosLanding {
   categorias: TarifaCategoria[];
   bonos: TarifaBono[];
-  contacto: { whatsapp: string | null; direccion: string | null; horario: string };
+  contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
   url?: string;
 }
@@ -32,6 +32,8 @@ export function duracionTexto(minutos: number): string {
 const precioTexto = (centimos?: number) => (centimos === undefined ? "Consultar" : formatearEuros(centimos).replace(",00", ""));
 
 export function construirPagina(d: DatosLanding): string {
+  // Solo letras, números, puntos y guiones bajos: así no puede romper el enlace.
+  const instagram = d.contacto.instagram && /^[A-Za-z0-9._]{1,30}$/.test(d.contacto.instagram) ? d.contacto.instagram : null;
   const telefono = d.contacto.whatsapp ? normalizarTelefono(d.contacto.whatsapp) : null;
   if (d.contacto.whatsapp && !telefono) throw new Error(`El WhatsApp del centro no es válido: ${d.contacto.whatsapp}`);
 
@@ -148,6 +150,16 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       : ""
   }
 
+  <section id="regalo" class="contenedor bloque" aria-labelledby="titulo-regalo">
+    <h2 id="titulo-regalo">Tarjeta regalo</h2>
+    <p class="nota-centrada">Regala un momento de cuidado: elige el importe y te preparamos la tarjeta, válida para cualquier tratamiento. <strong>No caduca.</strong></p>
+    ${
+      telefono
+        ? `<div class="centrado"><a class="boton boton-secundario" href="${esc(enlaceWhatsapp(telefono, "Hola, me gustaría una tarjeta regalo de "))}" target="_blank" rel="noopener">Pedir una tarjeta regalo</a></div>`
+        : ""
+    }
+  </section>
+
   <section id="cita" class="contenedor bloque" aria-labelledby="titulo-cita">
     <h2 id="titulo-cita">Cómo pedir cita</h2>
     <ol class="pasos">
@@ -164,6 +176,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <div class="marca-nombre">Adela María · Belleza holística</div>
     <p>${esc(d.contacto.horario)}</p>
     ${d.contacto.direccion ? `<p>${esc(d.contacto.direccion)}</p>` : ""}
+    ${instagram ? `<p><a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Síguenos en Instagram: @${instagram}</a></p>` : ""}
     ${telefono ? `<p><a href="tel:${telefono}">Llamar</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">WhatsApp</a></p>` : ""}
     <p class="legal">Esta página no recoge datos personales. Si nos escribes por WhatsApp, usaremos tu nombre y teléfono solo para gestionar tu cita.</p>
   </div>

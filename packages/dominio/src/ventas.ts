@@ -3,9 +3,11 @@
  * Los precios de las tarifas llevan el IVA incluido (venta a consumidoras).
  */
 
-export const METODOS_PAGO = ["efectivo", "tarjeta", "bizum"] as const;
+export const METODOS_PAGO = ["efectivo", "tarjeta", "bizum", "tarjeta_regalo"] as const;
 export type MetodoPago = (typeof METODOS_PAGO)[number];
-export const NOMBRE_METODO: Record<MetodoPago, string> = { efectivo: "Efectivo", tarjeta: "Tarjeta", bizum: "Bizum" };
+/** Las formas de pago de la caja y el datáfono (la tarjeta regalo va aparte: necesita su código). */
+export const METODOS_CAJA = ["efectivo", "tarjeta", "bizum"] as const satisfies readonly MetodoPago[];
+export const NOMBRE_METODO: Record<MetodoPago, string> = { efectivo: "Efectivo", tarjeta: "Tarjeta", bizum: "Bizum", tarjeta_regalo: "Tarjeta regalo" };
 
 export interface LineaEntrada {
   descripcion: string;

@@ -50,6 +50,13 @@
       "when": 1791823798185,
       "tag": "0006_cobros_caja_facturacion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791826041977,
+      "tag": "0007_bonos_y_tarjetas_regalo",
+      "breakpoints": true
     }
   ]
 }

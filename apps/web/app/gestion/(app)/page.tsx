@@ -6,6 +6,7 @@ import { requerirSesion } from "@/server/auth";
 import { avisosSistema } from "@/server/estado";
 import { contarPendientes } from "@/server/reservas";
 import { ventasPendientes } from "@/server/tpv";
+import { bonosPorAcabar } from "@/server/bonos";
 import { citasDelDia, profesionalDeUsuario } from "@/server/agenda";
 import { EstadoCitaChip } from "@/components/EstadoCita";
 import { horaATexto, hoyEnMadrid, partesMadrid } from "@adela/dominio";
@@ -14,7 +15,7 @@ const TARJETAS = [
   { titulo: "Citas de hoy", fase: 0, href: "/gestion/agenda" },
   { titulo: "Reservas por confirmar", fase: 0, href: "/gestion/reservas" },
   { titulo: "Pendientes de cobro", fase: 0, href: "/gestion/tpv" },
-  { titulo: "Bonos por caducar", fase: 3, href: "/gestion/clientas" },
+  { titulo: "Bonos por acabar", fase: 0, href: "/gestion/mas/bonos" },
   { titulo: "Stock bajo", fase: 4, href: "/gestion/mas/stock" },
   { titulo: "Tareas", fase: 5, href: "/gestion/avisos" },
 ];
@@ -32,6 +33,7 @@ export default async function Inicio() {
     "Reservas por confirmar": verReservas ? await contarPendientes() : undefined,
     "Citas de hoy": verToda || propia ? hoy.length : undefined,
     "Pendientes de cobro": puede(usuario.rol, "cobrar") ? (await ventasPendientes()).length : undefined,
+    "Bonos por acabar": puede(usuario.rol, "cobrar") ? (await bonosPorAcabar()).length : undefined,
   };
 
   return (

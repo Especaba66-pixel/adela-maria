@@ -29,7 +29,7 @@ async function anadir(tratamiento: string) {
   await pagina.getByRole("region", { name: "Tratamientos" }).getByRole("button", { name: new RegExp(`^${tratamiento.replace(/[()]/g, "\\$&")}`) }).click();
 }
 
-const formaDePago = (m: string) => pagina.getByRole("group", { name: "Forma de pago" }).getByRole("button", { name: m });
+const formaDePago = (m: string) => pagina.getByRole("group", { name: "Forma de pago" }).getByRole("button", { name: m, exact: true });
 
 test("sin IVA ni datos fiscales, el inicio avisa de que no se puede cobrar", async () => {
   await expect(pagina.getByText(/Faltan los datos fiscales del centro/)).toBeVisible();
