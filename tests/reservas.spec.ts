@@ -15,7 +15,10 @@ test.beforeAll(() => {
     delete from horarios where profesional_id = (select id from profesionales where nombre = 'Adela');
     insert into horarios (profesional_id, dia_semana, inicio_min, fin_min)
     select p.id, d, t.i, t.f from profesionales p, generate_series(1, 7) d, (values (540, 840), (960, 1260)) t(i, f)
-    where p.nombre = 'Adela';`;
+    where p.nombre = 'Adela';
+    -- Un tratamiento aún sin duración ni precio, para probar las peticiones sin hora.
+    insert into tratamientos (categoria_id, nombre, orden)
+    select id, 'Consulta', 99 from categorias where nombre = 'Faciales' on conflict do nothing;`;
   execSync(`psql "${ENTORNO_PRUEBAS.DATABASE_URL}" -q -v ON_ERROR_STOP=1`, { input: sql });
 });
 
@@ -24,7 +27,7 @@ const enDias = (n: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Euro
 
 async function pedirSinHora(page: Page, datos: { nombre: string; telefono: string }) {
   await page.goto("/reservar");
-  await page.getByLabel("Tratamiento").selectOption({ label: "Diseño de cejas" });
+  await page.getByLabel("Tratamiento").selectOption({ label: "Consulta" });
   await page.getByRole("button", { name: "Ver horas" }).click();
   await expect(page.getByRole("heading", { name: /Déjanos tu petición/ })).toBeVisible();
   await page.getByLabel("¿Qué día te viene bien?").fill(enDias(3));
@@ -46,7 +49,7 @@ test.describe("clienta en el móvil", () => {
     await expect(page.getByText(HIGIENE)).toBeVisible();
     await expect(page.getByText("90 min · 30,00 €")).toBeVisible();
     await expect(page.getByText("Bono facial 6 sesiones")).toBeVisible();
-    const cejas = page.getByRole("listitem").filter({ hasText: "Diseño de cejas" });
+    const cejas = page.getByRole("listitem").filter({ hasText: "Consulta" });
     await expect(cejas).toContainText("Precio a consultar");
     await expect(page.getByLabel(/contraseña|PIN/i)).toHaveCount(0);
   });
@@ -55,7 +58,8 @@ test.describe("clienta en el móvil", () => {
     await page.goto("/");
     await page.getByRole("link", { name: `Pedir cita: ${HIGIENE}` }).click();
     await expect(page.getByLabel("Tratamiento").locator("option:checked")).toHaveText(HIGIENE);
-    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").first().click();
+    // El último día ofrecido: lejos de las citas que crean otras pruebas, con las dos cabinas libres.
+    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").last().click();
     const hora = page.getByRole("region", { name: /¿A qué hora\?/ }).getByRole("link").first();
     horaReservada = (await hora.textContent())!;
     await hora.click();
@@ -71,7 +75,7 @@ test.describe("clienta en el móvil", () => {
   test("con dos cabinas, otra clienta puede coger la misma hora; una tercera ya no", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: `Pedir cita: ${HIGIENE}` }).click();
-    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").first().click();
+    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").last().click();
     await page.getByRole("region", { name: /¿A qué hora\?/ }).getByRole("link", { name: horaReservada, exact: true }).click();
     await page.getByLabel("Tu nombre", { exact: true }).fill("Paula Gil");
     await page.getByLabel(/Tu teléfono/).fill("644 55 66 77");
@@ -81,7 +85,7 @@ test.describe("clienta en el móvil", () => {
 
     await page.goto("/");
     await page.getByRole("link", { name: `Pedir cita: ${HIGIENE}` }).click();
-    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").first().click();
+    await page.getByRole("region", { name: /¿Qué día\?/ }).getByRole("link").last().click();
     await expect(page.getByRole("region", { name: /¿A qué hora\?/ }).getByRole("link", { name: horaReservada, exact: true })).toHaveCount(0);
   });
 
@@ -113,7 +117,7 @@ test.describe("clienta en el móvil", () => {
 
   test("los programas automáticos que rellenan el campo trampa no crean nada", async ({ page }) => {
     await page.goto("/reservar");
-    await page.getByLabel("Tratamiento").selectOption({ label: "Diseño de cejas" });
+    await page.getByLabel("Tratamiento").selectOption({ label: "Consulta" });
     await page.getByRole("button", { name: "Ver horas" }).click();
     await page.getByLabel("¿Qué día te viene bien?").fill(enDias(1));
     await page.getByLabel("Tu nombre", { exact: true }).fill("Robot");
@@ -167,13 +171,13 @@ test.describe("centro", () => {
     await expect(pagina.getByLabel("Nombre")).toHaveValue("Lola Pérez");
     await pagina.getByLabel("Hora").fill("10:00");
     await pagina.getByRole("button", { name: "Guardar cita" }).click();
-    await expect(alerta(pagina)).toHaveText("Falta la duración de: Diseño de cejas. Ponla en Tratamientos.");
+    await expect(alerta(pagina)).toHaveText("Falta la duración de: Consulta. Ponla en Tratamientos.");
   });
 
-  test("la administración pone precio y duración al diseño de cejas, y la web lo muestra", async ({ browser }) => {
+  test("la administración pone precio y duración a la consulta, y la web lo muestra", async ({ browser }) => {
     await pagina.goto("/gestion/mas/tratamientos");
-    await pagina.getByLabel("Editar Diseño de cejas").click();
-    const form = pagina.locator("form").filter({ has: pagina.locator('input[name="nombre"][value="Diseño de cejas"]') });
+    await pagina.getByLabel("Editar Consulta").click();
+    const form = pagina.locator("form").filter({ has: pagina.locator('input[name="nombre"][value="Consulta"]') });
     await form.getByLabel("Minutos").fill("20");
     await form.getByLabel("Precio (€)").fill("12");
     await form.getByRole("button", { name: "Guardar" }).click();
@@ -181,7 +185,7 @@ test.describe("centro", () => {
 
     const movil = await browser.newPage();
     await movil.goto("/");
-    await expect(movil.getByRole("listitem").filter({ hasText: "Diseño de cejas" })).toContainText("20 min · 12,00 €");
+    await expect(movil.getByRole("listitem").filter({ hasText: "Consulta" })).toContainText("20 min · 12,00 €");
     await movil.close();
   });
 
@@ -198,6 +202,6 @@ test.describe("centro", () => {
 
   test("rechazar una petición sin hora", async () => {
     await pagina.getByRole("region", { name: "Petición de Prueba 1" }).getByRole("button", { name: "Rechazar" }).click();
-    await expect(pagina.locator("div").filter({ hasText: "Prueba 1 · Diseño de cejas" }).filter({ hasText: "Rechazada por Adela" }).last()).toBeVisible();
+    await expect(pagina.locator("div").filter({ hasText: "Prueba 1 · Consulta" }).filter({ hasText: "Rechazada por Adela" }).last()).toBeVisible();
   });
 });

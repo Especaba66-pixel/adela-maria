@@ -1,7 +1,7 @@
 # Cierre de la fase 1 · Agenda, clientas y tratamientos
 
-Estado: **pendiente de tu aprobación.** Según el plan, la fase se da por terminada cuando el centro lleve **una semana
-real de citas sin doble reserva**. Para eso falta ponerla en marcha (ver punto 5).
+Estado: **aprobada** el 12 de octubre de 2026 para seguir con la fase 2. Queda pendiente la semana real de citas
+que pide el plan, cuando la gestión esté funcionando en el centro (ver punto 5).
 
 ## 1. Qué se ha construido
 
@@ -94,7 +94,8 @@ real de citas sin doble reserva**. Para eso falta ponerla en marcha (ver punto 5
 
 - Poner la aplicación en marcha en el centro (alojamiento en la nube y base de datos en la UE) y usar la agenda una
   semana real. Necesito que crees las cuentas o me digas quién lo hará.
-- Tu **horario real** y el de cada profesional, y **cuántas profesionales** sois.
+- Confirmar los **días** del horario provisional: está de **lunes a viernes, de 9:00 a 14:00** (se cambia en
+  Configuración → Horario). Hay una sola profesional (Adela) y **2 cabinas**.
 
 **Sigue pendiente de antes:**
 

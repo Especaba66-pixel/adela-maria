@@ -4,8 +4,9 @@
 import { cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
-import { BONOS, CABINAS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { categorias, centro, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { CABINAS, HORARIO_INICIAL } from "./datos/centro";
+import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
+import { categorias, centro, horarios, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -22,6 +23,7 @@ export interface ResumenSiembra {
   adminCreado: boolean;
   tratamientosNuevos: number;
   bonosNuevos: number;
+  horarioCreado: boolean;
   avisos: string[];
 }
 
@@ -30,7 +32,7 @@ export async function sembrar(
   admin: AdminInicial,
   tarifas: { categorias: TarifaCategoria[]; bonos: TarifaBono[] } = { categorias: CATEGORIAS, bonos: BONOS },
 ): Promise<ResumenSiembra> {
-  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, avisos: [] };
+  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, horarioCreado: false, avisos: [] };
 
   await db.transaction(async (tx) => {
     let [c] = await tx.select().from(centro).limit(1);
@@ -65,7 +67,9 @@ export async function sembrar(
     const [hayProfesional] = await tx.select({ id: profesionales.id }).from(profesionales).limit(1);
     if (!hayProfesional) {
       const [admin] = await tx.select().from(usuarios).where(eq(usuarios.rol, "administrador")).limit(1);
-      await tx.insert(profesionales).values({ nombre: admin!.nombre, usuarioId: admin!.id });
+      const [adela] = await tx.insert(profesionales).values({ nombre: admin!.nombre, usuarioId: admin!.id }).returning();
+      await tx.insert(horarios).values(HORARIO_INICIAL.map((h) => ({ ...h, profesionalId: adela!.id })));
+      resumen.horarioCreado = true;
     }
 
     for (const [i, cat] of tarifas.categorias.entries()) {

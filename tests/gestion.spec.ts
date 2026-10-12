@@ -32,7 +32,7 @@ test("la administradora registra este equipo como TPV y entra", async () => {
   await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(/^(Buenos días|Buenas tardes|Buenas noches), Adela$/);
   await expect(alerta(pagina).filter({ hasText: "copia de seguridad" })).toBeVisible();
   await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("0");
-  await expect(pagina.getByText("Falta el precio o la duración de: Diseño de cejas.")).toBeVisible();
+  await expect(pagina.getByText(/Falta el precio o la duración/)).toHaveCount(0);
 });
 
 test("el menú tiene las 7 entradas fijas, con botones de al menos 64 px de alto", async () => {
@@ -49,8 +49,7 @@ test("las tarifas muestran los tratamientos y los dos bonos faciales", async () 
   await expect(pagina.getByText("240,00 €")).toBeVisible();
   // Los bonos cubren los 6 faciales de hora y media (no «Unos labios más gruesos»).
   await expect(pagina.getByText("6 sesiones · vale para 6 tratamientos")).toBeVisible();
-  await expect(pagina.getByText("Diseño de cejas")).toBeVisible();
-  await expect(pagina.getByText("Precio a consultar")).toBeVisible();
+  await expect(pagina.getByText("Diseño y depilación de cejas")).toBeVisible();
 });
 
 const formularioNuevo = () => pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Crear usuario" }) });

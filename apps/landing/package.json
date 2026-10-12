@@ -1,0 +1,21 @@
+{
+  "name": "@adela/landing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx src/construir.ts",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@adela/db": "workspace:*",
+    "@adela/dominio": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15",
+    "vitest": "4.1.11",
+    "@fontsource/cormorant-garamond": "5.3.0",
+    "@fontsource/inter": "5.3.0"
+  }
+}

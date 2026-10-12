@@ -21,6 +21,28 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  apps/landing:
+    dependencies:
+      '@adela/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@adela/dominio':
+        specifier: workspace:*
+        version: link:../../packages/dominio
+    devDependencies:
+      '@fontsource/cormorant-garamond':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/inter':
+        specifier: 5.3.0
+        version: 5.3.0
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@22.20.5)(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+
   apps/web:
     dependencies:
       '@adela/db':
@@ -567,6 +589,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource/cormorant-garamond@5.3.0':
+    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
+
+  '@fontsource/inter@5.3.0':
+    resolution: {integrity: sha512-RofMylZmjlJEfELXeNHFWBRcSs75rGU/6bV2S2jfnvv/3rPXPGe0LgUJTklcHZ9lM4OZmAVFhcJPnACfb91A3g==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -1857,6 +1885,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource/cormorant-garamond@5.3.0': {}
+
+  '@fontsource/inter@5.3.0': {}
 
   '@img/colour@1.1.0':
     optional: true

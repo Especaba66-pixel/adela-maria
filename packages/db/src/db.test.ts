@@ -63,6 +63,9 @@ describe("datos iniciales", () => {
     expect(prof?.nombre).toBe("Adela");
     const [c] = await db.select().from(centro);
     expect(c?.cabinas).toBe(2);
+    // Horario provisional: de lunes a viernes, de 9 a 14.
+    const h = await db.select().from(horarios).where(eq(horarios.profesionalId, prof!.id));
+    expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([1, 2, 3, 4, 5].map((d) => [d, 540, 840]));
 
     const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adela"));
     expect(adela?.rol).toBe("administrador");

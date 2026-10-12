@@ -1,0 +1,47 @@
+name: Landing
+
+# Publica la landing en GitHub Pages (gratis) cada vez que cambia en «main».
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/landing/**"
+      - "packages/db/src/datos/**"
+      - "packages/dominio/src/**"
+      - ".github/workflows/landing.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @adela/landing test
+      - name: Generar la página
+        run: pnpm --filter @adela/landing build
+        env:
+          LANDING_URL: https://especaba66-pixel.github.io/adela-maria/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/landing/dist
+      - id: despliegue
+        uses: actions/deploy-pages@v4

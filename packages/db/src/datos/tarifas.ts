@@ -58,18 +58,14 @@ export const CATEGORIAS: TarifaCategoria[] = [
       { nombre: "Pecho caballero", duracionMinutos: 30, precioCentimos: 1_200 },
     ],
   },
-  // PENDIENTE: precio y duración del diseño de cejas.
-  { nombre: "Cejas", tratamientos: [{ nombre: "Diseño de cejas" }] },
 ];
 
 /**
  * «Adaptados a las necesidades de tu piel», 1:30 h cada sesión: cubren los faciales de hora y media.
+ * No caducan (confirmado por Espe el 12 de octubre de 2026).
  * PENDIENTE de confirmar: se deja fuera «Unos labios más gruesos» (30 min, 18 €).
  */
 export const BONOS: TarifaBono[] = [
   { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
   { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales", excepto: ["Unos labios más gruesos"] },
 ];
-
-/** Cabinas del centro (dato de Espe, 9 de octubre de 2026): hasta dos citas a la vez. */
-export const CABINAS = 2;

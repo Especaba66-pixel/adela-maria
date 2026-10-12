@@ -34,8 +34,14 @@ async function elegirClienta(nombre: string) {
   await expect(pagina.getByTestId("clienta-elegida")).toHaveText(nombre);
 }
 
-test("sin horario, el inicio avisa de que falta", async () => {
-  await expect(pagina.getByText(/Falta el horario/)).toBeVisible();
+test("el horario provisional ya viene puesto: de lunes a viernes, de 9 a 14", async () => {
+  await expect(pagina.getByText(/Falta el horario/)).toHaveCount(0);
+  await pagina.goto("/gestion/mas/configuracion/horario");
+  const form = pagina.getByRole("form", { name: "Horario de Adela" });
+  await expect(form.getByLabel("Lunes tramo 1 desde")).toHaveValue("09:00");
+  await expect(form.getByLabel("Viernes tramo 1 hasta")).toHaveValue("14:00");
+  await expect(form.getByLabel("Lunes tramo 2 desde")).toHaveValue("");
+  await expect(form.getByLabel("Sábado tramo 1 desde")).toHaveValue("");
 });
 
 test("la administración pone el horario de Adela: todos los días de 9 a 14 y de 16 a 21", async () => {
@@ -141,9 +147,12 @@ test("una cita que se repite crea toda la serie y se puede cancelar entera", asy
 
 test("la administración añade el microblading, que va solo", async () => {
   await pagina.goto("/gestion/mas/tratamientos");
+  await pagina.getByLabel("Nueva categoría").fill("Micropigmentación");
+  await pagina.getByRole("button", { name: "Crear", exact: true }).click();
+  await expect(pagina.getByText("Categoría creada.")).toBeVisible();
   const form = pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Añadir tratamiento" }) });
   await form.getByLabel("Nombre").fill("Microblading");
-  await form.getByLabel("Categoría").selectOption({ label: "Cejas" });
+  await form.getByLabel("Categoría").selectOption({ label: "Micropigmentación" });
   await form.getByLabel("Minutos").fill("120");
   await form.getByLabel("Precio (€)").fill("250");
   await form.getByLabel(/Va sola/).check();
