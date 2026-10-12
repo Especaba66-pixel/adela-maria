@@ -1,6 +1,6 @@
 # Cierre de la fase 3 · Bonos y tarjetas regalo
 
-Estado: **hecha, pendiente de tu aprobación.** El plan la da por terminada cuando **un bono se vende, se gasta sesión
+Estado: **aprobada** el 12 de octubre de 2026. El plan la da por terminada cuando **un bono se vende, se gasta sesión
 a sesión y avisa cuando queda una**. Todo eso funciona y está probado (punto 3).
 
 ## 1. Qué se ha construido
@@ -113,4 +113,4 @@ se cambian en las tarifas), y avisar por WhatsApp a la clienta cuando le queda u
 
 ## 6. Aprobación
 
-Revisa los pasos del punto 2. Cuando lo apruebes, empiezo la fase 4: stock, proveedores y gastos.
+Aprobada por Espe el 12 de octubre de 2026. Siguiente: fase 4, stock, proveedores y gastos.
