@@ -29,8 +29,8 @@ export const CONTACTO: { whatsapp: string | null; direccion: string | null; hora
   /** Usuario de Instagram del centro (dato de Espe, 12 de octubre de 2026). */
   instagram: "adela_maria_bellezaholistica",
   /**
-   * Servicio de reservas por internet (Cloudflare). Mientras sea null, la web explica cómo pedir cita por WhatsApp.
-   * PENDIENTE: poner la dirección que da el primer despliegue (https://adela-reservas.….workers.dev).
+   * Servicio de reservas por internet (Cloudflare), publicado el 13 de octubre de 2026. Si fuera null, la web
+   * explicaría cómo pedir cita por WhatsApp.
    */
-  reservas: null,
+  reservas: "https://adela-reservas.especaba66.workers.dev",
 };
