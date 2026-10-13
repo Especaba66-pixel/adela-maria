@@ -1,6 +1,6 @@
 # Cierre de la fase 7 · Informes, equipo y fichas avanzadas
 
-Estado: **pendiente de aprobación**. El plan la da por terminada cuando **los informes del mes coinciden con caja y
+Estado: **aprobada** el 13 de octubre de 2026. El plan la da por terminada cuando **los informes del mes coinciden con caja y
 facturación**. Funciona y está probado (punto 3): el informe hace la comprobación él mismo y la enseña arriba.
 
 ## 1. Qué se ha construido
@@ -73,4 +73,4 @@ centro, IVA y datos fiscales con la gestoría, productos y gasto en cabina.
 
 ## 6. Aprobación
 
-Pendiente. Cuando apruebes las fases 6 y 7, las paso a la rama principal y empiezo la fase 8 (VERI*FACTU).
+Aprobada por Espe el 13 de octubre de 2026. Siguiente: fase 8, VERI*FACTU.

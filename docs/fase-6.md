@@ -1,6 +1,6 @@
 # Cierre de la fase 6 · WhatsApp automático
 
-Estado: **pendiente de aprobación**. El plan la da por terminada cuando **un recordatorio sale solo y la respuesta de la
+Estado: **aprobada** el 13 de octubre de 2026. El plan la da por terminada cuando **un recordatorio sale solo y la respuesta de la
 clienta confirma la cita**. Funciona y está probado con un Meta de prueba (punto 3). Para usarlo de verdad falta el alta
 del centro en Meta (punto 5 y [docs/whatsapp.md](whatsapp.md)).
 
@@ -81,4 +81,4 @@ centro, IVA y datos fiscales con la gestoría, productos y gasto en cabina.
 
 ## 6. Aprobación
 
-Pendiente. Cuando la apruebes, la paso a la rama principal.
+Aprobada por Espe el 13 de octubre de 2026. Falta activarla de verdad con el alta en Meta (docs/whatsapp.md).
