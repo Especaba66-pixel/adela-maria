@@ -297,6 +297,8 @@ export interface CitaVista {
   profesionalId: string;
   cliente: { id: string; nombre: string; telefono: string | null };
   servicios: string[];
+  /** La clienta confirmó por WhatsApp que viene. */
+  confirmoClienta: boolean;
 }
 
 /** Citas en un rango (opcionalmente de una profesional), con clienta y servicios. */
@@ -337,6 +339,7 @@ export async function citasEntre(
     profesionalId: c.profesionalId,
     cliente,
     servicios: servs.filter((s) => s.citaId === c.id).map((s) => s.nombre),
+    confirmoClienta: c.confirmadaPorClientaEn !== null,
   }));
 }
 

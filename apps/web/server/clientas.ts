@@ -254,7 +254,7 @@ export async function mensajesDeClienta(id: string) {
   return db()
     .select({ m: mensajes, quien: usuarios.nombre })
     .from(mensajes)
-    .innerJoin(usuarios, eq(usuarios.id, mensajes.usuarioId))
+    .leftJoin(usuarios, eq(usuarios.id, mensajes.usuarioId))
     .where(eq(mensajes.clienteId, id))
     .orderBy(desc(mensajes.cuando));
 }

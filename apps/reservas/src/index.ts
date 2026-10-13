@@ -9,9 +9,16 @@
  * Para el TPV (con la clave de sincronización):
  *   GET  /api/sync/reservas                     reservas nuevas que el TPV aún no se ha llevado
  *   POST /api/sync                              el TPV manda tratamientos, horario, cabinas y lo ocupado
+ *   GET  /api/sync/whatsapp                     avisos de WhatsApp que el TPV aún no se ha llevado
+ *   POST /api/sync/whatsapp                     { hasta }: el TPV ya los tiene; se borran
+ *
+ * Para Meta (firmado con el secreto de la app):
+ *   GET  /api/whatsapp                          alta del webhook
+ *   POST /api/whatsapp                          estados de los envíos y mensajes de las clientas
  */
 import { esFecha, sumarDias } from "@adela/dominio/agenda";
 import { MAX_PENDIENTES_POR_TELEFONO, TEXTO_PRIVACIDAD, validarSolicitud } from "@adela/dominio/reservas";
+import { MAX_CUERPO, firmaValida, verificarSuscripcion } from "./whatsapp";
 import { estaLibre, horasLibres, intervalo, type Estado, type Ocupa, type Servicio } from "./disponibilidad";
 
 export interface Env {
@@ -20,6 +27,10 @@ export interface Env {
   ORIGEN_WEB: string;
   /** Clave que usa el TPV para sincronizar (secreto de Cloudflare). */
   CLAVE_SYNC: string;
+  /** Secreto de la app de Meta, para comprobar que los avisos de WhatsApp vienen de Meta. */
+  WA_SECRETO_APP?: string;
+  /** Token que se escribe en Meta al dar de alta el webhook. */
+  WA_TOKEN_VERIFICACION?: string;
 }
 
 /** Reservas por hora desde una misma conexión (frena el abuso). */
@@ -46,8 +57,17 @@ async function enrutar(req: Request, url: URL, env: Env): Promise<Response> {
   if (req.method === "GET" && ruta === "/api/servicios") return json({ servicios: await servicios(env) });
   if (req.method === "GET" && ruta === "/api/disponibilidad") return disponibilidad(url, env);
   if (req.method === "POST" && ruta === "/api/reservas") return reservar(req, env);
+  if (ruta === "/api/whatsapp") {
+    if (req.method === "GET") {
+      const reto = verificarSuscripcion(url, env.WA_TOKEN_VERIFICACION ?? "");
+      return reto === null ? json({ error: "No autorizado" }, 403) : new Response(reto, { headers: { "Content-Type": "text/plain" } });
+    }
+    if (req.method === "POST") return recibirWhatsapp(req, env);
+  }
   if (ruta.startsWith("/api/sync")) {
     if (!(await claveCorrecta(req, env))) return json({ error: "No autorizado" }, 401);
+    if (req.method === "GET" && ruta === "/api/sync/whatsapp") return eventosWhatsapp(env);
+    if (req.method === "POST" && ruta === "/api/sync/whatsapp") return borrarEventosWhatsapp(req, env);
     if (req.method === "GET" && ruta === "/api/sync/reservas") return pendientesDeImportar(env);
     if (req.method === "POST" && ruta === "/api/sync") return sincronizar(req, env);
   }
@@ -235,6 +255,33 @@ async function sincronizar(req: Request, env: Env): Promise<Response> {
     db.prepare("UPDATE ajustes SET valor = CAST(valor AS INTEGER) + 1 WHERE clave = 'version'"),
     db.prepare("UPDATE ajustes SET valor = ? WHERE clave = 'sincronizado'").bind(new Date(ahora).toISOString()),
   ]);
+  return json({ ok: true });
+}
+
+// ── WhatsApp ─────────────────────────────────────────────────────────────────
+
+async function recibirWhatsapp(req: Request, env: Env): Promise<Response> {
+  const cuerpo = await req.text();
+  if (cuerpo.length > MAX_CUERPO) return json({ error: "Demasiado grande" }, 413);
+  if (!(await firmaValida(env.WA_SECRETO_APP ?? "", cuerpo, req.headers.get("X-Hub-Signature-256")))) return json({ error: "Firma no válida" }, 401);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO whatsapp_eventos (cuerpo, recibido) VALUES (?, ?)").bind(cuerpo, Date.now()),
+    // Si el TPV no se los lleva en un mes (apagado mucho tiempo), no se guardan más.
+    env.DB.prepare("DELETE FROM whatsapp_eventos WHERE recibido < ?").bind(Date.now() - 30 * 86_400_000),
+  ]);
+  // Meta reintenta si no se le contesta 200 enseguida.
+  return json({ ok: true });
+}
+
+async function eventosWhatsapp(env: Env): Promise<Response> {
+  const { results } = await env.DB.prepare("SELECT id, cuerpo, recibido FROM whatsapp_eventos ORDER BY id LIMIT 200").all();
+  return json({ eventos: results });
+}
+
+async function borrarEventosWhatsapp(req: Request, env: Env): Promise<Response> {
+  const { hasta } = (await req.json().catch(() => ({}))) as { hasta?: number };
+  if (!Number.isInteger(hasta)) return json({ error: "Falta hasta" }, 400);
+  await env.DB.prepare("DELETE FROM whatsapp_eventos WHERE id <= ?").bind(hasta).run();
   return json({ ok: true });
 }
 

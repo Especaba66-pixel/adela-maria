@@ -1,4 +1,4 @@
-import { NOMBRE_ESTADO, NOMBRE_ESTADO_BONO, enlaceWhatsapp, textoQuedan, formatearTelefono, horaATexto, partesMadrid, puede, type EstadoCita } from "@adela/dominio";
+import { NOMBRE_ESTADO, NOMBRE_ESTADO_BONO, NOMBRE_ESTADO_ENVIO, ventanaAbierta, enlaceWhatsapp, textoQuedan, formatearTelefono, horaATexto, partesMadrid, puede, type EstadoCita } from "@adela/dominio";
 import { Boton, Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +8,10 @@ import { fichaClienta, mensajesDeClienta } from "@/server/clientas";
 import { plantillasGuardadas } from "@/server/avisos";
 import { enlaceMensaje } from "@/components/ListaAvisos";
 import { FormularioTarea } from "../../avisos/FormularioTarea";
+import { EnviarWhatsapp } from "@/components/EnviarWhatsapp";
+import { enviable } from "@/server/mensajes";
+import { apiWhatsapp, ultimoDeLaClienta } from "@/server/whatsapp";
+import { Responder } from "./Responder";
 import { bonosDeClienta } from "@/server/bonos";
 import { suprimir } from "../acciones";
 import { FormularioClienta } from "../FormularioClienta";
@@ -36,6 +40,7 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
   const proxima = f.eventos
     .filter((e) => e.tipo === "cita" && (e.estado === "pendiente" || e.estado === "confirmada") && new Date(e.cuando).getTime() > ahora)
     .sort((a, b) => new Date(a.cuando).getTime() - new Date(b.cuando).getTime())[0];
+  const puedeResponder = apiWhatsapp() && ventanaAbierta(await ultimoDeLaClienta(id), new Date());
   const SOLO_NOMBRE = /\{(fecha|hora|servicios|quedan|bono)\}/;
   const ofrecer = plantillas.flatMap((p): { p: typeof p; citaId?: string }[] => {
     if (p.permiso === "cita" && !c.aceptaAvisosCitas && p.clave !== "confirmar_cita") return [];
@@ -62,11 +67,15 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
               WhatsApp
             </summary>
             <div className="absolute right-0 z-10 mt-2 w-72 space-y-1 rounded-xl border border-borde bg-superficie p-2 shadow-lg">
-              {ofrecer.map(({ p, citaId }) => (
-                <a key={p.clave} href={enlaceMensaje({ clienteId: c.id, plantilla: p.clave, citaId })} target="_blank" rel="noopener" className="block rounded-lg px-3 py-2 hover:bg-crema">
-                  {p.nombre}
-                </a>
-              ))}
+              {ofrecer.map(({ p, citaId }) =>
+                enviable(p) ? (
+                  <EnviarWhatsapp key={p.clave} clienteId={c.id} plantilla={p.clave} citaId={citaId} texto={`Enviar: ${p.nombre}`} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-crema disabled:opacity-60" />
+                ) : (
+                  <a key={p.clave} href={enlaceMensaje({ clienteId: c.id, plantilla: p.clave, citaId })} target="_blank" rel="noopener" className="block rounded-lg px-3 py-2 hover:bg-crema">
+                    {p.nombre}
+                  </a>
+                ),
+              )}
               <a href={enlaceWhatsapp(c.telefono, `Hola, ${c.nombre.split(" ")[0]}. `)} target="_blank" rel="noopener noreferrer" className="block rounded-lg px-3 py-2 text-tinta-suave hover:bg-crema">
                 Escribir otra cosa
               </a>
@@ -136,16 +145,30 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
             <h2 className="text-xl">Apuntar una tarea sobre {c.nombre.split(" ")[0]}</h2>
             <FormularioTarea clienteId={c.id} />
           </Tarjeta>
-          {mensajes.length > 0 && (
-            <Tarjeta className="space-y-2">
-              <h2 className="text-xl">Mensajes preparados</h2>
-              <ol className="space-y-2" aria-label="Mensajes preparados">
-                {mensajes.slice(0, 20).map(({ m, quien }) => (
-                  <li key={m.id} className="rounded-xl border border-borde px-3 py-2">
+          {(mensajes.length > 0 || puedeResponder) && (
+            <Tarjeta className="space-y-3">
+              <h2 id="whatsapp" className="scroll-mt-4 text-xl">
+                WhatsApp
+              </h2>
+              {puedeResponder && <Responder clienteId={c.id} />}
+              <ol className="space-y-2" aria-label="Mensajes">
+                {mensajes.slice(0, 30).map(({ m, quien }) => (
+                  <li key={m.id} className={`rounded-xl border px-3 py-2 ${m.direccion === "entrante" ? "mr-8 border-dorado bg-crema" : "ml-8 border-borde"}`}>
                     <div className="text-sm text-tinta-suave">
-                      WhatsApp · {quien} · {fechaHora(m.cuando)}
+                      {m.direccion === "entrante"
+                        ? `${c.nombre.split(" ")[0]} escribió`
+                        : m.canal === "whatsapp_enlace"
+                          ? `Abierto en WhatsApp por ${quien ?? "—"}`
+                          : `Enviado por ${quien ?? "la app"}`}{" "}
+                      · {fechaHora(m.cuando)}
+                      {m.estado && m.direccion === "saliente" && (
+                        <span className={`ml-2 font-semibold ${m.estado === "fallido" ? "text-urgente" : "text-correcto"}`} data-testid="estado-envio">
+                          {NOMBRE_ESTADO_ENVIO[m.estado]}
+                        </span>
+                      )}
                     </div>
                     <div className="whitespace-pre-wrap">{m.texto}</div>
+                    {m.estado === "fallido" && m.error && <div className="text-sm text-urgente">{m.error}</div>}
                   </li>
                 ))}
               </ol>

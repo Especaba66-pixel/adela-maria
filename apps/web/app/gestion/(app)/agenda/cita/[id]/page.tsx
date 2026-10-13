@@ -3,7 +3,7 @@ import { Aviso, Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EstadoCitaChip } from "@/components/EstadoCita";
-import { diaLargo } from "@/lib/fechas";
+import { diaLargo, fechaHora } from "@/lib/fechas";
 import { detalleCita, profesionalDeUsuario, profesionalesActivos } from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
 import { BotonCancelarSerie, BotonesEstado, FormularioMover } from "./Acciones";
@@ -67,6 +67,12 @@ export default async function Cita({ params, searchParams }: { params: Promise<{
             <>
               <dt className="text-tinta-suave">Nota</dt>
               <dd>{d.c.nota}</dd>
+            </>
+          )}
+          {d.c.confirmadaPorClientaEn && (
+            <>
+              <dt className="text-tinta-suave">WhatsApp</dt>
+              <dd className="font-semibold text-correcto">La clienta confirmó que viene ({fechaHora(d.c.confirmadaPorClientaEn)})</dd>
             </>
           )}
           <dt className="text-tinta-suave">Origen</dt>

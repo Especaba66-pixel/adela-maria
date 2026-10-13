@@ -37,5 +37,11 @@ console.log("Publicando…");
 const salida = wrangler("deploy");
 console.log(salida);
 execFileSync("pnpm", ["exec", "wrangler", "secret", "put", "CLAVE_SYNC"], { input: process.env.RESERVAS_CLAVE, stdio: ["pipe", "inherit", "inherit"] });
+// WhatsApp (fase 6): solo si ya están los datos de Meta.
+for (const [secreto, variable] of [["WA_SECRETO_APP", "WHATSAPP_SECRETO_APP"], ["WA_TOKEN_VERIFICACION", "WHATSAPP_TOKEN_VERIFICACION"]]) {
+  const valor = (process.env[variable] ?? "").trim();
+  if (valor) execFileSync("pnpm", ["exec", "wrangler", "secret", "put", secreto], { input: valor, stdio: ["pipe", "inherit", "inherit"] });
+  else console.log(`(Sin ${variable}: el aviso de WhatsApp de Meta aún no está activo.)`);
+}
 const url = salida.match(/https:\/\/[^\s]+\.workers\.dev/)?.[0];
 console.log(`\nServicio de reservas publicado en: ${url ?? "(mira la salida de arriba)"}`);

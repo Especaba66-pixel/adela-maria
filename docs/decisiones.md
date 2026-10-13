@@ -213,3 +213,29 @@ Inicio salen como mucho 10 a la vez para no tapar lo urgente.
 
 **Al eliminar los datos de una clienta** se borran también los mensajes que se le prepararon y el texto de las tareas
 sobre ella.
+
+## Fase 6
+
+**El TPV envía; Cloudflare escucha.** Los envíos salen del TPV (que tiene los datos de las clientas) llamando a la API
+de Meta. Los avisos de Meta (estados y respuestas) necesitan una dirección pública siempre encendida: llegan al servicio
+de Cloudflare de las reservas, que comprueba la firma de Meta y los guarda tal cual hasta que el TPV se los lleva al
+sincronizar (cada minuto); entonces se borran allí. Nada se pierde con el TPV apagado; lo que no se recoja en 30 días
+se descarta.
+
+**Envío automático solo con el TPV encendido y dentro de una franja** (por defecto de 10:00 a 20:00): así los datos
+de las clientas no salen del centro. Cada cita recibe cada aviso automático una sola vez (lo garantiza la base de
+datos); si falla, sale en el Inicio con el motivo para hacerlo a mano. Si el TPV no se enciende en la franja, el
+recordatorio aparece en el Inicio como en la fase 5.
+
+**Solo se aplica sin dudas**: un botón «Confirmar»/«Cambiar», «BAJA» o un «sí / confirmo» corto. Lo demás lo lee una
+persona en el Inicio. Confirmar marca la cita como confirmada por la clienta (nuevo dato en la cita).
+
+**Las plantillas siguen siendo de la app**, con sus datos de Meta (nombre, categoría, orden de variables y botones) al
+lado. Sin datos de Meta, el botón abre WhatsApp como en la fase 5; con ellos, envía desde la app.
+
+**Los mensajes guardan su estado** (enviando, enviado, entregado, leído, no se pudo enviar); del registro solo cambia
+el estado, nunca el texto. Los estados de Meta llegan desordenados: nunca se retrocede (un «leído» no vuelve a
+«entregado»).
+
+**Envíos a grupos** solo a quien acepta promociones, con mensajes de marketing aprobados, y con resumen de entregados y
+leídos.

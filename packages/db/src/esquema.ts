@@ -50,6 +50,8 @@ export const centro = pgTable("centro", {
   impresora: jsonb(),
   /** Qué avisos automáticos se generan (ver AjustesAvisos en @adela/dominio). */
   avisos: jsonb(),
+  /** Envío automático por WhatsApp (ver AjustesWhatsapp en @adela/dominio). */
+  whatsapp: jsonb(),
   creadoEn: creadoEn(),
 });
 
@@ -288,7 +290,7 @@ export const consentimientos = pgTable("consentimientos", {
   tipo: text({ enum: ["privacidad_reserva", "avisos_citas", "promociones"] }).notNull(),
   aceptado: boolean().notNull(),
   texto: text(),
-  canal: text({ enum: ["web", "centro"] }).notNull(),
+  canal: text({ enum: ["web", "centro", "whatsapp"] }).notNull(),
   registradoPor: uuid().references(() => usuarios.id),
   cuando: creadoEn(),
 });
@@ -411,6 +413,8 @@ export const citas = pgTable(
     serieId: uuid().references(() => series.id),
     solicitudId: uuid().references(() => solicitudesReserva.id),
     nota: text(),
+    /** La clienta confirmó que viene (respondiendo al recordatorio de WhatsApp). */
+    confirmadaPorClientaEn: timestamp({ withTimezone: true }),
     creadaPor: uuid().references(() => usuarios.id),
     creadaEn: creadoEn(),
     actualizadaEn: creadoEn(),
@@ -883,9 +887,8 @@ export const avisosAtendidos = pgTable("avisos_atendidos", {
   clave: text().primaryKey(),
   /** Hasta cuándo no se enseña (incluido). Vacía = hecho para siempre. */
   posponerHasta: date({ mode: "string" }),
-  usuarioId: uuid()
-    .notNull()
-    .references(() => usuarios.id),
+  /** Vacío si lo resolvió la app sola (por ejemplo, una clienta que confirma por WhatsApp). */
+  usuarioId: uuid().references(() => usuarios.id),
   cuando: creadoEn(),
 });
 
@@ -895,24 +898,68 @@ export const plantillas = pgTable("plantillas", {
   nombre: text().notNull(),
   permiso: text({ enum: ["cita", "promocion"] }).notNull(),
   texto: text().notNull(),
+  /** Plantilla aprobada en Meta para enviarla sola (vacío = solo con el botón que abre WhatsApp). */
+  metaNombre: text(),
+  metaIdioma: text().notNull().default("es"),
+  metaCategoria: text({ enum: ["utility", "marketing"] }),
+  /** Qué variable va en {{1}}, {{2}}… */
+  metaVariables: jsonb().$type<string[]>().notNull().default([]),
+  /** Lleva los botones Confirmar / Cambiar. */
+  metaBotones: boolean().notNull().default(false),
   actualizadaEn: creadoEn(),
 });
 
-/** Mensajes preparados para una clienta (queda anotado en su ficha qué se le escribió y quién). */
+/** Envíos a un grupo de clientas (solo a las que aceptan promociones). */
+export const campanas = pgTable("campanas", {
+  id: uuid().primaryKey().defaultRandom(),
+  segmento: text().notNull(),
+  plantilla: text()
+    .notNull()
+    .references(() => plantillas.clave),
+  total: integer().notNull(),
+  usuarioId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  cuando: creadoEn(),
+});
+
+/**
+ * Mensajes de WhatsApp de cada clienta: los preparados con el botón (se abren en WhatsApp), los enviados por la API
+ * y las respuestas que llegan. Solo cambian el estado del envío; lo demás no se toca.
+ */
 export const mensajes = pgTable(
   "mensajes",
   {
     id: uuid().primaryKey().defaultRandom(),
-    clienteId: uuid()
-      .notNull()
-      .references(() => clientes.id),
+    /** Vacía si escribe un número que no está en ninguna ficha. */
+    clienteId: uuid().references(() => clientes.id),
+    telefono: text(),
+    direccion: text({ enum: ["saliente", "entrante"] }).notNull().default("saliente"),
     plantilla: text(),
     texto: text().notNull(),
-    canal: text({ enum: ["whatsapp_enlace"] }).notNull(),
-    usuarioId: uuid()
-      .notNull()
-      .references(() => usuarios.id),
+    canal: text({ enum: ["whatsapp_enlace", "whatsapp_api"] }).notNull(),
+    /** Quién lo preparó o envió; vacío si lo envió la app sola o es una respuesta. */
+    usuarioId: uuid().references(() => usuarios.id),
+    citaId: uuid().references(() => citas.id),
+    campanaId: uuid().references(() => campanas.id),
+    /** Identificador de Meta (wamid). */
+    waId: text(),
+    estado: text({ enum: ["enviando", "enviado", "entregado", "leido", "fallido"] }),
+    estadoEn: timestamp({ withTimezone: true }),
+    error: text(),
+    /** Botón pulsado en la respuesta (CONFIRMAR, CAMBIAR…). */
+    boton: text(),
+    /** wamid del mensaje nuestro al que responde. */
+    responde: text(),
     cuando: creadoEn(),
   },
-  (t) => [index("mensajes_cliente").on(t.clienteId, t.cuando)],
+  (t) => [
+    index("mensajes_cliente").on(t.clienteId, t.cuando),
+    uniqueIndex("mensajes_wa_id").on(t.waId),
+    index("mensajes_entrantes").on(t.direccion, t.cuando),
+    // Un mismo aviso de una cita se envía una sola vez por la API (si falla, se puede volver a intentar).
+    uniqueIndex("mensajes_api_cita_unico")
+      .on(t.citaId, t.plantilla)
+      .where(sql`${t.canal} = 'whatsapp_api' and ${t.citaId} is not null and ${t.estado} <> 'fallido'`),
+  ],
 );

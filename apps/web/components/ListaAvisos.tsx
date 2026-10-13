@@ -2,6 +2,7 @@ import { Aviso, Boton } from "@adela/ui";
 import Link from "next/link";
 import { hecho, posponer, tareaHecha } from "@/app/gestion/(app)/avisos/acciones";
 import type { AvisoDia, MensajeAviso } from "@/server/avisos";
+import { EnviarWhatsapp } from "./EnviarWhatsapp";
 
 /** Enlace que prepara el mensaje (lo anota en la ficha) y abre WhatsApp. */
 export function enlaceMensaje(m: MensajeAviso, clave?: string) {
@@ -36,7 +37,10 @@ export function ListaAvisos({ avisos }: { avisos: AvisoDia[] }) {
                 {a.mensaje?.noDisponible && <div className="text-sm opacity-80">WhatsApp: {a.mensaje.noDisponible.toLowerCase()}.</div>}
               </div>
               <div className="flex flex-wrap gap-2">
-                {a.mensaje && !a.mensaje.noDisponible && (
+                {a.mensaje && !a.mensaje.noDisponible && a.mensaje.api && (
+                  <EnviarWhatsapp clienteId={a.mensaje.clienteId} plantilla={a.mensaje.plantilla} citaId={a.mensaje.citaId} bonoId={a.mensaje.bonoId} clave={a.clave} />
+                )}
+                {a.mensaje && !a.mensaje.noDisponible && !a.mensaje.api && (
                   <a href={enlaceMensaje(a.mensaje, a.clave)} target="_blank" rel="noopener" className={`${boton} bg-correcto text-white hover:opacity-90`}>
                     WhatsApp
                   </a>

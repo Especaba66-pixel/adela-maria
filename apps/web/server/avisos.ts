@@ -1,11 +1,14 @@
 import "server-only";
-import { avisosAtendidos, centro, citas, clientes, cobros, plantillas, solicitudesReserva, tareas, tratamientos, type Tx } from "@adela/db";
+import { avisosAtendidos, centro, citas, clientes, cobros, mensajes, plantillas, solicitudesReserva, tareas, tratamientos, type Tx } from "@adela/db";
 import {
   esCumpleanos,
   estaInactiva,
   formatearEuros,
   horaATexto,
   hoyEnMadrid,
+  dentroDeFranja,
+  entenderRespuesta,
+  formatearTelefono,
   leerAjustesAvisos,
   ordenarPorPrioridad,
   partesMadrid,
@@ -15,7 +18,7 @@ import {
   type PrioridadAviso,
   type Rol,
 } from "@adela/dominio";
-import { and, asc, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { diaLargo } from "@/lib/fechas";
 import { citasDelDia } from "./agenda";
 import { bonosPorAcabar } from "./bonos";
@@ -23,6 +26,8 @@ import { db } from "./db";
 import { avisosSistema } from "./estado";
 import { contarStockBajo, productosConStock } from "./stock";
 import { ventasPendientes } from "./tpv";
+import { plantillaMeta } from "./mensajes";
+import { ajustesWhatsapp, apiWhatsapp } from "./whatsapp";
 
 /** Un mensaje de WhatsApp listo para preparar desde un aviso. */
 export interface MensajeAviso {
@@ -32,6 +37,8 @@ export interface MensajeAviso {
   bonoId?: string;
   /** Si no se puede escribir (sin teléfono o sin permiso), por qué. */
   noDisponible?: string;
+  /** Se puede enviar desde la app (API de WhatsApp y plantilla aprobada en Meta). */
+  api?: boolean;
 }
 
 export interface AvisoDia {
@@ -122,35 +129,85 @@ export async function avisosDeHoy(usuario: { rol: Rol }): Promise<AvisoDia[]> {
   if (ver("agenda.ver_toda") && ver("clientas.gestionar")) {
     const fichas = async (ids: string[]) => (ids.length ? await db().select().from(clientes).where(inArray(clientes.id, ids)) : []);
 
-    if (ajustes.recordatorios) {
-      const manana = (await citasDelDia(sumarDias(hoy, 1))).filter((c) => c.estado === "confirmada");
-      const datos = await fichas(manana.map((c) => c.cliente.id));
-      for (const c of manana) {
+    // Con WhatsApp automático, los recordatorios y el «qué tal» salen solos: aquí solo aparecen si fallan o si ya
+    // pasó la hora de envío sin que se enviaran (TPV apagado).
+    const aprobadas = apiWhatsapp() ? new Set((await db().select().from(plantillas)).filter((p) => plantillaMeta(p)).map((p) => p.clave)) : new Set<string>();
+    const wa = aprobadas.size ? await ajustesWhatsapp() : null;
+    const autoActivo = (plantilla: string, activo: boolean | undefined) => Boolean(wa && activo && aprobadas.has(plantilla));
+    const yaPasoLaHora = wa ? !dentroDeFranja(wa, partesMadrid(ahora).minutos) && partesMadrid(ahora).minutos >= wa.hasta : true;
+    const enviosAuto = async (ids: string[], plantilla: string) => {
+      if (!ids.length) return new Map<string, { estado: string | null; error: string | null }>();
+      const filas = await db()
+        .select({ citaId: mensajes.citaId, estado: mensajes.estado, error: mensajes.error })
+        .from(mensajes)
+        .where(and(eq(mensajes.canal, "whatsapp_api"), eq(mensajes.plantilla, plantilla), inArray(mensajes.citaId, ids)))
+        .orderBy(asc(mensajes.cuando));
+      return new Map(filas.map((f) => [f.citaId!, { estado: f.estado, error: f.error }]));
+    };
+    const avisosDeCitas = async (
+      plantilla: "recordatorio" | "seguimiento",
+      lista0: Awaited<ReturnType<typeof citasDelDia>>,
+      auto: boolean,
+      texto: (c: Awaited<ReturnType<typeof citasDelDia>>[number]) => { titulo: string; detalle?: string; prioridad: PrioridadAviso },
+    ) => {
+      const datos = await fichas(lista0.map((c) => c.cliente.id));
+      const envios = auto ? await enviosAuto(lista0.map((c) => c.id), plantilla) : new Map();
+      for (const c of lista0) {
         const f = datos.find((x) => x.id === c.cliente.id);
         if (!f || f.anonimizadaEn) continue;
-        lista.push({
-          clave: `recordatorio:${c.id}`,
-          prioridad: "pendiente",
-          titulo: `Recordar a ${c.cliente.nombre} su cita de mañana a las ${horaATexto(partesMadrid(c.inicio).minutos)}.`,
-          detalle: c.servicios.join(" + "),
-          mensaje: { clienteId: f.id, plantilla: "recordatorio", citaId: c.id, noDisponible: disponible(f, "cita") },
-        });
+        const envio = envios.get(c.id);
+        const mensaje = { clienteId: f.id, plantilla, citaId: c.id, noDisponible: disponible(f, "cita") };
+        if (auto && envio?.estado === "fallido") {
+          lista.push({
+            clave: `${plantilla}:${c.id}`,
+            prioridad: "importante",
+            titulo: `No se pudo enviar ${plantilla === "recordatorio" ? "el recordatorio" : "el «qué tal»"} a ${c.cliente.nombre}.`,
+            detalle: envio.error ?? undefined,
+            mensaje,
+          });
+          continue;
+        }
+        if (auto && (envio || (!yaPasoLaHora && !mensaje.noDisponible))) continue;
+        lista.push({ clave: `${plantilla}:${c.id}`, ...texto(c), mensaje });
       }
+    };
+
+    if (ajustes.recordatorios || autoActivo("recordatorio", wa?.recordatorios)) {
+      const auto = autoActivo("recordatorio", wa?.recordatorios);
+      const manana = (await citasDelDia(sumarDias(hoy, 1))).filter((c) => c.estado === "confirmada" || (auto && c.estado === "pendiente"));
+      await avisosDeCitas("recordatorio", manana, auto, (c) => ({
+        prioridad: "pendiente",
+        titulo: `Recordar a ${c.cliente.nombre} su cita de mañana a las ${horaATexto(partesMadrid(c.inicio).minutos)}.`,
+        detalle: c.servicios.join(" + "),
+      }));
     }
 
-    if (ajustes.seguimiento) {
+    if (ajustes.seguimiento || autoActivo("seguimiento", wa?.seguimiento)) {
       const ayer = (await citasDelDia(sumarDias(hoy, -1))).filter((c) => c.estado === "realizada");
-      const datos = await fichas(ayer.map((c) => c.cliente.id));
-      for (const c of ayer) {
-        const f = datos.find((x) => x.id === c.cliente.id);
-        if (!f || f.anonimizadaEn) continue;
-        lista.push({
-          clave: `seguimiento:${c.id}`,
-          prioridad: "informativo",
-          titulo: `Preguntar a ${c.cliente.nombre} qué tal su ${c.servicios.join(" y ")} de ayer.`,
-          mensaje: { clienteId: f.id, plantilla: "seguimiento", citaId: c.id, noDisponible: disponible(f, "cita") },
-        });
-      }
+      await avisosDeCitas("seguimiento", ayer, autoActivo("seguimiento", wa?.seguimiento), (c) => ({
+        prioridad: "informativo",
+        titulo: `Preguntar a ${c.cliente.nombre} qué tal su ${c.servicios.join(" y ")} de ayer.`,
+      }));
+    }
+
+    // Lo que han escrito las clientas por WhatsApp (lo que la app no ha resuelto sola) en la última semana.
+    const escritos = await db()
+      .select({ m: mensajes, nombre: clientes.nombre })
+      .from(mensajes)
+      .leftJoin(clientes, eq(clientes.id, mensajes.clienteId))
+      .where(and(eq(mensajes.direccion, "entrante"), gt(mensajes.cuando, new Date(ahora.getTime() - 7 * 86_400_000))))
+      .orderBy(desc(mensajes.cuando))
+      .limit(50);
+    for (const { m, nombre } of escritos) {
+      const quien = nombre ?? `El ${m.telefono ? formatearTelefono(m.telefono) : "número"} (sin ficha)`;
+      const cambiar = entenderRespuesta(m.texto, m.boton) === "cambiar";
+      lista.push({
+        clave: `respuesta:${m.id}`,
+        prioridad: cambiar ? "importante" : "pendiente",
+        titulo: cambiar ? `${quien} quiere cambiar su cita.` : `${quien} ha escrito por WhatsApp.`,
+        detalle: `«${m.texto.length > 160 ? `${m.texto.slice(0, 160)}…` : m.texto}»`,
+        enlace: m.clienteId ? `/gestion/clientas/${m.clienteId}#whatsapp` : undefined,
+      });
     }
 
     if (ajustes.bonos && ver("cobrar")) {
@@ -224,11 +281,17 @@ export async function avisosDeHoy(usuario: { rol: Rol }): Promise<AvisoDia[]> {
   const claves = lista.flatMap((a) => (a.clave ? [a.clave] : []));
   const atendidos = claves.length ? await db().select().from(avisosAtendidos).where(inArray(avisosAtendidos.clave, claves)) : [];
   const ocultos = new Set(atendidos.filter((a) => a.posponerHasta === null || a.posponerHasta >= hoy).map((a) => a.clave));
-  return ordenarPorPrioridad(lista.filter((a) => !a.clave || !ocultos.has(a.clave)));
+  const visibles = lista.filter((a) => !a.clave || !ocultos.has(a.clave));
+  // Si la plantilla está aprobada en Meta, el botón envía desde la app en lugar de abrir WhatsApp.
+  if (apiWhatsapp()) {
+    const aprobadas = new Set((await db().select().from(plantillas)).filter((p) => plantillaMeta(p)).map((p) => p.clave));
+    for (const a of visibles) if (a.mensaje && aprobadas.has(a.mensaje.plantilla)) a.mensaje.api = true;
+  }
+  return ordenarPorPrioridad(visibles);
 }
 
 /** Marca un aviso como hecho (o lo pospone hasta un día). */
-export async function atenderAviso(clave: string, usuarioId: string, posponerHasta: string | null, tx?: Tx) {
+export async function atenderAviso(clave: string, usuarioId: string | null, posponerHasta: string | null, tx?: Tx) {
   await (tx ?? db())
     .insert(avisosAtendidos)
     .values({ clave, posponerHasta, usuarioId })

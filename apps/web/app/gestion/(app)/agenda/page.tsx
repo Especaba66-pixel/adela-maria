@@ -138,6 +138,7 @@ function TarjetaCita({ c }: { c: CitaVista }) {
         {c.servicios.join(" + ")}
         {c.origen === "web" && " · pedida en la web"}
         {c.serieId && " · se repite"}
+        {c.confirmoClienta && <span className="font-semibold text-correcto"> · ✓ confirmó por WhatsApp</span>}
       </div>
     </Link>
   );

@@ -8,6 +8,8 @@ if (!url) throw new Error("Falta DATABASE_URL_TEST en .env");
 const PUERTO = 3100;
 /** Servicio de reservas por internet (Cloudflare en local) y landing que lo usa. */
 export const RESERVAS = { url: "http://127.0.0.1:8788", clave: "clave-de-pruebas-0123456789abcdef0123456789", landing: "http://127.0.0.1:8090" };
+/** WhatsApp de Meta imitado en local (tests/meta-falso.mjs) y secreto con el que firma sus avisos. */
+export const META = { url: "http://127.0.0.1:8099", secreto: "secreto-de-pruebas" };
 export const ENTORNO_PRUEBAS = {
   DATABASE_URL: url,
   ADMIN_NOMBRE: "Adela",
@@ -20,6 +22,9 @@ export const ENTORNO_PRUEBAS = {
   RESERVAS_CLAVE: RESERVAS.clave,
   // En las pruebas se sincroniza a mano («Sincronizar ahora»).
   RESERVAS_CADA_SEGUNDOS: "3600",
+  WHATSAPP_TOKEN: "token-de-pruebas",
+  WHATSAPP_NUMERO_ID: "123456",
+  WHATSAPP_API_URL: `${META.url}/v23.0`,
 };
 
 export default defineConfig({
@@ -64,5 +69,6 @@ export default defineConfig({
       reuseExistingServer: false,
       env: { RESERVAS_URL: RESERVAS.url },
     },
+    { command: "node tests/meta-falso.mjs 8099", url: META.url, timeout: 10_000, reuseExistingServer: false },
   ],
 });

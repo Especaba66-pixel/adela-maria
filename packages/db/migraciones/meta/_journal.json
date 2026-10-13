@@ -78,6 +78,13 @@
       "when": 1791880425841,
       "tag": "0010_avisos_tareas_y_seguimiento",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791882235362,
+      "tag": "0011_whatsapp_automatico",
+      "breakpoints": true
     }
   ]
 }

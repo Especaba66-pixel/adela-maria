@@ -55,7 +55,7 @@ test("el inicio dice qué hay que hacer hoy, con el WhatsApp ya escrito", async 
   await expect(aviso("Hoy cumple años Lucía Gómez.")).toHaveCount(0);
   await pagina.goto("/gestion/clientas?q=Lucía");
   await pagina.getByRole("link", { name: "Lucía Gómez" }).click();
-  await expect(pagina.getByRole("list", { name: "Mensajes preparados" })).toContainText("¡Feliz cumpleaños, Lucía!");
+  await expect(pagina.getByRole("list", { name: "Mensajes" })).toContainText("¡Feliz cumpleaños, Lucía!");
 });
 
 test("un aviso se puede dejar para mañana", async () => {
@@ -93,7 +93,7 @@ test("los mensajes se pueden cambiar, sin variables que no existen", async () =>
   // La ficha ofrece ese mensaje y lo prepara con el texto nuevo.
   await pagina.goto("/gestion/clientas?q=Lucía");
   await pagina.getByRole("link", { name: "Lucía Gómez" }).click();
-  await pagina.getByText("WhatsApp", { exact: true }).click();
+  await pagina.locator("summary").filter({ hasText: /^WhatsApp$/ }).click();
   const href = await pagina.getByRole("link", { name: "Felicitación de cumpleaños" }).getAttribute("href");
   const r = await pagina.request.get(href!, { maxRedirects: 0 });
   expect(new URL(r.headers()["location"]!).searchParams.get("text")).toMatch(/^¡Muchas felicidades, Lucía!/);

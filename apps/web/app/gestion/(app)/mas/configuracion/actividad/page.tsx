@@ -60,6 +60,12 @@ const ACCIONES: Record<string, string> = {
   "mensaje.preparar": "Preparó un mensaje de WhatsApp",
   "avisos.configurar": "Cambió los avisos automáticos",
   "plantilla.editar": "Cambió un mensaje de WhatsApp",
+  "plantilla.meta": "Cambió los datos de Meta de un mensaje",
+  "mensaje.enviar": "Envió un WhatsApp desde la app",
+  "whatsapp.configurar": "Cambió el envío automático de WhatsApp",
+  "campana.enviar": "Envió un WhatsApp a un grupo de clientas",
+  "cita.confirmada_por_clienta": "La clienta confirmó su cita por WhatsApp",
+  "clienta.baja_whatsapp": "La clienta pidió la baja por WhatsApp",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

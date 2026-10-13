@@ -38,6 +38,8 @@ jobs:
           # El Account ID no es secreto (sale en la dirección del panel de Cloudflare).
           CLOUDFLARE_ACCOUNT_ID: 2264334998238691752d10614c774d0f
           RESERVAS_CLAVE: ${{ secrets.RESERVAS_CLAVE }}
+          WHATSAPP_SECRETO_APP: ${{ secrets.WHATSAPP_SECRETO_APP }}
+          WHATSAPP_TOKEN_VERIFICACION: ${{ secrets.WHATSAPP_TOKEN_VERIFICACION }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$RESERVAS_CLAVE" ]; then
             echo "::warning::Faltan los secretos de Cloudflare: el servicio de reservas no se publica todavía (ver docs/reservas-internet.md)."

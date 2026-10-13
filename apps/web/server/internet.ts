@@ -16,6 +16,7 @@ import { TEXTO_PRIVACIDAD, horaATexto, normalizarTelefono, partesMadrid } from "
 import { and, asc, eq, gt, inArray, isNotNull, isNull, lt, ne } from "drizzle-orm";
 import { cabinas, crearCitas, profesionalesActivos, profesionalesQueHacen } from "./agenda";
 import { db } from "./db";
+import { apiWhatsapp, envioAutomatico, procesarEventos } from "./whatsapp";
 
 /**
  * Reservas por internet. Las clientas reservan en el servicio de Cloudflare (siempre encendido); el TPV, cuando está
@@ -37,10 +38,17 @@ export interface ReservaOnline {
 
 export type ResultadoSincronizacion = { ok: true; cuando: Date; importadas: number } | { ok: false; cuando: Date; error: string };
 
-const estado = globalThis as typeof globalThis & { __ultimaSincronizacion?: ResultadoSincronizacion; __sincronizando?: Promise<ResultadoSincronizacion> };
+export type ResultadoWhatsapp = { ok: true; cuando: Date; recibidos: number; enviados: number; fallidos: number } | { ok: false; cuando: Date; error: string };
+
+const estado = globalThis as typeof globalThis & {
+  __ultimaSincronizacion?: ResultadoSincronizacion;
+  __sincronizando?: Promise<ResultadoSincronizacion>;
+  __ultimoWhatsapp?: ResultadoWhatsapp;
+};
 
 export const internetConfigurado = () => Boolean(process.env.RESERVAS_URL && process.env.RESERVAS_CLAVE);
 export const ultimaSincronizacion = () => estado.__ultimaSincronizacion ?? null;
+export const ultimoWhatsapp = () => estado.__ultimoWhatsapp ?? null;
 
 /** Días hacia delante de agenda que se mandan (lo mismo que se puede reservar, y uno más). */
 const DIAS_A_MANDAR = 62;
@@ -74,10 +82,33 @@ export function sincronizar(): Promise<ResultadoSincronizacion> {
       r = { ok: false, cuando: new Date(), error: e instanceof Error ? e.message : String(e) };
     }
     estado.__ultimaSincronizacion = r;
+    if (apiWhatsapp()) estado.__ultimoWhatsapp = await sincronizarWhatsapp();
     estado.__sincronizando = undefined;
     return r;
   })();
   return estado.__sincronizando;
+}
+
+/**
+ * WhatsApp: se trae de Cloudflare lo que ha avisado Meta (estados y respuestas), lo aplica, le dice a Cloudflare que
+ * ya lo tiene (y lo borra allí) y envía lo que toque enviar solo. Va aparte: si falla, las reservas siguen.
+ */
+async function sincronizarWhatsapp(): Promise<ResultadoWhatsapp> {
+  try {
+    let recibidos = 0;
+    for (let vuelta = 0; vuelta < 10; vuelta++) {
+      const { eventos } = (await llamar("/api/sync/whatsapp")) as { eventos: { id: number; cuerpo: string }[] };
+      if (!eventos.length) break;
+      recibidos += await procesarEventos(eventos.map((e) => e.cuerpo));
+      await llamar("/api/sync/whatsapp", { method: "POST", body: JSON.stringify({ hasta: Math.max(...eventos.map((e) => e.id)) }) });
+      if (eventos.length < 200) break;
+    }
+    const { enviados, fallidos } = await envioAutomatico();
+    return { ok: true, cuando: new Date(), recibidos, enviados, fallidos };
+  } catch (e) {
+    console.error("WhatsApp:", e);
+    return { ok: false, cuando: new Date(), error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 /**
