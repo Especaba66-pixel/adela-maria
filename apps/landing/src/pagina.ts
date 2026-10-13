@@ -67,7 +67,7 @@ export function construirPagina(d: DatosLanding): string {
     .filter((c) => c.tratamientos.length > 0)
     .map(
       (c) => `
-      <section class="categoria" aria-labelledby="cat-${esc(c.nombre)}">
+      <section class="categoria aparece" aria-labelledby="cat-${esc(c.nombre)}">
         <h3 id="cat-${esc(c.nombre)}">${esc(c.nombre)}</h3>
         ${PREGUNTA[c.nombre] ? `<p class="pregunta">${esc(PREGUNTA[c.nombre]!)}</p>` : ""}
         <ul class="lista">
@@ -106,6 +106,10 @@ export function construirPagina(d: DatosLanding): string {
     ? `<a class="boton boton-principal" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita por WhatsApp</a>`
     : `<p class="pronto">Muy pronto podrás pedir cita por WhatsApp desde aquí.</p>`;
 
+  // Fotos de los trabajos para la portada y la cinta (una de cada tipo primero, para que se vean todos).
+  const conFotos = (d.trabajos ?? []).filter((t) => t.fotos.length);
+  const pase = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat().slice(0, 8);
+
   const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y pide tu cita por WhatsApp.";
 
   return `<!doctype html>
@@ -124,7 +128,8 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <link rel="apple-touch-icon" href="icono.png">
 <meta property="og:image" content="${esc(d.url ? `${d.url.replace(/\/$/, "")}/sello.png` : "sello.png")}">
 <link rel="preload" href="fuentes/cormorant-garamond-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<style>${ESTILOS}${ESTILOS_RESERVA}</style>
+<style>${ESTILOS}${ESTILOS_RESERVA}${estilosPase(pase.length)}</style>
+<script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
 <header class="cabecera">
@@ -145,23 +150,24 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <main id="inicio">
   ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
 
-  <section class="portada">
-    <div class="contenedor">
-      <img class="sello" src="sello.png" alt="" width="240" height="240" loading="lazy">
-      <h2>Tu momento de cuidado</h2>
-      <p class="entrada">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
+  <section class="portada${pase.length ? " con-fotos" : ""}">
+    ${pase.length ? `<div class="pase" aria-hidden="true">${pase.map((f, i) => `<img src="${esc(f.archivo)}" alt="" style="animation-delay:${i * SEGUNDOS_FOTO}s"${i ? ' loading="lazy"' : ""} decoding="async">`).join("")}</div>` : ""}
+    <div class="contenedor portada-texto">
+      <img class="sello aparece" src="sello.png" alt="" width="240" height="240" loading="lazy">
+      <h2 class="aparece">Tu momento de cuidado</h2>
+      <p class="entrada aparece">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
     </div>
   </section>
 
   <section id="tratamientos" class="contenedor bloque" aria-labelledby="titulo-tratamientos">
-    <h2 id="titulo-tratamientos">Tratamientos</h2>
+    <h2 id="titulo-tratamientos" class="aparece">Tratamientos</h2>
     ${categorias}
   </section>
 
   ${
     d.bonos.length
       ? `<section id="bonos" class="contenedor bloque" aria-labelledby="titulo-bonos">
-    <h2 id="titulo-bonos">Bonos faciales</h2>
+    <h2 id="titulo-bonos" class="aparece">Bonos faciales</h2>
     <p class="nota-centrada">Adaptados a las necesidades de tu piel. <strong>No caducan.</strong></p>
     <ul class="lista">${bonos}
     </ul>
@@ -172,12 +178,13 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   ${
     d.trabajos?.some((t) => t.fotos.length)
       ? `<section id="trabajos" class="contenedor bloque" aria-labelledby="titulo-trabajos">
-    <h2 id="titulo-trabajos">Nuestros trabajos</h2>
+    <h2 id="titulo-trabajos" class="aparece">Nuestros trabajos</h2>
+    <div class="cinta" aria-hidden="true"><div class="cinta-pista">${[...pase, ...pase].map((f) => `<img src="${esc(f.archivo)}" alt="" loading="lazy" decoding="async">`).join("")}</div></div>
     ${d.trabajos
       .filter((t) => t.fotos.length)
       .map(
-        (t) => `<h3 class="categoria">${esc(t.titulo)}</h3>
-    <div class="galeria">${t.fotos.map((f) => `<img src="${esc(f.archivo)}" alt="${esc(f.alt)}"${f.ancho && f.alto ? ` width="${f.ancho}" height="${f.alto}"` : ""} loading="lazy" decoding="async">`).join("")}</div>`,
+        (t) => `<h3 class="categoria aparece">${esc(t.titulo)}</h3>
+    <div class="galeria aparece">${t.fotos.map((f) => `<img src="${esc(f.archivo)}" alt="${esc(f.alt)}"${f.ancho && f.alto ? ` width="${f.ancho}" height="${f.alto}"` : ""} loading="lazy" decoding="async">`).join("")}</div>`,
       )
       .join("\n    ")}
   </section>`
@@ -185,8 +192,8 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   }
 
   <section id="maquillaje" class="contenedor bloque" aria-labelledby="titulo-maquillaje">
-    <h2 id="titulo-maquillaje">Prepara tu piel para un maquillaje perfecto</h2>
-    <ol class="preparacion">
+    <h2 id="titulo-maquillaje" class="aparece">Prepara tu piel para un maquillaje perfecto</h2>
+    <ol class="preparacion aparece">
       <li><strong>10 días antes</strong> Higiene facial profunda, ideal para una piel limpia y luminosa.</li>
       <li><strong>3 días antes</strong> Exfoliación suave y mucha hidratación. Evita productos nuevos y no uses labiales permanentes o de larga duración.</li>
       <li><strong>2 días antes</strong> Bebe 2 litros de agua y duerme 8 horas. Aplica bálsamo hidratante en los labios varias veces al día.</li>
@@ -196,7 +203,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   </section>
 
   <section id="regalo" class="contenedor bloque" aria-labelledby="titulo-regalo">
-    <h2 id="titulo-regalo">Tarjeta regalo</h2>
+    <h2 id="titulo-regalo" class="aparece">Tarjeta regalo</h2>
     <p class="nota-centrada">Regala un momento de cuidado: elige el importe y te preparamos la tarjeta, válida para cualquier tratamiento. <strong>No caduca.</strong></p>
     ${
       telefono
@@ -206,7 +213,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   </section>
 
   <section id="cita" class="contenedor bloque" aria-labelledby="titulo-cita">
-    <h2 id="titulo-cita">Cómo pedir cita</h2>
+    <h2 id="titulo-cita" class="aparece">Cómo pedir cita</h2>
     ${
       api
         ? `<ol class="pasos">
@@ -239,6 +246,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     }</p>
   </div>
 </footer>
+<script>${SCRIPT_MOVIMIENTO}</script>
 ${
   api
     ? `<script>${SCRIPT_RESERVA}
@@ -255,6 +263,28 @@ document.addEventListener("click", (e) => {
 </html>
 `;
 }
+
+/** Segundos que se ve cada foto de la portada. */
+const SEGUNDOS_FOTO = 6;
+
+/** Fundido entre las fotos de la portada con un zoom lento; la animación depende de cuántas fotos haya. */
+function estilosPase(n: number): string {
+  if (n === 0) return "";
+  const total = n * SEGUNDOS_FOTO;
+  const entra = ((1.5 / total) * 100).toFixed(2);
+  const sale = (((SEGUNDOS_FOTO + 1.5) / total) * 100).toFixed(2);
+  return `.pase img{animation:pase ${total}s linear infinite}
+@keyframes pase{0%{opacity:0;transform:scale(1.02)}${entra}%{opacity:1}${(Number(sale) - Number(entra)).toFixed(2)}%{opacity:1}${sale}%{opacity:0;transform:scale(1.14)}100%{opacity:0;transform:scale(1.14)}}
+.cinta-pista{animation:cinta ${Math.max(30, n * 7)}s linear infinite}`;
+}
+
+/** Lo que aparece al bajar: se marca cuando entra en pantalla (sin librerías). */
+const SCRIPT_MOVIMIENTO = `(function(){
+  var el = document.querySelectorAll(".aparece");
+  if (!("IntersectionObserver" in window)) { el.forEach(function(e){ e.classList.add("visible"); }); return; }
+  var io = new IntersectionObserver(function(es){ es.forEach(function(x){ if (x.isIntersecting) { x.target.classList.add("visible"); io.unobserve(x.target); } }); }, { rootMargin: "0px 0px -8% 0px" });
+  el.forEach(function(e){ io.observe(e); });
+})();`;
 
 /** Tipografías servidas desde la propia página (sin Google): ningún dato del visitante sale a terceros. */
 export const FUENTES = [
@@ -320,5 +350,25 @@ a{color:var(--dorado-oscuro)}
 .pie{margin-top:3rem;background:var(--crema);border-top:1px solid var(--borde);padding:2rem 0 2.5rem;color:var(--suave)}
 .pie p{margin:.35rem 0}
 .legal{font-size:.85rem;margin-top:1rem!important}
+/* Movimiento */
+.portada{position:relative;overflow:hidden}
+.portada.con-fotos{min-height:clamp(26rem,80vh,40rem);display:flex;align-items:center;justify-content:center;color:#fff}
+.pase{position:absolute;inset:0}
+.pase img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity,transform}
+.portada.con-fotos::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(43,38,32,.25),rgba(43,38,32,.55))}
+.portada-texto{position:relative;z-index:1}
+.con-fotos .sello{background:rgba(255,253,249,.9);border-radius:50%;padding:.5rem;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.con-fotos h2{text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.con-fotos .entrada{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45)}
+.cinta{overflow:hidden;margin:0 -1rem 2rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.cinta-pista{display:flex;gap:.75rem;width:max-content}
+.cinta-pista img{height:14rem;width:auto;border-radius:12px;display:block}
+.cinta:hover .cinta-pista{animation-play-state:paused}
+@keyframes cinta{to{transform:translateX(-50%)}}
+.galeria img{transition:transform .5s ease,box-shadow .5s ease}
+.galeria img:hover{transform:scale(1.03);box-shadow:0 12px 30px rgba(43,38,32,.18)}
+.js .aparece{opacity:0;transform:translateY(24px);transition:opacity .9s ease,transform .9s ease}
+.js .aparece.visible{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.pase img{animation:none!important}.pase img:first-child{opacity:1}.cinta-pista{animation:none!important}.js .aparece{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
 @media (max-width:30rem){.lista li{padding:.85rem 1rem}.lista .boton{min-height:2.75rem;padding:0 .9rem;font-size:.95rem}}
 `;

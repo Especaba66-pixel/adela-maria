@@ -57,7 +57,8 @@ describe("landing", () => {
     expect(con).toContain('data-reservar="Axilas"');
     expect(con).toContain("Si reservas aquí, guardamos tu nombre y tu teléfono");
     expect(html).toContain("Muy pronto podrás elegir aquí tu tratamiento");
-    expect(html).not.toContain("<script>");
+    // Sin servicio de reservas no va el código del calendario (solo el pequeño del movimiento).
+    expect(html).not.toContain("r-servicio");
     expect(construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, reservasApi: 'javascript:alert(1)"' })).not.toContain("data-api");
   });
 
@@ -88,8 +89,18 @@ describe("landing", () => {
     expect(raro).not.toContain("<b>A & B</b>");
   });
 
+  it("las fotos de los trabajos se mueven en la portada y en la cinta, y se respeta «reducir movimiento»", () => {
+    const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, trabajos: [{ titulo: "Uñas", fotos: [{ archivo: "trabajos/unas/1.jpg", alt: "Uñas: trabajo 1" }, { archivo: "trabajos/unas/2.jpg", alt: "Uñas: trabajo 2" }] }] });
+    expect(con).toContain('class="portada con-fotos"');
+    expect(con).toContain('style="animation-delay:6s"');
+    expect(con.match(/<div class="cinta-pista">.*?<\/div>/s)![0].match(/<img/g)).toHaveLength(4);
+    expect(con).toContain("@keyframes pase");
+    expect(con).toContain("prefers-reduced-motion:reduce");
+    expect(html).not.toContain('class="portada con-fotos"');
+  });
+
   it("no carga nada de terceros (ni tipografías de Google)", () => {
-    expect(html).not.toMatch(/googleapis|gstatic|<script/);
+    expect(html).not.toMatch(/googleapis|gstatic|<script[^>]+src=/);
     expect(html).toContain("fuentes/inter-latin-400-normal.woff2");
   });
 
