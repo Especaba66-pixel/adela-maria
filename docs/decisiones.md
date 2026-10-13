@@ -190,3 +190,26 @@ IVA. Cada compra genera su gasto, con base, IVA y total.
 gestoría: resumen, facturas emitidas y gastos. El cálculo oficial (modelo 303) es de la gestoría.
 
 **Permisos**: recepción lleva stock, proveedores y compras; los gastos y su descarga, solo administración.
+
+## Fase 5
+
+**Los avisos se calculan al abrir la pantalla**, a partir de las citas, bonos, fichas y stock de ese momento: no hay
+tareas programadas que puedan fallar con el TPV apagado. Solo se guarda qué aviso se ha atendido o dejado para mañana
+(`avisos_atendidos`), con una clave por aviso (por ejemplo, el recordatorio de una cita concreta).
+
+**WhatsApp con un clic, sin envíos automáticos.** El botón abre WhatsApp con el mensaje ya escrito y la persona pulsa
+enviar. Al abrirlo se anota en la ficha qué se preparó (`mensajes`, que no se edita) y el aviso deja de salir. El envío
+automático con la API oficial de WhatsApp es de la fase 6.
+
+**Solo se escribe a quien ha dado permiso**: avisos de citas para recordatorios, seguimiento y bonos; promociones para
+cumpleaños y «te echamos de menos». Confirmar una cita que la clienta pidió en la web no necesita permiso aparte. Sin
+permiso, el aviso sale igual pero sin botón y explica por qué.
+
+**Mensajes editables con variables** ({nombre}, {centro}, {fecha}, {hora}, {servicios}, {quedan}, {bono}); la app
+no deja guardar una variable que no existe. Las de partida se siembran una vez y no se pisan si se han cambiado.
+
+**Inactiva**: vino alguna vez, hace más de 90 días (ajustable; 0 = no avisar) y no tiene cita por delante. En el
+Inicio salen como mucho 10 a la vez para no tapar lo urgente.
+
+**Al eliminar los datos de una clienta** se borran también los mensajes que se le prepararon y el texto de las tareas
+sobre ella.

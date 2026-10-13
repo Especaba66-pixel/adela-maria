@@ -48,6 +48,8 @@ export const centro = pgTable("centro", {
   pieTicket: text(),
   /** Impresora de tickets: { tipo: "ninguna" | "simulador" | "red" | "windows", host?, puerto?, nombre?, ancho? }. */
   impresora: jsonb(),
+  /** Qué avisos automáticos se generan (ver AjustesAvisos en @adela/dominio). */
+  avisos: jsonb(),
   creadoEn: creadoEn(),
 });
 
@@ -850,4 +852,67 @@ export const gastos = pgTable(
     check("gastos_cuadra", sql`${t.base} + ${t.cuota} = ${t.total}`),
     check("gastos_iva_valido", sql`${t.ivaCentesimas} between 0 and 10000`),
   ],
+);
+
+// ── Fase 5: avisos, tareas y seguimiento ────────────────────────────────────
+
+/** Tareas que apunta el personal («llamar a Marta para cambiar la cita»), con fecha opcional. */
+export const tareas = pgTable(
+  "tareas",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    texto: text().notNull(),
+    /** Día en que hay que hacerla; vacía = cuando se pueda. */
+    fecha: date({ mode: "string" }),
+    clienteId: uuid().references(() => clientes.id),
+    creadaPor: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    creadaEn: creadoEn(),
+    hechaPor: uuid().references(() => usuarios.id),
+    hechaEn: fecha(),
+  },
+  (t) => [index("tareas_pendientes").on(t.hechaEn, t.fecha), check("tareas_texto", sql`length(trim(${t.texto})) between 2 and 300`)],
+);
+
+/**
+ * Avisos automáticos ya atendidos o pospuestos. Cada aviso tiene una clave estable (por ejemplo
+ * «recordatorio:<id de la cita>»): al marcarlo hecho deja de salir; al posponerlo, vuelve ese día.
+ */
+export const avisosAtendidos = pgTable("avisos_atendidos", {
+  clave: text().primaryKey(),
+  /** Hasta cuándo no se enseña (incluido). Vacía = hecho para siempre. */
+  posponerHasta: date({ mode: "string" }),
+  usuarioId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  cuando: creadoEn(),
+});
+
+/** Plantillas de mensajes de WhatsApp, editables. */
+export const plantillas = pgTable("plantillas", {
+  clave: text().primaryKey(),
+  nombre: text().notNull(),
+  permiso: text({ enum: ["cita", "promocion"] }).notNull(),
+  texto: text().notNull(),
+  actualizadaEn: creadoEn(),
+});
+
+/** Mensajes preparados para una clienta (queda anotado en su ficha qué se le escribió y quién). */
+export const mensajes = pgTable(
+  "mensajes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clienteId: uuid()
+      .notNull()
+      .references(() => clientes.id),
+    plantilla: text(),
+    texto: text().notNull(),
+    canal: text({ enum: ["whatsapp_enlace"] }).notNull(),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    cuando: creadoEn(),
+  },
+  (t) => [index("mensajes_cliente").on(t.clienteId, t.cuando)],
 );

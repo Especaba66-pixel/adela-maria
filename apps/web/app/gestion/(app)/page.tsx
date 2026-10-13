@@ -3,14 +3,18 @@ import { Aviso, Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { fechaLarga, saludo } from "@/lib/fechas";
 import { requerirSesion } from "@/server/auth";
-import { avisosSistema } from "@/server/estado";
 import { contarPendientes } from "@/server/reservas";
 import { ventasPendientes } from "@/server/tpv";
 import { bonosPorAcabar } from "@/server/bonos";
 import { productosConStock } from "@/server/stock";
+import { avisosDeHoy } from "@/server/avisos";
+import { ListaAvisos } from "@/components/ListaAvisos";
 import { citasDelDia, profesionalDeUsuario } from "@/server/agenda";
 import { EstadoCitaChip } from "@/components/EstadoCita";
 import { horaATexto, hoyEnMadrid, partesMadrid } from "@adela/dominio";
+
+/** Cosas por hacer que caben en el Inicio; el resto, en Avisos. */
+const MAX_INICIO = 12;
 
 const TARJETAS = [
   { titulo: "Citas de hoy", fase: 0, href: "/gestion/agenda" },
@@ -18,21 +22,22 @@ const TARJETAS = [
   { titulo: "Pendientes de cobro", fase: 0, href: "/gestion/tpv" },
   { titulo: "Bonos por acabar", fase: 0, href: "/gestion/mas/bonos" },
   { titulo: "Stock bajo", fase: 0, href: "/gestion/mas/stock" },
-  { titulo: "Tareas", fase: 5, href: "/gestion/avisos" },
+  { titulo: "Por hacer hoy", fase: 0, href: "/gestion/avisos" },
 ];
 
 export default async function Inicio() {
   const { usuario } = await requerirSesion();
   const ahora = new Date();
-  const avisos = puede(usuario.rol, "configuracion.gestionar") ? await avisosSistema() : [];
   const verReservas = puede(usuario.rol, "reservas.gestionar");
   const verToda = puede(usuario.rol, "agenda.ver_toda");
   const propia = verToda ? null : await profesionalDeUsuario(usuario.id);
   const hoy = verToda || propia ? await citasDelDia(hoyEnMadrid(ahora), { profesionalId: propia?.id }) : [];
   const proximas = hoy.filter((c) => c.fin.getTime() > ahora.getTime());
   const reponer = puede(usuario.rol, "stock.gestionar") ? (await productosConStock()).filter((p) => p.bajo) : undefined;
+  const porHacer = await avisosDeHoy(usuario);
   const valores: Record<string, number | undefined> = {
     "Stock bajo": reponer?.length,
+    "Por hacer hoy": porHacer.length,
     "Reservas por confirmar": verReservas ? await contarPendientes() : undefined,
     "Citas de hoy": verToda || propia ? hoy.length : undefined,
     "Pendientes de cobro": puede(usuario.rol, "cobrar") ? (await ventasPendientes()).length : undefined,
@@ -47,12 +52,6 @@ export default async function Inicio() {
         </h1>
         <p className="mt-1 text-lg text-tinta-suave first-letter:uppercase">{fechaLarga(ahora)}</p>
       </header>
-
-      {reponer && reponer.length > 0 && (
-        <Link href="/gestion/mas/stock" className="block">
-          <Aviso prioridad="importante">Hay que reponer: {reponer.map((p) => `${p.nombre} (quedan ${p.stock})`).join(", ")}.</Aviso>
-        </Link>
-      )}
 
       <section aria-label="Resumen del día" className="grid grid-cols-2 gap-4 xl:grid-cols-3">
         {TARJETAS.filter((t) => t.fase > 0 || valores[t.titulo] !== undefined).map((t) => (
@@ -98,24 +97,17 @@ export default async function Inicio() {
       )}
 
       <section aria-labelledby="titulo-avisos" className="space-y-3">
-        <h2 id="titulo-avisos" className="text-3xl">
-          Avisos
-        </h2>
-        {avisos.length === 0 ? (
-          <Aviso prioridad="correcto">Todo en orden.</Aviso>
-        ) : (
-          avisos.map((a) => (
-            <Aviso key={a.texto} prioridad={a.prioridad}>
-              {a.enlace ? (
-                <Link href={a.enlace} className="underline">
-                  {a.texto}
-                </Link>
-              ) : (
-                a.texto
-              )}
-            </Aviso>
-          ))
-        )}
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="titulo-avisos" className="text-3xl">
+            Qué hay que hacer hoy
+          </h2>
+          {porHacer.length > MAX_INICIO && (
+            <Link href="/gestion/avisos" className="text-dorado-oscuro underline">
+              Ver los {porHacer.length}
+            </Link>
+          )}
+        </div>
+        {porHacer.length === 0 ? <Aviso prioridad="correcto">Todo en orden: no hay nada pendiente.</Aviso> : <ListaAvisos avisos={porHacer.slice(0, MAX_INICIO)} />}
       </section>
     </div>
   );

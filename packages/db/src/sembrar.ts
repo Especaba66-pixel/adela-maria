@@ -1,12 +1,12 @@
 /**
  * Datos iniciales. Se puede ejecutar varias veces: solo añade lo que falta.
  */
-import { cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
+import { PLANTILLAS_INICIALES, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { categorias, centro, horarios, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { categorias, centro, horarios, plantillas, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -71,6 +71,9 @@ export async function sembrar(
       await tx.insert(horarios).values(HORARIO_INICIAL.map((h) => ({ ...h, profesionalId: adela!.id })));
       resumen.horarioCreado = true;
     }
+
+    // Plantillas de mensajes de partida (las que ya existen no se tocan: puede haberlas cambiado el centro).
+    await tx.insert(plantillas).values(PLANTILLAS_INICIALES).onConflictDoNothing();
 
     for (const [i, cat] of tarifas.categorias.entries()) {
       await tx.insert(categorias).values({ nombre: cat.nombre, orden: i }).onConflictDoNothing();

@@ -15,7 +15,7 @@ export const MENU: EntradaMenu[] = [
   { href: "/gestion/clientas", nombre: "Clientas", icono: "☺", fase: 0 },
   { href: "/gestion/tpv", nombre: "TPV", icono: "€", fase: 0 },
   { href: "/gestion/caja", nombre: "Caja", icono: "▤", fase: 0 },
-  { href: "/gestion/avisos", nombre: "Avisos", icono: "⚑", fase: 5 },
+  { href: "/gestion/avisos", nombre: "Avisos", icono: "⚑", fase: 0 },
   { href: "/gestion/mas", nombre: "Más", icono: "⋯", fase: 0 },
 ];
 
@@ -28,6 +28,6 @@ export const MAS: (EntradaMenu & { permiso?: Permiso })[] = [
   { href: "/gestion/mas/stock", nombre: "Stock", icono: "▥", fase: 0, permiso: "stock.gestionar" },
   { href: "/gestion/mas/proveedores", nombre: "Proveedores", icono: "⛟", fase: 0, permiso: "stock.gestionar" },
   { href: "/gestion/mas/gastos", nombre: "Gastos", icono: "◧", fase: 0, permiso: "gastos.gestionar" },
-  { href: "/gestion/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 5 },
+  { href: "/gestion/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 0, permiso: "configuracion.gestionar" },
   { href: "/gestion/mas/informes", nombre: "Informes", icono: "▲", fase: 7 },
 ];

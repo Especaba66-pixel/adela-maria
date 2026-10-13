@@ -71,6 +71,13 @@
       "when": 1791879358814,
       "tag": "0009_stock_proveedores_y_gastos",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791880425841,
+      "tag": "0010_avisos_tareas_y_seguimiento",
+      "breakpoints": true
     }
   ]
 }

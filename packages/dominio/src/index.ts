@@ -11,3 +11,4 @@ export * from "./facturacion";
 export * from "./ticket";
 export * from "./bonos";
 export * from "./stock";
+export * from "./avisos";

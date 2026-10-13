@@ -6,6 +6,7 @@ const SECCIONES = [
   { href: "/gestion/mas/configuracion/centro", nombre: "Datos del centro", texto: "Teléfono, dirección y número de cabinas." },
   { href: "/gestion/mas/configuracion/horario", nombre: "Horario", texto: "Qué días y horas atiende cada profesional." },
   { href: "/gestion/mas/configuracion/profesionales", nombre: "Profesionales", texto: "Quién atiende citas y qué tratamientos hace." },
+  { href: "/gestion/mas/configuracion/avisos", nombre: "Avisos automáticos", texto: "Recordatorios, seguimiento, bonos, cumpleaños y clientas que no vuelven." },
   { href: "/gestion/mas/configuracion/impresora", nombre: "Impresora y cajón", texto: "Impresora de tickets y apertura del cajón." },
   { href: "/gestion/mas/configuracion/usuarios", nombre: "Usuarios", texto: "Quién entra, con qué rol, contraseña y PIN." },
   { href: "/gestion/mas/configuracion/equipos", nombre: "Equipos", texto: "Equipos de confianza donde se entra con PIN." },

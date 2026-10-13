@@ -57,6 +57,9 @@ const ACCIONES: Record<string, string> = {
   "compra.registrar": "Registró una compra",
   "gasto.registrar": "Anotó un gasto",
   "gasto.anular": "Anuló un gasto",
+  "mensaje.preparar": "Preparó un mensaje de WhatsApp",
+  "avisos.configurar": "Cambió los avisos automáticos",
+  "plantilla.editar": "Cambió un mensaje de WhatsApp",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

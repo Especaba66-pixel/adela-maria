@@ -210,7 +210,8 @@ test("la ficha de la clienta reúne sus citas y notas", async () => {
   await pagina.getByLabel("Nueva nota").fill("Prefiere por la mañana");
   await pagina.getByRole("button", { name: "Añadir nota" }).click();
   await expect(pagina.getByText("Prefiere por la mañana")).toBeVisible();
-  await expect(pagina.getByRole("link", { name: "WhatsApp" })).toHaveAttribute("href", /wa\.me\/34611223344/);
+  await pagina.getByText("WhatsApp", { exact: true }).click();
+  await expect(pagina.getByRole("link", { name: "Escribir otra cosa" })).toHaveAttribute("href", /wa\.me\/34611223344/);
 
   await pagina.getByLabel("Avisos de sus citas").check();
   await pagina.getByRole("button", { name: "Guardar ficha" }).click();

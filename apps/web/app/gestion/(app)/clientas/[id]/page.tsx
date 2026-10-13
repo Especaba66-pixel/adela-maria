@@ -4,7 +4,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { diaLargo, fechaHora } from "@/lib/fechas";
 import { requerirSesion } from "@/server/auth";
-import { fichaClienta } from "@/server/clientas";
+import { fichaClienta, mensajesDeClienta } from "@/server/clientas";
+import { plantillasGuardadas } from "@/server/avisos";
+import { enlaceMensaje } from "@/components/ListaAvisos";
+import { FormularioTarea } from "../../avisos/FormularioTarea";
 import { bonosDeClienta } from "@/server/bonos";
 import { suprimir } from "../acciones";
 import { FormularioClienta } from "../FormularioClienta";
@@ -27,7 +30,20 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
     );
   }
   const esAdmin = puede(usuario.rol, "configuracion.gestionar");
-  const bonos = puede(usuario.rol, "cobrar") ? await bonosDeClienta(id) : [];
+  const [bonos, mensajes, plantillas] = await Promise.all([puede(usuario.rol, "cobrar") ? bonosDeClienta(id) : [], mensajesDeClienta(id), plantillasGuardadas()]);
+  // Próxima cita (para el recordatorio con su fecha y hora).
+  const ahora = Date.now();
+  const proxima = f.eventos
+    .filter((e) => e.tipo === "cita" && (e.estado === "pendiente" || e.estado === "confirmada") && new Date(e.cuando).getTime() > ahora)
+    .sort((a, b) => new Date(a.cuando).getTime() - new Date(b.cuando).getTime())[0];
+  const SOLO_NOMBRE = /\{(fecha|hora|servicios|quedan|bono)\}/;
+  const ofrecer = plantillas.flatMap((p): { p: typeof p; citaId?: string }[] => {
+    if (p.permiso === "cita" && !c.aceptaAvisosCitas && p.clave !== "confirmar_cita") return [];
+    if (p.permiso === "promocion" && !c.aceptaPromociones) return [];
+    if (!SOLO_NOMBRE.test(p.texto)) return [{ p }];
+    if (proxima && proxima.tipo === "cita" && (p.clave === "recordatorio" || p.clave === "confirmar_cita")) return [{ p, citaId: proxima.id }];
+    return [];
+  });
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -41,14 +57,21 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
           </p>
         </div>
         {c.telefono && (
-          <a
-            href={enlaceWhatsapp(c.telefono, `Hola, ${c.nombre}. `)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-toque items-center rounded-xl border-2 border-correcto px-5 font-semibold text-correcto hover:bg-correcto-fondo"
-          >
-            WhatsApp
-          </a>
+          <details className="relative">
+            <summary className="inline-flex min-h-toque cursor-pointer items-center rounded-xl border-2 border-correcto px-5 font-semibold text-correcto hover:bg-correcto-fondo">
+              WhatsApp
+            </summary>
+            <div className="absolute right-0 z-10 mt-2 w-72 space-y-1 rounded-xl border border-borde bg-superficie p-2 shadow-lg">
+              {ofrecer.map(({ p, citaId }) => (
+                <a key={p.clave} href={enlaceMensaje({ clienteId: c.id, plantilla: p.clave, citaId })} target="_blank" rel="noopener" className="block rounded-lg px-3 py-2 hover:bg-crema">
+                  {p.nombre}
+                </a>
+              ))}
+              <a href={enlaceWhatsapp(c.telefono, `Hola, ${c.nombre.split(" ")[0]}. `)} target="_blank" rel="noopener noreferrer" className="block rounded-lg px-3 py-2 text-tinta-suave hover:bg-crema">
+                Escribir otra cosa
+              </a>
+            </div>
+          </details>
         )}
         <Link href={`/gestion/agenda/nueva?cliente=${c.id}`} className="inline-flex min-h-toque items-center rounded-xl bg-dorado-oscuro px-5 font-semibold text-white hover:bg-tinta">
           + Nueva cita
@@ -109,6 +132,26 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
         </section>
 
         <section aria-labelledby="datos" className="space-y-3">
+          <Tarjeta className="space-y-3">
+            <h2 className="text-xl">Apuntar una tarea sobre {c.nombre.split(" ")[0]}</h2>
+            <FormularioTarea clienteId={c.id} />
+          </Tarjeta>
+          {mensajes.length > 0 && (
+            <Tarjeta className="space-y-2">
+              <h2 className="text-xl">Mensajes preparados</h2>
+              <ol className="space-y-2" aria-label="Mensajes preparados">
+                {mensajes.slice(0, 20).map(({ m, quien }) => (
+                  <li key={m.id} className="rounded-xl border border-borde px-3 py-2">
+                    <div className="text-sm text-tinta-suave">
+                      WhatsApp · {quien} · {fechaHora(m.cuando)}
+                    </div>
+                    <div className="whitespace-pre-wrap">{m.texto}</div>
+                  </li>
+                ))}
+              </ol>
+            </Tarjeta>
+          )}
+
           <h2 id="datos" className="text-2xl">
             Datos
           </h2>

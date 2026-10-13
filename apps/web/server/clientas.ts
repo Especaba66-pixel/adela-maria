@@ -1,17 +1,30 @@
 import "server-only";
 import {
+  centro,
   citas,
   citasServicios,
   clientes,
   consentimientos,
+  mensajes,
   notasClientes,
+  tareas,
   registrarActividad,
   solicitudesReserva,
   tratamientos,
   usuarios,
 } from "@adela/db";
-import { hoyEnMadrid, telefonoDeBusqueda, validarClienta, type DatosClienta } from "@adela/dominio";
-import { and, asc, desc, eq, ilike, inArray, isNull, like, or } from "drizzle-orm";
+import {
+  estaInactiva,
+  horaATexto,
+  hoyEnMadrid,
+  leerAjustesAvisos,
+  partesMadrid,
+  telefonoDeBusqueda,
+  validarClienta,
+  type DatosClienta,
+  type Segmento,
+} from "@adela/dominio";
+import { and, asc, desc, eq, ilike, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { requerirSesion } from "./auth";
 import { db } from "./db";
 
@@ -176,10 +189,72 @@ export async function anonimizarClienta(id: string): Promise<Resultado> {
       .where(eq(clientes.id, id));
     await tx.update(notasClientes).set({ texto: "[nota eliminada]" }).where(eq(notasClientes.clienteId, id));
     await tx.update(citas).set({ nota: null }).where(eq(citas.clienteId, id));
+    // Los mensajes que se le prepararon llevan su nombre: se borran. Las tareas sobre ella se quedan sin texto.
+    await tx.delete(mensajes).where(eq(mensajes.clienteId, id));
+    await tx.update(tareas).set({ texto: "[tarea de una clienta eliminada]" }).where(eq(tareas.clienteId, id));
     if (c.telefono) {
       await tx.update(solicitudesReserva).set({ nombre: "Clienta eliminada", telefono: "+34000000000", nota: null }).where(eq(solicitudesReserva.telefono, c.telefono));
     }
     await registrarActividad(tx, { usuarioId: usuario.id, accion: "clienta.suprimir", entidad: "clientes", entidadId: id });
   });
   return { ok: true, valor: undefined };
+}
+
+/** Clientas de un segmento, con un dato que explica por qué están (última visita, cumpleaños…). */
+export async function clientasDeSegmento(segmento: Segmento): Promise<{ id: string; nombre: string; telefono: string | null; promociones: boolean; dato: string }[]> {
+  await requerirSesion("clientas.gestionar");
+  const hoy = hoyEnMadrid(new Date());
+  const ultima = sql<string | null>`(select to_char(max(ci.inicio at time zone 'Europe/Madrid'), 'YYYY-MM-DD') from citas ci where ci.cliente_id = "clientes"."id" and ci.estado = 'realizada')`;
+  const proxima = sql<Date | null>`(select min(ci.inicio) from citas ci where ci.cliente_id = "clientes"."id" and ci.inicio > now() and ci.estado in ('pendiente', 'confirmada'))`;
+  const filas = await db().select({ c: clientes, ultima, proxima }).from(clientes).where(isNull(clientes.anonimizadaEn)).orderBy(asc(clientes.nombre));
+  const fecha = (f: string) => f.split("-").reverse().join("/");
+  const conBono =
+    segmento === "con_bono"
+      ? new Set(
+          (
+            await db().execute<{ cliente_id: string }>(
+              sql`select b.cliente_id from bonos b where b.anulado_en is null and (b.caduca_en is null or b.caduca_en >= ${hoy}) and b.sesiones > coalesce((select sum(u.cantidad) from usos_bono u where u.bono_id = b.id), 0)`,
+            )
+          ).map((r) => r.cliente_id),
+        )
+      : null;
+  const dias = (await ajustesAvisosInactividad()) || 90;
+  const lista = filas.flatMap(({ c, ultima: u, proxima: p }) => {
+    const proximaFecha = p ? new Date(p) : null;
+    switch (segmento) {
+      case "proxima_cita":
+        return proximaFecha ? [{ c, dato: `Próxima cita: ${fechaHoraCorta(proximaFecha)}` }] : [];
+      case "inactivas":
+        return estaInactiva(u, proximaFecha !== null, hoy, dias) ? [{ c, dato: `Última visita: ${fecha(u!)}` }] : [];
+      case "cumpleanos_mes":
+        return c.fechaNacimiento && c.fechaNacimiento.slice(5, 7) === hoy.slice(5, 7) ? [{ c, dato: `Cumple el ${Number(c.fechaNacimiento.slice(8))}` }] : [];
+      case "con_bono":
+        return conBono!.has(c.id) ? [{ c, dato: "Tiene bono activo" }] : [];
+      case "nuevas":
+        return partesMadrid(c.creadaEn).fecha.slice(0, 7) === hoy.slice(0, 7) ? [{ c, dato: `Alta: ${fecha(partesMadrid(c.creadaEn).fecha)}` }] : [];
+      case "promociones":
+        return c.aceptaPromociones ? [{ c, dato: u ? `Última visita: ${fecha(u)}` : "Aún no ha venido" }] : [];
+    }
+  });
+  return lista.map(({ c, dato }) => ({ id: c.id, nombre: c.nombre, telefono: c.telefono, promociones: c.aceptaPromociones, dato }));
+}
+
+async function ajustesAvisosInactividad(): Promise<number> {
+  const [c] = await db().select({ avisos: centro.avisos }).from(centro).limit(1);
+  return leerAjustesAvisos(c?.avisos).diasInactiva;
+}
+
+const fechaHoraCorta = (d: Date) => {
+  const p = partesMadrid(d);
+  return `${p.fecha.split("-").reverse().join("/")} ${horaATexto(p.minutos)}`;
+};
+
+/** Mensajes preparados para una clienta (más recientes primero). */
+export async function mensajesDeClienta(id: string) {
+  return db()
+    .select({ m: mensajes, quien: usuarios.nombre })
+    .from(mensajes)
+    .innerJoin(usuarios, eq(usuarios.id, mensajes.usuarioId))
+    .where(eq(mensajes.clienteId, id))
+    .orderBy(desc(mensajes.cuando));
 }
