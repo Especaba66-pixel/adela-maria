@@ -7,7 +7,7 @@
     "dev": "wrangler dev --local --port 8787",
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "semilla": "tsx scripts/semilla.ts > .wrangler/semilla.sql",
+    "semilla": "mkdir -p .wrangler && tsx scripts/semilla.ts > .wrangler/semilla.sql",
     "db:local": "wrangler d1 migrations apply adela-reservas --local && pnpm semilla && wrangler d1 execute adela-reservas --local --file .wrangler/semilla.sql",
     "pruebas": "rm -rf .wrangler/pruebas && wrangler d1 migrations apply adela-reservas --local --persist-to .wrangler/pruebas && pnpm semilla && wrangler d1 execute adela-reservas --local --persist-to .wrangler/pruebas --file .wrangler/semilla.sql && wrangler dev --local --persist-to .wrangler/pruebas --port 8788 --var ORIGEN_WEB:* --var CLAVE_SYNC:clave-de-pruebas-0123456789abcdef0123456789",
     "desplegar": "node scripts/desplegar.mjs"
