@@ -18,6 +18,6 @@ Aplicación de gestión del centro: agenda, clientas, TPV, caja, bonos, stock, a
 | 1. Agenda, clientas y tratamientos | Aprobada (falta la semana de uso real) |
 | 2. TPV, caja y facturación base | Aprobada de forma provisional (falta un día real cobrado en el TPV) |
 | 3. Bonos y tarjetas regalo | Aprobada |
-| 4. Stock, proveedores y gastos | Hecha, pendiente de aprobación |
+| 4. Stock, proveedores y gastos | Aprobada |
 | 5. Avisos, tareas y seguimiento | Siguiente |
 | 6 a 8 | Pendientes |

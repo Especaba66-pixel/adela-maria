@@ -1,6 +1,6 @@
 # Cierre de la fase 4 · Stock, proveedores y gastos
 
-Estado: **hecha, pendiente de tu aprobación.** El plan la da por terminada cuando **una venta descuenta stock y salta
+Estado: **aprobada** el 13 de octubre de 2026. El plan la da por terminada cuando **una venta descuenta stock y salta
 el aviso de stock bajo**. Funciona y está probado (punto 3).
 
 ## 1. Qué se ha construido
@@ -87,4 +87,4 @@ centro, IVA y datos fiscales confirmados por la gestoría.
 
 ## 6. Aprobación
 
-Revisa los pasos del punto 2. Cuando lo apruebes, empiezo la fase 5: avisos, tareas y seguimiento.
+Aprobada por Espe el 13 de octubre de 2026. Siguiente: fase 5, avisos, tareas y seguimiento.
