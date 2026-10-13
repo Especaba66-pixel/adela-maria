@@ -5,6 +5,13 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
+// Los secretos pegados a mano a veces llevan espacios, saltos de línea o la dirección entera del panel:
+// del Account ID solo vale la tira de 32 letras y números.
+for (const v of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "RESERVAS_CLAVE"]) process.env[v] = (process.env[v] ?? "").trim();
+const cuenta = process.env.CLOUDFLARE_ACCOUNT_ID.match(/[0-9a-f]{32}/i)?.[0];
+if (!cuenta) throw new Error("CLOUDFLARE_ACCOUNT_ID no tiene la forma de un Account ID (32 letras y números).");
+process.env.CLOUDFLARE_ACCOUNT_ID = cuenta.toLowerCase();
+
 const wrangler = (...args) => execFileSync("pnpm", ["exec", "wrangler", ...args], { encoding: "utf8", stdio: ["pipe", "pipe", "inherit"] });
 for (const v of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "RESERVAS_CLAVE"]) {
   if (!process.env[v]) throw new Error(`Falta ${v}`);
