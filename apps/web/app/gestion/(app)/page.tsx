@@ -7,6 +7,7 @@ import { avisosSistema } from "@/server/estado";
 import { contarPendientes } from "@/server/reservas";
 import { ventasPendientes } from "@/server/tpv";
 import { bonosPorAcabar } from "@/server/bonos";
+import { productosConStock } from "@/server/stock";
 import { citasDelDia, profesionalDeUsuario } from "@/server/agenda";
 import { EstadoCitaChip } from "@/components/EstadoCita";
 import { horaATexto, hoyEnMadrid, partesMadrid } from "@adela/dominio";
@@ -16,7 +17,7 @@ const TARJETAS = [
   { titulo: "Reservas por confirmar", fase: 0, href: "/gestion/reservas" },
   { titulo: "Pendientes de cobro", fase: 0, href: "/gestion/tpv" },
   { titulo: "Bonos por acabar", fase: 0, href: "/gestion/mas/bonos" },
-  { titulo: "Stock bajo", fase: 4, href: "/gestion/mas/stock" },
+  { titulo: "Stock bajo", fase: 0, href: "/gestion/mas/stock" },
   { titulo: "Tareas", fase: 5, href: "/gestion/avisos" },
 ];
 
@@ -29,7 +30,9 @@ export default async function Inicio() {
   const propia = verToda ? null : await profesionalDeUsuario(usuario.id);
   const hoy = verToda || propia ? await citasDelDia(hoyEnMadrid(ahora), { profesionalId: propia?.id }) : [];
   const proximas = hoy.filter((c) => c.fin.getTime() > ahora.getTime());
+  const reponer = puede(usuario.rol, "stock.gestionar") ? (await productosConStock()).filter((p) => p.bajo) : undefined;
   const valores: Record<string, number | undefined> = {
+    "Stock bajo": reponer?.length,
     "Reservas por confirmar": verReservas ? await contarPendientes() : undefined,
     "Citas de hoy": verToda || propia ? hoy.length : undefined,
     "Pendientes de cobro": puede(usuario.rol, "cobrar") ? (await ventasPendientes()).length : undefined,
@@ -44,6 +47,12 @@ export default async function Inicio() {
         </h1>
         <p className="mt-1 text-lg text-tinta-suave first-letter:uppercase">{fechaLarga(ahora)}</p>
       </header>
+
+      {reponer && reponer.length > 0 && (
+        <Link href="/gestion/mas/stock" className="block">
+          <Aviso prioridad="importante">Hay que reponer: {reponer.map((p) => `${p.nombre} (quedan ${p.stock})`).join(", ")}.</Aviso>
+        </Link>
+      )}
 
       <section aria-label="Resumen del día" className="grid grid-cols-2 gap-4 xl:grid-cols-3">
         {TARJETAS.filter((t) => t.fase > 0 || valores[t.titulo] !== undefined).map((t) => (

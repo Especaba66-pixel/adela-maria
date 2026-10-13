@@ -1,5 +1,5 @@
 import "server-only";
-import { bonos, categorias, centro, citasServicios, clientes, cobros, facturas, lineasVenta, pagos, tiposBono, tiposBonoTratamientos, tratamientos, usosBono, usuarios, ventas, type PagoEntrada, type UsoBono } from "@adela/db";
+import { bonos, productos, stock as stockDb, categorias, centro, citasServicios, clientes, cobros, facturas, lineasVenta, pagos, tiposBono, tiposBonoTratamientos, tratamientos, usosBono, usuarios, ventas, type PagoEntrada, type UsoBono } from "@adela/db";
 import { NOMBRE_METODO, cambio, formatearEuros, lineasTicket, lineasVale, textoQuedan, type DatosTicket, type DatosVale, type MetodoPago } from "@adela/dominio";
 import { and, asc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import { fechaHora } from "@/lib/fechas";
@@ -15,7 +15,9 @@ export type LineaCarrito =
    */
   | { tipo: "tratamiento"; tratamientoId: string; cantidad: number; descuentoCentesimas: number; bonoId?: string; bonoNuevo?: string }
   /** Un bono que se vende. */
-  | { tipo: "bono"; tipoBonoId: string; cantidad: number; descuentoCentesimas: number };
+  | { tipo: "bono"; tipoBonoId: string; cantidad: number; descuentoCentesimas: number }
+  /** Un producto que se vende (sale del stock). */
+  | { tipo: "producto"; productoId: string; cantidad: number; descuentoCentesimas: number };
 
 /** Pago desde el TPV: la tarjeta regalo se indica por su código. */
 export type PagoTpv = { metodo: MetodoPago; importe: number; entregado?: number; codigo?: string };
@@ -54,10 +56,19 @@ export async function cobrarEnTpv(p: PeticionCobro) {
   const ids = [...new Set(p.lineas.flatMap((l) => (l.tipo === "tratamiento" ? [l.tratamientoId] : [])))];
   const lista = ids.length ? await db().select().from(tratamientos).where(inArray(tratamientos.id, ids)) : [];
   const idsBono = [...new Set(p.lineas.flatMap((l) => (l.tipo === "bono" ? [l.tipoBonoId] : [])))];
+  const idsProducto = [...new Set(p.lineas.flatMap((l) => (l.tipo === "producto" ? [l.productoId] : [])))];
+  const listaProductos = idsProducto.length ? await db().select().from(productos).where(inArray(productos.id, idsProducto)) : [];
   const tipos = idsBono.length ? await db().select().from(tiposBono).where(inArray(tiposBono.id, idsBono)) : [];
   const lineas = [];
   const usosBono: UsoBono[] = [];
   for (const l of p.lineas) {
+    if (l.tipo === "producto") {
+      const pr = listaProductos.find((x) => x.id === l.productoId);
+      if (!pr || pr.anuladoEn) return { ok: false as const, error: "Algún producto ya no existe." };
+      if (pr.precioCentimos === null || pr.ivaCentesimas === null) return { ok: false as const, error: `«${pr.nombre}» no tiene precio o IVA. Pónselo en Stock.` };
+      lineas.push({ productoId: pr.id, descripcion: pr.nombre, cantidad: l.cantidad, precioUnitario: pr.precioCentimos, descuentoCentesimas: l.descuentoCentesimas, ivaCentesimas: pr.ivaCentesimas });
+      continue;
+    }
     if (l.tipo === "bono") {
       const b = tipos.find((x) => x.id === l.tipoBonoId);
       if (!b || b.anuladoEn) return { ok: false as const, error: "Ese bono ya no está a la venta." };
@@ -199,6 +210,13 @@ export async function catalogoTpv() {
     .innerJoin(categorias, eq(categorias.id, tratamientos.categoriaId))
     .where(and(isNull(tratamientos.anuladoEn), isNull(categorias.anuladoEn)))
     .orderBy(asc(categorias.orden), asc(tratamientos.orden));
+}
+
+/** Productos que se venden en el TPV, con su stock. */
+export async function productosALaVenta() {
+  return (await stockDb.listaProductos(db()))
+    .filter((p) => p.uso === "venta")
+    .map((p) => ({ id: p.id, nombre: p.nombre, precioCentimos: p.precioCentimos, ivaCentesimas: p.ivaCentesimas, stock: p.stock }));
 }
 
 /** Bonos que se pueden vender, con lo que cubren. */

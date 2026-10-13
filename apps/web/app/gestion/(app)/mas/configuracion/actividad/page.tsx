@@ -47,6 +47,16 @@ const ACCIONES: Record<string, string> = {
   "bono.devolver_sesion": "Devolvió una sesión de bono",
   "tarjeta_regalo.vender": "Vendió una tarjeta regalo",
   "tarjeta_regalo.devolver": "Devolvió una tarjeta regalo",
+  "producto.crear": "Añadió un producto",
+  "producto.editar": "Modificó un producto",
+  "stock.recuento": "Hizo un recuento de stock",
+  "stock.merma": "Quitó del stock (roto o caducado)",
+  "stock.consumo": "Cambió el gasto de cabina de un tratamiento",
+  "proveedor.crear": "Añadió un proveedor",
+  "proveedor.editar": "Modificó un proveedor",
+  "compra.registrar": "Registró una compra",
+  "gasto.registrar": "Anotó un gasto",
+  "gasto.anular": "Anuló un gasto",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

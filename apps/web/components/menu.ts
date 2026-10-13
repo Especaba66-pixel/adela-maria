@@ -25,8 +25,9 @@ export const MAS: (EntradaMenu & { permiso?: Permiso })[] = [
   { href: "/gestion/mas/configuracion", nombre: "Configuración", icono: "⚙", fase: 0, permiso: "configuracion.gestionar" },
   { href: "/gestion/mas/facturacion", nombre: "Facturación", icono: "▣", fase: 0, permiso: "cobrar" },
   { href: "/gestion/mas/bonos", nombre: "Bonos y tarjetas regalo", icono: "✦", fase: 0, permiso: "cobrar" },
-  { href: "/gestion/mas/stock", nombre: "Stock", icono: "▥", fase: 4 },
-  { href: "/gestion/mas/proveedores", nombre: "Proveedores", icono: "⛟", fase: 4 },
+  { href: "/gestion/mas/stock", nombre: "Stock", icono: "▥", fase: 0, permiso: "stock.gestionar" },
+  { href: "/gestion/mas/proveedores", nombre: "Proveedores", icono: "⛟", fase: 0, permiso: "stock.gestionar" },
+  { href: "/gestion/mas/gastos", nombre: "Gastos", icono: "◧", fase: 0, permiso: "gastos.gestionar" },
   { href: "/gestion/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 5 },
   { href: "/gestion/mas/informes", nombre: "Informes", icono: "▲", fase: 7 },
 ];

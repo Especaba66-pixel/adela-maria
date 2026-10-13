@@ -23,7 +23,7 @@ import {
   type AnyPgColumn,
   uuid,
 } from "drizzle-orm/pg-core";
-import { ROLES } from "@adela/dominio";
+import { CATEGORIAS_GASTO, ROLES } from "@adela/dominio";
 
 const fecha = (nombre?: string) =>
   nombre ? timestamp(nombre, { withTimezone: true }) : timestamp({ withTimezone: true });
@@ -488,6 +488,7 @@ export const lineasVenta = pgTable(
     orden: integer().notNull(),
     tratamientoId: uuid().references(() => tratamientos.id),
     tipoBonoId: uuid().references(() => tiposBono.id),
+    productoId: uuid().references((): AnyPgColumn => productos.id),
     descripcion: text().notNull(),
     cantidad: integer().notNull(),
     precioUnitario: integer().notNull(),
@@ -709,3 +710,144 @@ export const reservasOnline = pgTable("reservas_online", {
   solicitudId: uuid().references(() => solicitudesReserva.id),
   importadaEn: creadoEn(),
 });
+
+// ── Fase 4: stock, proveedores y gastos ─────────────────────────────────────
+
+export const proveedores = pgTable("proveedores", {
+  id: uuid().primaryKey().defaultRandom(),
+  nombre: text().notNull().unique(),
+  nif: text(),
+  telefono: text(),
+  email: text(),
+  notas: text(),
+  anuladoEn: fecha(),
+  creadoEn: creadoEn(),
+});
+
+/** Productos: los que se venden en el TPV y los que se gastan en cabina. Su stock es la suma de sus movimientos. */
+export const productos = pgTable(
+  "productos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    nombre: text().notNull().unique(),
+    /** «venta»: se vende a las clientas; «cabina»: se gasta en los tratamientos. */
+    uso: text({ enum: ["venta", "cabina"] }).notNull(),
+    referencia: text(),
+    /** Precio de venta con IVA (solo productos de venta). */
+    precioCentimos: integer(),
+    ivaCentesimas: integer(),
+    /** Último coste de compra por unidad, sin IVA. */
+    costeCentimos: integer(),
+    /** Por debajo de esto, aviso de stock bajo. */
+    stockMinimo: integer().notNull().default(0),
+    proveedorId: uuid().references(() => proveedores.id),
+    anuladoEn: fecha(),
+    creadoEn: creadoEn(),
+  },
+  (t) => [
+    check("productos_precio_no_negativo", sql`${t.precioCentimos} is null or ${t.precioCentimos} >= 0`),
+    check("productos_iva_valido", sql`${t.ivaCentesimas} is null or ${t.ivaCentesimas} between 0 and 10000`),
+    check("productos_minimo_no_negativo", sql`${t.stockMinimo} >= 0`),
+  ],
+);
+
+/** Lo que se gasta de un producto de cabina en cada tratamiento (se descuenta solo al cobrarlo o usar el bono). */
+export const consumosTratamiento = pgTable(
+  "consumos_tratamiento",
+  {
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+    productoId: uuid()
+      .notNull()
+      .references(() => productos.id),
+    cantidad: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.tratamientoId, t.productoId] }), check("consumos_cantidad_positiva", sql`${t.cantidad} > 0`)],
+);
+
+/** Compras a proveedores: entran en el stock y generan su gasto. */
+export const compras = pgTable("compras", {
+  id: uuid().primaryKey().defaultRandom(),
+  proveedorId: uuid()
+    .notNull()
+    .references(() => proveedores.id),
+  fecha: date({ mode: "string" }).notNull(),
+  numeroFactura: text(),
+  notas: text(),
+  usuarioId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  creadaEn: creadoEn(),
+});
+
+export const lineasCompra = pgTable(
+  "lineas_compra",
+  {
+    compraId: uuid()
+      .notNull()
+      .references(() => compras.id),
+    orden: integer().notNull(),
+    productoId: uuid()
+      .notNull()
+      .references(() => productos.id),
+    cantidad: integer().notNull(),
+    /** Coste por unidad, sin IVA. */
+    costeUnitario: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.compraId, t.orden] }), check("lineas_compra_cantidad", sql`${t.cantidad} > 0`), check("lineas_compra_coste", sql`${t.costeUnitario} >= 0`)],
+);
+
+/** Movimientos de stock. Solo se añaden: un error se corrige con otro movimiento (ajuste). */
+export const movimientosStock = pgTable(
+  "movimientos_stock",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    productoId: uuid()
+      .notNull()
+      .references(() => productos.id),
+    tipo: text({ enum: ["compra", "venta", "devolucion", "consumo", "ajuste", "merma"] }).notNull(),
+    cantidad: integer().notNull(),
+    compraId: uuid().references(() => compras.id),
+    ventaId: uuid().references(() => ventas.id),
+    citaId: uuid().references(() => citas.id),
+    motivo: text(),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    cuando: creadoEn(),
+  },
+  (t) => [index("movimientos_stock_producto").on(t.productoId), check("movimientos_stock_no_cero", sql`${t.cantidad} <> 0`)],
+);
+
+/** Gastos del centro (facturas recibidas), para el resumen de IVA y la gestoría. */
+export const gastos = pgTable(
+  "gastos",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    fecha: date({ mode: "string" }).notNull(),
+    categoria: text({ enum: CATEGORIAS_GASTO }).notNull(),
+    concepto: text().notNull(),
+    proveedorId: uuid().references(() => proveedores.id),
+    numeroFactura: text(),
+    /** Base imponible, tipo y cuota de IVA soportado, y total pagado. */
+    base: integer().notNull(),
+    ivaCentesimas: integer().notNull(),
+    cuota: integer().notNull(),
+    total: integer().notNull(),
+    compraId: uuid().references(() => compras.id),
+    /** Si se pagó en efectivo con dinero de la caja. */
+    pagoCaja: boolean().notNull().default(false),
+    usuarioId: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    creadoEn: creadoEn(),
+    anuladoEn: fecha(),
+  },
+  (t) => [
+    index("gastos_fecha").on(t.fecha),
+    uniqueIndex("gastos_una_por_compra").on(t.compraId),
+    check("gastos_cuadra", sql`${t.base} + ${t.cuota} = ${t.total}`),
+    check("gastos_iva_valido", sql`${t.ivaCentesimas} between 0 and 10000`),
+  ],
+);

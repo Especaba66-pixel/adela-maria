@@ -17,6 +17,8 @@ describe("permisos", () => {
     expect(puede("recepcion", "facturas.anular")).toBe(false);
     expect(puede("recepcion", "usuarios.gestionar")).toBe(false);
     expect(puede("recepcion", "bonos.corregir")).toBe(false);
+    expect(puede("recepcion", "stock.gestionar")).toBe(true);
+    expect(puede("recepcion", "gastos.gestionar")).toBe(false);
   });
 
   it("una profesional solo ve su agenda y sus fichas", () => {

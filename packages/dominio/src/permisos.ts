@@ -23,6 +23,8 @@ export const PERMISOS = [
   "caja.abrir_cerrar",
   "facturas.anular",
   "bonos.corregir",
+  "stock.gestionar",
+  "gastos.gestionar",
   "informes.ver",
   "configuracion.gestionar",
   "usuarios.gestionar",
@@ -32,7 +34,7 @@ export type Permiso = (typeof PERMISOS)[number];
 
 const PERMISOS_POR_ROL: Record<Rol, readonly Permiso[]> = {
   administrador: PERMISOS,
-  recepcion: ["agenda.ver_toda", "agenda.gestionar", "clientas.gestionar", "reservas.gestionar", "cobrar", "caja.abrir_cerrar"],
+  recepcion: ["agenda.ver_toda", "agenda.gestionar", "clientas.gestionar", "reservas.gestionar", "cobrar", "caja.abrir_cerrar", "stock.gestionar"],
   profesional: ["agenda.ver_propia", "fichas.ver_propias"],
 };
 

@@ -42,7 +42,15 @@ export interface CitaPorCobrar {
 }
 type Linea =
   | { tipo: "tratamiento"; tratamientoId: string; cantidad: number; descuentoCentesimas: number; conBono: boolean }
-  | { tipo: "bono"; tipoBonoId: string; cantidad: number; descuentoCentesimas: number };
+  | { tipo: "bono"; tipoBonoId: string; cantidad: number; descuentoCentesimas: number }
+  | { tipo: "producto"; productoId: string; cantidad: number; descuentoCentesimas: number };
+export interface ProductoALaVenta {
+  id: string;
+  nombre: string;
+  precioCentimos: number | null;
+  ivaCentesimas: number | null;
+  stock: number;
+}
 type Pago = { metodo: MetodoPago; importe: number; entregado?: number; codigo?: string };
 interface Clienta {
   id: string;
@@ -58,12 +66,14 @@ const lineaTratamiento = (id: string): Linea => ({ tipo: "tratamiento", tratamie
 export function Tpv({
   catalogo,
   bonosVenta,
+  productosVenta = [],
   citas,
   cajaAbierta,
   inicial,
 }: {
   catalogo: ItemCatalogo[];
   bonosVenta: BonoALaVenta[];
+  productosVenta?: ProductoALaVenta[];
   citas: CitaPorCobrar[];
   cajaAbierta: boolean;
   /** Cita con la que se abre el TPV (al pulsar «Cobrar» en una cita). */
@@ -109,6 +119,7 @@ export function Tpv({
 
   const porId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
   const bonoPorId = useMemo(() => new Map(bonosVenta.map((b) => [b.id, b])), [bonosVenta]);
+  const productoPorId = useMemo(() => new Map(productosVenta.map((p) => [p.id, p])), [productosVenta]);
 
   // Qué bono paga cada línea «con bono», y si a las demás les podría tocar uno.
   const bonosEnCuenta = lineas.flatMap((l) => {
@@ -128,6 +139,10 @@ export function Tpv({
   const bonoPosible = (tratamientoId: string) => bonosRestantes.find((b) => b.tratamientoIds.includes(tratamientoId) && restantes(b) > 0);
 
   const calculadas = lineas.map((l, i) => {
+    if (l.tipo === "producto") {
+      const p = productoPorId.get(l.productoId)!;
+      return { linea: l, nombre: p.nombre, bonoId: null, ...calcularLinea({ descripcion: p.nombre, cantidad: l.cantidad, precioUnitario: p.precioCentimos ?? 0, descuentoCentesimas: l.descuentoCentesimas, ivaCentesimas: p.ivaCentesimas ?? 0 }) };
+    }
     if (l.tipo === "bono") {
       const b = bonoPorId.get(l.tipoBonoId)!;
       return { linea: l, nombre: b.nombre, bonoId: null, ...calcularLinea({ descripcion: b.nombre, cantidad: l.cantidad, precioUnitario: b.precioCentimos, descuentoCentesimas: l.descuentoCentesimas, ivaCentesimas: b.ivaCentesimas ?? 0 }) };
@@ -166,6 +181,14 @@ export function Tpv({
     });
   }
   /** Al vender un bono, lo que cubre de la cuenta pasa a pagarse con él (la primera sesión, hoy). */
+  function anadirProducto(id: string) {
+    limpiarPago();
+    setTarjeta(null);
+    setLineas((ls) => {
+      const i = ls.findIndex((l) => l.tipo === "producto" && l.productoId === id && l.descuentoCentesimas === 0);
+      return i >= 0 ? ls.map((l, j) => (j === i ? { ...l, cantidad: l.cantidad + 1 } : l)) : [...ls, { tipo: "producto", productoId: id, cantidad: 1, descuentoCentesimas: 0 }];
+    });
+  }
   function anadirBono(id: string) {
     limpiarPago();
     setTarjeta(null);
@@ -222,7 +245,9 @@ export function Tpv({
         ? await venderTarjeta({ importe: tarjeta.importe, para: tarjeta.para, deParte: tarjeta.deParte, clienteId: clienta?.id, pagos })
         : await cobrar({
             lineas: calculadas.map(({ linea: l, bonoId }) =>
-              l.tipo === "bono"
+              l.tipo === "producto"
+                ? { tipo: "producto", productoId: l.productoId, cantidad: l.cantidad, descuentoCentesimas: l.descuentoCentesimas }
+                : l.tipo === "bono"
                 ? { tipo: "bono", tipoBonoId: l.tipoBonoId, cantidad: l.cantidad, descuentoCentesimas: l.descuentoCentesimas }
                 : {
                     tipo: "tratamiento",
@@ -300,6 +325,30 @@ export function Tpv({
             </div>
           </div>
         ))}
+        {productosVenta.length > 0 && (
+          <div className="space-y-2" role="group" aria-label="Productos">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-tinta-suave">Productos</h3>
+            <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+              {productosVenta.map((p) => {
+                const vendible = p.precioCentimos !== null && p.ivaCentesimas !== null;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    disabled={!vendible}
+                    onClick={() => anadirProducto(p.id)}
+                    className="min-h-boton rounded-xl border-2 border-borde bg-superficie px-3 py-2 text-left hover:border-dorado disabled:opacity-50"
+                  >
+                    <div className="font-medium leading-tight">{p.nombre}</div>
+                    <div className="text-sm text-tinta-suave">
+                      {vendible ? formatearEuros(p.precioCentimos!) : "sin precio"} · {p.stock > 0 ? `quedan ${p.stock}` : "sin stock"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="space-y-2" role="group" aria-label="Bonos y tarjetas regalo">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-tinta-suave">Bonos y tarjetas regalo</h3>
           <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">

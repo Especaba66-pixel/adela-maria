@@ -45,9 +45,11 @@ import {
   tiposBono,
   tiposBonoTratamientos,
   usosBono,
+  movimientosStock,
   ventas,
 } from "./esquema";
 import type { BaseDatos, Tx } from "./index";
+import { salidasDeCobro } from "./stock";
 
 export type Resultado<T> = { ok: true; valor: T } | { ok: false; error: string };
 const error = (e: string) => ({ ok: false as const, error: e });
@@ -221,8 +223,8 @@ export type UsoBono = { tratamientoId: string } & ({ bonoId: string; tipoBonoNue
 export interface Cobro {
   clienteId?: string | null;
   citaId?: string | null;
-  /** Lo que se cobra: tratamientos (con `tratamientoId`) o bonos que se venden (con `tipoBonoId`). */
-  lineas: (LineaEntrada & { tratamientoId?: string | null; tipoBonoId?: string | null })[];
+  /** Lo que se cobra: tratamientos (`tratamientoId`), bonos que se venden (`tipoBonoId`) o productos (`productoId`). */
+  lineas: (LineaEntrada & { tratamientoId?: string | null; tipoBonoId?: string | null; productoId?: string | null })[];
   pagos: PagoEntrada[];
   /**
    * Tratamientos que no se cobran porque se pagan con una sesión de un bono de la clienta: uno que ya tiene
@@ -322,7 +324,7 @@ export async function cobrar(db: BaseDatos, usuarioId: string, c: Cobro): Promis
     const e = validarLinea(l);
     if (e) return error(`${l.descripcion || "Línea"}: ${e}`);
   }
-  const lineas = c.lineas.map((l) => ({ ...calcularLinea(l), tratamientoId: l.tratamientoId ?? null, tipoBonoId: l.tipoBonoId ?? null }));
+  const lineas = c.lineas.map((l) => ({ ...calcularLinea(l), tratamientoId: l.tratamientoId ?? null, tipoBonoId: l.tipoBonoId ?? null, productoId: l.productoId ?? null }));
   const total = totalDe(lineas);
   const errorPagos = validarPagos(total, c.pagos);
   if (errorPagos) return error(errorPagos);
@@ -379,6 +381,7 @@ export async function cobrar(db: BaseDatos, usuarioId: string, c: Cobro): Promis
             orden,
             tratamientoId: l.tratamientoId,
             tipoBonoId: l.tipoBonoId,
+            productoId: l.productoId,
             descripcion: l.descripcion.trim(),
             cantidad: l.cantidad,
             precioUnitario: l.precioUnitario,
@@ -411,6 +414,14 @@ export async function cobrar(db: BaseDatos, usuarioId: string, c: Cobro): Promis
         await tx.insert(usosBono).values({ bonoId, cantidad: 1, tratamientoId: u.tratamientoId, citaId: c.citaId ?? null, ventaId, usuarioId });
         usados.push(bonoId);
       }
+      // Stock: productos vendidos y lo que se gasta en cabina en cada tratamiento hecho.
+      await salidasDeCobro(tx, {
+        usuarioId,
+        ventaId,
+        citaId: c.citaId ?? null,
+        productos: lineas.flatMap((l) => (l.productoId ? [{ productoId: l.productoId, cantidad: l.cantidad }] : [])),
+        tratamientos: [...lineas.flatMap((l) => (l.tratamientoId ? Array<string>(l.cantidad).fill(l.tratamientoId) : [])), ...usos.map((u) => u.tratamientoId)],
+      });
       // Al cobrar una cita, queda como realizada.
       if (c.citaId) await tx.update(citas).set({ estado: "realizada" }).where(and(eq(citas.id, c.citaId), eq(citas.estado, "confirmada")));
       await registrarActividad(tx, {
@@ -513,6 +524,10 @@ export async function devolver(db: BaseDatos, usuarioId: string, ventaId: string
     }
     for (const b of bonosVendidos) {
       if (!b.anuladoEn) await tx.update(bonos).set({ anuladoEn: new Date() }).where(eq(bonos.id, b.id));
+    }
+    // Los productos devueltos vuelven al stock (lo gastado en cabina no).
+    for (const l of lineasOriginales) {
+      if (l.productoId) await tx.insert(movimientosStock).values({ productoId: l.productoId, tipo: "devolucion", cantidad: l.cantidad, ventaId: dev!.id, usuarioId });
     }
     const f = await emitirFactura(tx, {
       tipo: "rectificativa",

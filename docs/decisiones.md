@@ -170,3 +170,23 @@ se trae las reservas nuevas a su agenda como citas por confirmar. Cada reserva s
 que se comprobó la hora (contador de versión en la misma operación); si no, se vuelve a comprobar.
 
 **Hasta 3 citas a la vez; microblading, maquillaje y uñas van solos** (dato de Espe, 13 de octubre de 2026).
+
+## Fase 4
+
+**El stock es la suma de movimientos que no se editan.** Compras (+), ventas (−), devoluciones (+), gasto en cabina
+(−), recuentos (±) y roturas (−). Un error se corrige con otro movimiento, así el historial explica siempre cuánto hay.
+Las salidas de una venta van en la misma operación que el cobro: o se guarda todo o nada.
+
+**Se puede vender aunque la app diga que no queda.** Si el stock está mal contado, lo que manda es lo que hay en la
+estantería; el recuento lo corrige después. El aviso de reponer sale al llegar al mínimo.
+
+**Gasto en cabina por tratamiento, en unidades enteras.** Se configura en cada producto de cabina y se descuenta al
+cobrar el tratamiento o descontarlo de un bono. Si se quieren mililitros o gramos, se cuentan como unidades.
+
+**Compras con un solo tipo de IVA por factura** (lo habitual en proveedores de cosmética); los costes se apuntan sin
+IVA. Cada compra genera su gasto, con base, IVA y total.
+
+**Gastos y resumen de IVA por trimestre**, con descarga en CSV (se abre en Excel, con «;» y coma decimal) para la
+gestoría: resumen, facturas emitidas y gastos. El cálculo oficial (modelo 303) es de la gestoría.
+
+**Permisos**: recepción lleva stock, proveedores y compras; los gastos y su descarga, solo administración.
