@@ -1,6 +1,6 @@
 # Cierre de la fase 5 · Avisos, tareas y seguimiento
 
-Estado: **pendiente de aprobación**. El plan la da por terminada cuando **el Inicio responde a «qué tengo que hacer
+Estado: **aprobada** el 13 de octubre de 2026. El plan la da por terminada cuando **el Inicio responde a «qué tengo que hacer
 hoy» sin buscar**. Funciona y está probado (punto 3).
 
 ## 1. Qué se ha construido
@@ -86,4 +86,4 @@ centro, IVA y datos fiscales confirmados por la gestoría, productos y gasto en 
 
 ## 6. Aprobación
 
-Pendiente. Cuando la apruebes, la paso a la rama principal y empiezo la fase 6.
+Aprobada por Espe el 13 de octubre de 2026. Siguiente: fase 6, WhatsApp automático con la API oficial.
