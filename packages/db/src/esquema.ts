@@ -699,3 +699,13 @@ export const movimientosTarjetaRegalo = pgTable(
   },
   (t) => [index("movimientos_tarjeta_regalo_tarjeta").on(t.tarjetaId), check("movimientos_tarjeta_regalo_no_cero", sql`${t.importe} <> 0`)],
 );
+
+// ── Reservas por internet ───────────────────────────────────────────────────
+
+/** Reservas hechas en la web de internet (Cloudflare) que ya se han pasado a la agenda: no se importan dos veces. */
+export const reservasOnline = pgTable("reservas_online", {
+  id: text().primaryKey(),
+  citaId: uuid().references(() => citas.id),
+  solicitudId: uuid().references(() => solicitudesReserva.id),
+  importadaEn: creadoEn(),
+});

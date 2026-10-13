@@ -49,7 +49,7 @@ test.describe("clienta en el móvil", () => {
     await expect(page.getByText(HIGIENE)).toBeVisible();
     await expect(page.getByText("90 min · 30,00 €")).toBeVisible();
     await expect(page.getByText("Bono facial 6 sesiones")).toBeVisible();
-    const cejas = page.getByRole("listitem").filter({ hasText: "Consulta" });
+    const cejas = page.getByRole("listitem").filter({ hasText: /^Consulta/ });
     await expect(cejas).toContainText("Precio a consultar");
     await expect(page.getByLabel(/contraseña|PIN/i)).toHaveCount(0);
   });
@@ -185,7 +185,7 @@ test.describe("centro", () => {
 
     const movil = await browser.newPage();
     await movil.goto("/");
-    await expect(movil.getByRole("listitem").filter({ hasText: "Consulta" })).toContainText("20 min · 12,00 €");
+    await expect(movil.getByRole("listitem").filter({ hasText: /^Consulta/ })).toContainText("20 min · 12,00 €");
     await movil.close();
   });
 

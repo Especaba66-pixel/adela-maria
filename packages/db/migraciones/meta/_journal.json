@@ -57,6 +57,13 @@
       "when": 1791826041977,
       "tag": "0007_bonos_y_tarjetas_regalo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791874936490,
+      "tag": "0008_reservas_por_internet",
+      "breakpoints": true
     }
   ]
 }

@@ -8,3 +8,7 @@ playwright-report/
 /copias/
 *.tsbuildinfo
 next-env.d.ts
+
+# Cloudflare (local)
+.wrangler/
+.dev.vars

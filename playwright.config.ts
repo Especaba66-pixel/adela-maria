@@ -6,6 +6,8 @@ const url = process.env.DATABASE_URL_TEST;
 if (!url) throw new Error("Falta DATABASE_URL_TEST en .env");
 
 const PUERTO = 3100;
+/** Servicio de reservas por internet (Cloudflare en local) y landing que lo usa. */
+export const RESERVAS = { url: "http://127.0.0.1:8788", clave: "clave-de-pruebas-0123456789abcdef0123456789", landing: "http://127.0.0.1:8090" };
 export const ENTORNO_PRUEBAS = {
   DATABASE_URL: url,
   ADMIN_NOMBRE: "Adela",
@@ -13,6 +15,11 @@ export const ENTORNO_PRUEBAS = {
   ADMIN_CONTRASENA: "contrasena-de-prueba",
   ADMIN_PIN: "2468",
   SESION_MINUTOS_INACTIVIDAD: "15",
+  PORT: String(PUERTO),
+  RESERVAS_URL: RESERVAS.url,
+  RESERVAS_CLAVE: RESERVAS.clave,
+  // En las pruebas se sincroniza a mano («Sincronizar ahora»).
+  RESERVAS_CADA_SEGUNDOS: "3600",
 };
 
 export default defineConfig({
@@ -41,11 +48,21 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: `pnpm --filter @adela/web build && pnpm --filter @adela/web start -p ${PUERTO}`,
-    port: PUERTO,
-    timeout: 180_000,
-    reuseExistingServer: false,
-    env: ENTORNO_PRUEBAS,
-  },
+  webServer: [
+    {
+      command: `pnpm --filter @adela/web build && pnpm --filter @adela/web start -p ${PUERTO}`,
+      port: PUERTO,
+      timeout: 180_000,
+      reuseExistingServer: false,
+      env: ENTORNO_PRUEBAS,
+    },
+    { command: "pnpm --filter @adela/reservas pruebas", url: `${RESERVAS.url}/api/servicios`, timeout: 120_000, reuseExistingServer: false },
+    {
+      command: `pnpm --filter @adela/landing build && node tests/servidor-estatico.mjs 8090`,
+      url: RESERVAS.landing,
+      timeout: 60_000,
+      reuseExistingServer: false,
+      env: { RESERVAS_URL: RESERVAS.url },
+    },
+  ],
 });

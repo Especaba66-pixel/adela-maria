@@ -6,6 +6,7 @@ Aplicación de gestión del centro: agenda, clientas, TPV, caja, bonos, stock, a
 - [Landing gratuita](docs/landing.md): la página pública con tratamientos y cita por WhatsApp.
 - Cierres de fase: [0](docs/fase-0.md), [1](docs/fase-1.md), [2](docs/fase-2.md) y [3](docs/fase-3.md): qué hay hecho, cómo probarlo y qué falta.
 - [Instalar en el TPV (gratis)](docs/instalacion-tpv.md).
+- [Reservas por internet (gratis, siempre encendidas)](docs/reservas-internet.md).
 - [Cómo trabajar en el proyecto](docs/desarrollo.md): arrancarlo, pruebas y base de datos.
 - [Decisiones técnicas](docs/decisiones.md).
 

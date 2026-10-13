@@ -151,20 +151,20 @@ test("la administración añade el microblading, que va solo", async () => {
   await pagina.getByRole("button", { name: "Crear", exact: true }).click();
   await expect(pagina.getByText("Categoría «Micropigmentación» creada.")).toBeVisible();
   const form = pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Añadir tratamiento" }) });
-  await form.getByLabel("Nombre").fill("Microblading");
+  await form.getByLabel("Nombre").fill("Pigmentación de labios");
   await form.getByLabel("Categoría").selectOption({ label: "Micropigmentación" });
   await form.getByLabel("Minutos").fill("120");
   await form.getByLabel("Precio (€)").fill("250");
   await form.getByLabel(/Va sola/).check();
   await form.getByRole("button", { name: "Añadir tratamiento" }).click();
-  await expect(pagina.getByText("«Microblading» añadido.")).toBeVisible();
+  await expect(pagina.getByText("«Pigmentación de labios» añadido.")).toBeVisible();
   await expect(pagina.getByText("120 min · va sola")).toBeVisible();
 });
 
 test("si una fecha de la serie choca, no se crea ninguna", async () => {
   await pagina.goto(`/gestion/agenda/nueva?fecha=${diaMadrid(8)}`);
   await elegirClienta("Carmen Ruiz");
-  await elegirTratamientos("Microblading");
+  await elegirTratamientos("Pigmentación de labios");
   await pagina.getByLabel("Hora").fill("16:00");
   await pagina.getByRole("button", { name: "Guardar cita" }).click();
   await expect(pagina.getByText("Cita guardada.")).toBeVisible();

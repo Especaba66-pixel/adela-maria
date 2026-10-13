@@ -1,0 +1,45 @@
+name: Reservas por internet
+
+# Publica el servicio de reservas en Cloudflare (gratis) cada vez que cambia en «main».
+# Necesita los secretos CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID y RESERVAS_CLAVE (ver docs/reservas-internet.md).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/reservas/**"
+      - "packages/dominio/src/**"
+      - "packages/db/src/datos/**"
+      - ".github/workflows/reservas.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reservas
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @adela/reservas typecheck
+      - run: pnpm --filter @adela/reservas test
+      - name: Publicar en Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RESERVAS_CLAVE: ${{ secrets.RESERVAS_CLAVE }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$RESERVAS_CLAVE" ]; then
+            echo "::warning::Faltan los secretos de Cloudflare: el servicio de reservas no se publica todavía (ver docs/reservas-internet.md)."
+            exit 0
+          fi
+          cd apps/reservas && pnpm desplegar

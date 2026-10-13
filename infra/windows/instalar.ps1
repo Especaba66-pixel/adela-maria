@@ -45,6 +45,8 @@ if (-not (Test-Path "$Raiz\.env")) {
   Paso "Configuración inicial"
   $Contrasena = Read-Host "Contraseña de administración de la app (mínimo 10 caracteres)"
   $Pin = Read-Host "PIN de Adela (4 a 6 números)"
+  $ReservasUrl = Read-Host "Dirección del servicio de reservas por internet (Intro para dejarlo para luego)"
+  $ReservasClave = if ($ReservasUrl) { Read-Host "Clave de sincronización de las reservas (la misma que en GitHub)" } else { "" }
   $ClaveUrl = [uri]::EscapeDataString($ClavePg)
   @"
 DATABASE_URL=postgres://postgres:$ClaveUrl@localhost:5432/adela
@@ -55,6 +57,8 @@ ADMIN_CONTRASENA=$Contrasena
 ADMIN_PIN=$Pin
 SESION_MINUTOS_INACTIVIDAD=15
 PORT=3000
+RESERVAS_URL=$ReservasUrl
+RESERVAS_CLAVE=$ReservasClave
 "@ | Set-Content -Encoding UTF8 "$Raiz\.env"
 }
 

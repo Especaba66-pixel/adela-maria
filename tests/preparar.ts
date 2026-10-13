@@ -11,4 +11,6 @@ export default function preparar() {
   });
   execSync("pnpm --silent db:migrate", { env, stdio: "inherit" });
   execSync("pnpm --silent db:seed", { env, stdio: "inherit" });
+  // Los recorridos comprueban el límite de citas a la vez con 2 (el centro usa 3; la regla es la misma).
+  execSync(`psql "${ENTORNO_PRUEBAS.DATABASE_URL}" -q -c "update centro set cabinas = 2"`, { env, stdio: "inherit" });
 }

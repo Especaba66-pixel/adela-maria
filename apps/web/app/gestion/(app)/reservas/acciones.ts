@@ -2,9 +2,18 @@
 import { revalidatePath } from "next/cache";
 import { cambiarEstadoCita } from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
+import { internetConfigurado, sincronizar } from "@/server/internet";
 import { gestionarSolicitud } from "@/server/reservas";
 
 function refrescar() {
+  revalidatePath("/gestion", "layout");
+  // Lo que se libera o se confirma aquí se ve enseguida en las reservas por internet.
+  if (internetConfigurado()) void sincronizar();
+}
+
+export async function sincronizarAhora() {
+  await requerirSesion("reservas.gestionar");
+  await sincronizar();
   revalidatePath("/gestion", "layout");
 }
 

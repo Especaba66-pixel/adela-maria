@@ -153,3 +153,20 @@ más gruesos», y las tarjetas regalo no caducan.
 **Fotos de trabajos en la landing (12 de octubre de 2026).** Espe confirma que las clientas que aparecen en las fotos
 de microblading, maquillaje y uñas han dado su permiso para publicarlas en la web. Se publican reducidas y sin los
 datos ocultos de la cámara (modelo, fecha, ubicación).
+
+## Reservas por internet
+
+**Calendario propio en Cloudflare, gratis y siempre encendido** (decidido por Espe el 13 de octubre de 2026: que se
+pueda reservar a cualquier hora aunque el TPV esté apagado, con varias citas a la vez y sin pagar). Las herramientas
+genéricas (Google Calendar, Cal.com, Calendly) no admiten gratis varias citas a la misma hora con tratamientos que van
+solos, y las de salones (Booksy, Fresha) cuestan dinero y duplican la app. Un servicio pequeño en Cloudflare Workers
+con su base de datos D1 (plan gratuito, en Europa) usa las mismas reglas de agenda que el TPV (`@adela/dominio`).
+
+**El TPV manda, Cloudflare guarda.** El TPV le envía cada minuto tratamientos, horario, citas a la vez y lo ocupado, y
+se trae las reservas nuevas a su agenda como citas por confirmar. Cada reserva se importa una sola vez
+(`reservas_online`), y al importarla se borran en Cloudflare el nombre y el teléfono.
+
+**Sin solapes aunque reserven dos personas a la vez**: la reserva se guarda solo si nadie ha cambiado la agenda desde
+que se comprobó la hora (contador de versión en la misma operación); si no, se vuelve a comprobar.
+
+**Hasta 3 citas a la vez; microblading, maquillaje y uñas van solos** (dato de Espe, 13 de octubre de 2026).

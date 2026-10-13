@@ -5,6 +5,7 @@
  */
 import type { TarifaBono, TarifaCategoria } from "@adela/db/datos";
 import { enlaceWhatsapp, formatearEuros, normalizarTelefono } from "@adela/dominio";
+import { ESTILOS_RESERVA, SCRIPT_RESERVA, bloqueReserva } from "./reserva";
 
 export interface DatosLanding {
   categorias: TarifaCategoria[];
@@ -12,6 +13,8 @@ export interface DatosLanding {
   /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
   trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
+  /** Servicio de reservas por internet (Cloudflare). Sin él, se pide cita por WhatsApp. */
+  reservasApi?: string | null;
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
   url?: string;
 }
@@ -49,7 +52,11 @@ export function construirPagina(d: DatosLanding): string {
         )
       : null;
 
-  const botonCita = (tratamiento: string) => {
+  const api = d.reservasApi && /^https?:\/\/[^\s"'<>]+$/.test(d.reservasApi) ? d.reservasApi : null;
+  const botonCita = (tratamiento: string, reservable = false) => {
+    if (api && reservable) {
+      return `<a class="boton boton-secundario" href="#reservar" data-reservar="${esc(tratamiento)}" aria-label="Reservar: ${esc(tratamiento)}">Reservar</a>`;
+    }
     const enlace = enlaceCita(tratamiento);
     return enlace
       ? `<a class="boton boton-secundario" href="${enlace}" target="_blank" rel="noopener" aria-label="Pedir cita por WhatsApp: ${esc(tratamiento)}">Pedir cita</a>`
@@ -72,7 +79,7 @@ export function construirPagina(d: DatosLanding): string {
               <div class="nombre">${esc(t.nombre)}</div>
               <div class="detalle">${t.duracionMinutos ? `${duracionTexto(t.duracionMinutos)} · ` : ""}<strong>${precioTexto(t.precioCentimos)}</strong></div>
             </div>
-            ${botonCita(t.nombre)}
+            ${botonCita(t.nombre, Boolean(t.duracionMinutos))}
           </li>`,
             )
             .join("")}
@@ -117,7 +124,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <link rel="apple-touch-icon" href="icono.png">
 <meta property="og:image" content="${esc(d.url ? `${d.url.replace(/\/$/, "")}/sello.png` : "sello.png")}">
 <link rel="preload" href="fuentes/cormorant-garamond-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<style>${ESTILOS}</style>
+<style>${ESTILOS}${ESTILOS_RESERVA}</style>
 </head>
 <body>
 <header class="cabecera">
@@ -125,17 +132,24 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <a href="#inicio" class="marca" aria-label="Adela María · Belleza holística">
       <img src="logotipo.png" alt="Adela María · Belleza holística" width="155" height="48">
     </a>
-    ${enlaceCita() ? `<a class="boton boton-principal boton-pequeno" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita</a>` : ""}
+    ${
+      api
+        ? `<a class="boton boton-principal boton-pequeno" href="#reservar">Reservar</a>`
+        : enlaceCita()
+          ? `<a class="boton boton-principal boton-pequeno" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita</a>`
+          : ""
+    }
   </div>
 </header>
 
 <main id="inicio">
+  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
+
   <section class="portada">
     <div class="contenedor">
-      <img class="sello" src="sello.png" alt="" width="240" height="240">
-      <h1>Tu momento de cuidado</h1>
-      <p class="entrada">Tratamientos faciales y depilación pensados para ti. Elige lo que te apetece y escríbenos: te confirmamos la hora por WhatsApp.</p>
-      ${ctaPrincipal}
+      <img class="sello" src="sello.png" alt="" width="240" height="240" loading="lazy">
+      <h2>Tu momento de cuidado</h2>
+      <p class="entrada">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
     </div>
   </section>
 
@@ -193,12 +207,21 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 
   <section id="cita" class="contenedor bloque" aria-labelledby="titulo-cita">
     <h2 id="titulo-cita">Cómo pedir cita</h2>
-    <ol class="pasos">
+    ${
+      api
+        ? `<ol class="pasos">
+      <li><span>1</span>Arriba, elige tratamiento, día y hora: se ven las horas libres al momento.</li>
+      <li><span>2</span>Deja tu nombre y tu teléfono y pulsa «Reservar».</li>
+      <li><span>3</span>Te confirmamos la cita por WhatsApp.</li>
+    </ol>
+    <div class="centrado"><a class="boton boton-principal" href="#reservar">Reservar mi cita</a></div>`
+        : `<ol class="pasos">
       <li><span>1</span>Elige tu tratamiento.</li>
       <li><span>2</span>Pulsa «Pedir cita» y envíanos el mensaje por WhatsApp.</li>
       <li><span>3</span>Te respondemos con la hora y la dejamos confirmada.</li>
     </ol>
-    <div class="centrado">${ctaPrincipal}</div>
+    <div class="centrado">${ctaPrincipal}</div>`
+    }
   </section>
 </main>
 
@@ -209,9 +232,25 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     ${d.contacto.direccion ? `<p>${esc(d.contacto.direccion)}</p>` : ""}
     ${instagram ? `<p><a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Síguenos en Instagram: @${instagram}</a></p>` : ""}
     ${telefono ? `<p><a href="tel:${telefono}">Llamar</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">WhatsApp</a></p>` : ""}
-    <p class="legal">Esta página no recoge datos personales. Si nos escribes por WhatsApp, usaremos tu nombre y teléfono solo para gestionar tu cita.</p>
+    <p class="legal">${
+      api
+        ? "Si reservas aquí, guardamos tu nombre y tu teléfono solo para gestionar tu cita y contactarte sobre ella; puedes pedir que los borremos cuando quieras. La página no usa cookies ni rastreo."
+        : "Esta página no recoge datos personales. Si nos escribes por WhatsApp, usaremos tu nombre y teléfono solo para gestionar tu cita."
+    }</p>
   </div>
 </footer>
+${
+  api
+    ? `<script>${SCRIPT_RESERVA}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-reservar]");
+  if (!a) return;
+  const sel = document.getElementById("r-servicio");
+  const o = [...sel.options].find((x) => x.textContent.startsWith(a.dataset.reservar));
+  if (o) { sel.value = o.value; sel.dispatchEvent(new Event("change")); }
+});</script>`
+    : ""
+}
 </body>
 </html>
 `;
@@ -249,7 +288,7 @@ a{color:var(--dorado-oscuro)}
 .preparacion li{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:1rem 1.25rem}
 .preparacion strong{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;color:var(--dorado-oscuro)}
 .sello{display:block;width:min(240px,60vw);height:auto;margin:0 auto 1.5rem}
-.portada h1{font-size:clamp(2.6rem,9vw,4rem)}
+.portada h2{font-size:clamp(2.6rem,9vw,4rem)}
 .entrada{color:var(--suave);font-size:1.15rem;max-width:32rem;margin:1rem auto 2rem}
 .boton{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.4rem;border-radius:.75rem;font-weight:600;text-decoration:none;white-space:nowrap}
 .boton-principal{background:var(--dorado-oscuro);color:#fff;min-height:3.5rem;padding:0 2rem;font-size:1.1rem}

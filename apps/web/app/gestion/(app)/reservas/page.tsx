@@ -7,7 +7,8 @@ import { citasEntre } from "@/server/agenda";
 import { diaLargo, fechaHora } from "@/lib/fechas";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
-import { confirmar, confirmarCita, rechazar, rechazarCita } from "./acciones";
+import { internetConfigurado, ultimaSincronizacion } from "@/server/internet";
+import { confirmar, confirmarCita, rechazar, rechazarCita, sincronizarAhora } from "./acciones";
 
 const columnas = {
   s: solicitudesReserva,
@@ -43,6 +44,8 @@ export default async function Reservas() {
           o recházalas (el hueco queda libre). Las que no tienen hora, dales cita.
         </p>
       </div>
+
+      <EstadoInternet />
 
       {pendientes.length === 0 && citasWeb.length === 0 && <Aviso prioridad="correcto">No hay peticiones pendientes.</Aviso>}
 
@@ -182,5 +185,27 @@ export default async function Reservas() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Cómo va la conexión con las reservas por internet. */
+function EstadoInternet() {
+  if (!internetConfigurado()) {
+    return <Aviso prioridad="pendiente">Las reservas por internet aún no están conectadas a este TPV (falta configurarlas en la instalación).</Aviso>;
+  }
+  const u = ultimaSincronizacion();
+  return (
+    <form action={sincronizarAhora} className="flex flex-wrap items-center gap-3" aria-label="Reservas por internet">
+      <span className={u && !u.ok ? "text-urgente" : "text-tinta-suave"} data-testid="estado-internet">
+        {!u
+          ? "Reservas por internet: conectando…"
+          : u.ok
+            ? `Reservas por internet al día (${fechaHora(u.cuando).slice(-8, -3)}${u.importadas ? `, ${u.importadas} nuevas` : ""}).`
+            : `Reservas por internet: no se ha podido conectar (${fechaHora(u.cuando).slice(-8, -3)}). Se reintenta cada minuto; las clientas pueden seguir reservando.`}
+      </span>
+      <Boton type="submit" variante="secundario" className="min-h-10">
+        Sincronizar ahora
+      </Boton>
+    </form>
   );
 }

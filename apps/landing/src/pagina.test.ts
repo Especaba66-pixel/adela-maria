@@ -48,6 +48,19 @@ describe("landing", () => {
     expect(html).toContain("El día D");
   });
 
+  it("con el servicio de reservas, lo primero es el calendario; sin él, se explica cómo pedir cita", () => {
+    const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, reservasApi: "https://reservas.ejemplo.workers.dev" });
+    const main = con.slice(con.indexOf("<main"));
+    expect(main.indexOf('id="reservar"')).toBeLessThan(main.indexOf('id="tratamientos"'));
+    expect(main.indexOf('id="reservar"')).toBeLessThan(main.indexOf('class="portada"'));
+    expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');
+    expect(con).toContain('data-reservar="Axilas"');
+    expect(con).toContain("Si reservas aquí, guardamos tu nombre y tu teléfono");
+    expect(html).toContain("Muy pronto podrás elegir aquí tu tratamiento");
+    expect(html).not.toContain("<script>");
+    expect(construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, reservasApi: 'javascript:alert(1)"' })).not.toContain("data-api");
+  });
+
   it("ofrece tarjetas regalo por WhatsApp", () => {
     expect(html).toContain("Tarjeta regalo");
     expect(html).toContain(`href="https://wa.me/34600112233?text=${encodeURIComponent("Hola, me gustaría una tarjeta regalo de ")}"`);

@@ -10,6 +10,8 @@ export interface TarifaTratamiento {
   /** Sin indicar = precio por decidir («Precio a consultar»). */
   precioCentimos?: number;
   descripcion?: string;
+  /** Va sola: no admite ninguna otra cita a la vez (microblading, maquillaje, uñas). */
+  exclusivo?: boolean;
 }
 
 export interface TarifaCategoria {
@@ -56,6 +58,16 @@ export const CATEGORIAS: TarifaCategoria[] = [
       { nombre: "Piernas hombre", duracionMinutos: 25, precioCentimos: 1_500 },
       { nombre: "Espalda caballero", duracionMinutos: 20, precioCentimos: 1_200 },
       { nombre: "Pecho caballero", duracionMinutos: 30, precioCentimos: 1_200 },
+    ],
+  },
+  {
+    // Van solos (dato de Espe, 13 de octubre de 2026): no admiten otra cita a la vez.
+    // PENDIENTE: precio y duración de cada uno; hasta tenerlos, no se reservan por internet.
+    nombre: "Microblading, maquillaje y uñas",
+    tratamientos: [
+      { nombre: "Microblading", exclusivo: true },
+      { nombre: "Maquillaje", exclusivo: true },
+      { nombre: "Uñas", exclusivo: true },
     ],
   },
 ];
