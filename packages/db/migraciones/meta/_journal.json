@@ -85,6 +85,13 @@
       "when": 1791882235362,
       "tag": "0011_whatsapp_automatico",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791896506695,
+      "tag": "0012_informes_equipo_y_fichas",
+      "breakpoints": true
     }
   ]
 }

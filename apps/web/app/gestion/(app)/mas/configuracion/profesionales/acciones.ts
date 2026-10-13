@@ -1,4 +1,5 @@
 "use server";
+import { leerPorcentaje } from "@adela/dominio";
 import { revalidatePath } from "next/cache";
 import { guardarProfesional, type Resultado } from "@/server/equipo";
 
@@ -10,6 +11,8 @@ export async function guardar(_: Resultado | null, f: FormData): Promise<Resulta
     usuarioId: String(f.get("usuario") ?? ""),
     activo: f.get("activo") !== "no",
     tratamientoIds: f.getAll("tratamiento").map(String),
+    comisionServicios: leerPorcentaje(String(f.get("comisionServicios") ?? "")),
+    comisionProductos: leerPorcentaje(String(f.get("comisionProductos") ?? "")),
   });
   revalidatePath("/gestion", "layout");
   return r;

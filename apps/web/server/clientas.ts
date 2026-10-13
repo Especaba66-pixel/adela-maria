@@ -1,6 +1,8 @@
 import "server-only";
 import {
   centro,
+  consentimientosFirmados,
+  fotosClientes,
   citas,
   citasServicios,
   clientes,
@@ -191,6 +193,9 @@ export async function anonimizarClienta(id: string): Promise<Resultado> {
     await tx.update(citas).set({ nota: null }).where(eq(citas.clienteId, id));
     // Los mensajes que se le prepararon llevan su nombre: se borran. Las tareas sobre ella se quedan sin texto.
     await tx.delete(mensajes).where(eq(mensajes.clienteId, id));
+    // Fotos y consentimientos firmados (con su firma) también se borran.
+    await tx.delete(fotosClientes).where(eq(fotosClientes.clienteId, id));
+    await tx.delete(consentimientosFirmados).where(eq(consentimientosFirmados.clienteId, id));
     await tx.update(tareas).set({ texto: "[tarea de una clienta eliminada]" }).where(eq(tareas.clienteId, id));
     if (c.telefono) {
       await tx.update(solicitudesReserva).set({ nombre: "Clienta eliminada", telefono: "+34000000000", nota: null }).where(eq(solicitudesReserva.telefono, c.telefono));

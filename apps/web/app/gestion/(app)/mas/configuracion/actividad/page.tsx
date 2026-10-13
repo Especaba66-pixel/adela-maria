@@ -66,6 +66,11 @@ const ACCIONES: Record<string, string> = {
   "campana.enviar": "Envió un WhatsApp a un grupo de clientas",
   "cita.confirmada_por_clienta": "La clienta confirmó su cita por WhatsApp",
   "clienta.baja_whatsapp": "La clienta pidió la baja por WhatsApp",
+  "foto.subir": "Subió una foto a una ficha",
+  "foto.borrar": "Borró una foto de una ficha",
+  "consentimiento.modelo": "Cambió un consentimiento informado",
+  "consentimiento.firmar": "Una clienta firmó un consentimiento",
+  "consentimiento.revocar": "Una clienta retiró un consentimiento",
 };
 
 /** Qué campos cambiaron entre "antes" y "después" (sin mostrar secretos). */

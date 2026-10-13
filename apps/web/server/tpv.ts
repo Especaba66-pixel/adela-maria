@@ -27,6 +27,8 @@ export interface PeticionCobro {
   pagos: PagoTpv[];
   clienteId?: string;
   citaId?: string;
+  /** Quién atendió (para las comisiones). */
+  profesionalId?: string;
   destinatario?: { nombre: string; nif: string; direccion: string };
 }
 
@@ -97,7 +99,7 @@ export async function cobrarEnTpv(p: PeticionCobro) {
   }
   const pagosResueltos = await resolverPagos(p.pagos);
   if (!pagosResueltos.ok) return pagosResueltos;
-  const r = await cobros.cobrar(db(), usuario.id, { lineas, pagos: pagosResueltos.valor, usosBono, clienteId: p.clienteId, citaId: p.citaId, destinatario: p.destinatario });
+  const r = await cobros.cobrar(db(), usuario.id, { lineas, pagos: pagosResueltos.valor, usosBono, clienteId: p.clienteId, citaId: p.citaId, profesionalId: p.profesionalId || null, destinatario: p.destinatario });
   if (!r.ok) return r;
   const efectivo = p.pagos.some((x) => x.metodo === "efectivo");
   const impresion: ResultadoImpresion = r.valor.facturaId ? await imprimirFactura(r.valor.facturaId, efectivo) : { ok: true, detalle: "" };

@@ -14,11 +14,16 @@ export async function guardarProfesional(datos: {
   usuarioId: string;
   activo: boolean;
   tratamientoIds: string[];
+  /** Comisión en centésimas de punto (null = mal escrita). */
+  comisionServicios?: number | null;
+  comisionProductos?: number | null;
 }): Promise<Resultado> {
   const { usuario } = await requerirSesion("configuracion.gestionar");
   const nombre = datos.nombre.trim();
   if (nombre.length < 2) return { ok: false, error: "Escribe el nombre." };
   if (!/^#[0-9a-f]{6}$/i.test(datos.color)) return { ok: false, error: "Color no válido." };
+  if (datos.comisionServicios === null || datos.comisionProductos === null) return { ok: false, error: "La comisión es un porcentaje de 0 a 100." };
+  const comisiones = { comisionServicios: datos.comisionServicios ?? 0, comisionProductos: datos.comisionProductos ?? 0 };
   const usuarioId = datos.usuarioId || null;
   if (usuarioId) {
     const [u] = await db().select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.id, usuarioId));
@@ -39,10 +44,10 @@ export async function guardarProfesional(datos: {
     let id = datos.id;
     if (id) {
       const [antes] = await tx.select().from(profesionales).where(eq(profesionales.id, id));
-      const [despues] = await tx.update(profesionales).set({ nombre, color: datos.color, usuarioId, activo: datos.activo }).where(eq(profesionales.id, id)).returning();
+      const [despues] = await tx.update(profesionales).set({ nombre, color: datos.color, usuarioId, activo: datos.activo, ...comisiones }).where(eq(profesionales.id, id)).returning();
       await registrarActividad(tx, { usuarioId: usuario.id, accion: "profesional.editar", entidad: "profesionales", entidadId: id, antes, despues });
     } else {
-      const [nueva] = await tx.insert(profesionales).values({ nombre, color: datos.color, usuarioId, activo: datos.activo }).returning();
+      const [nueva] = await tx.insert(profesionales).values({ nombre, color: datos.color, usuarioId, activo: datos.activo, ...comisiones }).returning();
       id = nueva!.id;
       await registrarActividad(tx, { usuarioId: usuario.id, accion: "profesional.crear", entidad: "profesionales", entidadId: id, despues: nueva });
     }

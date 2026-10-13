@@ -239,3 +239,26 @@ el estado, nunca el texto. Los estados de Meta llegan desordenados: nunca se ret
 
 **Envíos a grupos** solo a quien acepta promociones, con mensajes de marketing aprobados, y con resumen de entregados y
 leídos.
+
+## Fase 7
+
+**Quién atendió va en cada venta**, no en cada línea: es lo que se elige en el TPV («Atendió»), y por defecto es la
+profesional de la cita o quien cobra. Las devoluciones heredan la profesional y restan.
+
+**Comisión en dos porcentajes por profesional** (servicios y productos) sobre la base sin IVA de lo vendido en el
+mes. Los bonos vendidos cuentan como servicios; las sesiones de bono hechas se muestran pero no suman comisión (ya se
+cobró al vender el bono). La venta de tarjetas regalo no cuenta (no es venta hasta que se usa).
+
+**El cuadre del mes** comprueba con tablas distintas que no se ha perdido nada: ventas con factura = facturas
+emitidas; ventas = cobrado + lo que queda a deber; efectivo cobrado = efectivo que entró en el cajón. Si algo no
+coincide, el informe lo marca en rojo.
+
+**Fotos dentro de la base de datos**, reducidas en el propio equipo antes de subirlas (máximo 1600 px, JPG): ocupan
+poco y entran en las copias de seguridad sin hacer nada más. Solo las ve quien gestiona fichas.
+
+**Consentimientos informados**: modelos editables con los tratamientos que los piden; se firma con el dedo en el TPV
+y se guarda una copia del texto exacto y la firma. Lo firmado no se cambia; solo se puede retirar (queda la fecha). Si
+una cita de hoy o mañana pide un consentimiento que la clienta no tiene, sale en el Inicio y en la cita. Los textos de
+partida deben revisarse con la asesoría.
+
+**Al suprimir los datos de una clienta** se borran también sus fotos y sus consentimientos firmados.

@@ -27,6 +27,7 @@ import { avisosSistema } from "./estado";
 import { contarStockBajo, productosConStock } from "./stock";
 import { ventasPendientes } from "./tpv";
 import { plantillaMeta } from "./mensajes";
+import { consentimientosQueFaltan } from "./fichas";
 import { ajustesWhatsapp, apiWhatsapp } from "./whatsapp";
 
 /** Un mensaje de WhatsApp listo para preparar desde un aviso. */
@@ -188,6 +189,22 @@ export async function avisosDeHoy(usuario: { rol: Rol }): Promise<AvisoDia[]> {
         prioridad: "informativo",
         titulo: `Preguntar a ${c.cliente.nombre} qué tal su ${c.servicios.join(" y ")} de ayer.`,
       }));
+    }
+
+    // Consentimientos que hay que firmar antes de las citas de hoy y mañana.
+    const proximas = [...(await citasDelDia(hoy)), ...(await citasDelDia(sumarDias(hoy, 1)))].filter((c) => c.estado === "pendiente" || c.estado === "confirmada");
+    const faltan = await consentimientosQueFaltan(proximas.map((c) => ({ id: c.id, clienteId: c.cliente.id })));
+    for (const c of proximas) {
+      for (const m of faltan.get(c.id) ?? []) {
+        const p = partesMadrid(c.inicio);
+        lista.push({
+          clave: `consentimiento:${c.id}:${m.id}`,
+          prioridad: "importante",
+          titulo: `${c.cliente.nombre} tiene que firmar «${m.nombre}» antes de su cita.`,
+          detalle: `${p.fecha === hoy ? "Hoy" : "Mañana"} a las ${horaATexto(p.minutos)}`,
+          enlace: `/gestion/clientas/${c.cliente.id}/consentimiento?modelo=${m.id}&cita=${c.id}`,
+        });
+      }
     }
 
     // Lo que han escrito las clientas por WhatsApp (lo que la app no ha resuelto sola) en la última semana.

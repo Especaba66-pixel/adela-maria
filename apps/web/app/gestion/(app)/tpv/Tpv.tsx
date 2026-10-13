@@ -39,6 +39,7 @@ export interface CitaPorCobrar {
   cliente: { id: string; nombre: string };
   servicios: string[];
   tratamientoIds: string[];
+  profesionalId: string;
 }
 type Linea =
   | { tipo: "tratamiento"; tratamientoId: string; cantidad: number; descuentoCentesimas: number; conBono: boolean }
@@ -70,6 +71,8 @@ export function Tpv({
   citas,
   cajaAbierta,
   inicial,
+  profesionales = [],
+  profesionalPorDefecto,
 }: {
   catalogo: ItemCatalogo[];
   bonosVenta: BonoALaVenta[];
@@ -78,7 +81,11 @@ export function Tpv({
   cajaAbierta: boolean;
   /** Cita con la que se abre el TPV (al pulsar «Cobrar» en una cita). */
   inicial?: CitaPorCobrar;
+  /** Quién puede haber atendido (para las comisiones); por defecto, la de la cita o quien cobra. */
+  profesionales?: { id: string; nombre: string }[];
+  profesionalPorDefecto?: string;
 }) {
+  const [atendio, setAtendio] = useState(inicial?.profesionalId ?? profesionalPorDefecto ?? "");
   const [lineas, setLineas] = useState<Linea[]>(() => (inicial?.tratamientoIds ?? []).map(lineaTratamiento));
   const [cita, setCita] = useState<CitaPorCobrar | null>(inicial ?? null);
   const [clienta, setClienta] = useState<Clienta | null>(inicial?.cliente ?? null);
@@ -208,6 +215,7 @@ export function Tpv({
     setTarjeta(null);
     setCita(c);
     setClienta(c.cliente);
+    setAtendio(c.profesionalId);
     setLineas(c.tratamientoIds.filter((id) => porId.has(id)).map(lineaTratamiento));
   }
   function empezarTarjeta() {
@@ -260,6 +268,7 @@ export function Tpv({
             pagos,
             clienteId: clienta?.id,
             citaId: cita?.id,
+            profesionalId: atendio || undefined,
             destinatario: conFactura ? destinatario : undefined,
           });
       if (r?.error) setError(r.error);
@@ -512,6 +521,19 @@ export function Tpv({
 
         {metodo === "tarjeta_regalo" && <PagoConTarjeta falta={falta} regalo={regalo} onSaldo={(t) => (setRegalo(t), setImporte(Math.min(t.saldo, falta)))} />}
 
+        {hayAlgo && !tarjeta && profesionales.length > 1 && (
+          <label className="block">
+            Atendió
+            <select value={atendio} onChange={(e) => setAtendio(e.target.value)} className="mt-1 block w-full min-h-toque rounded-xl border-2 border-borde bg-superficie px-3 text-lg">
+              <option value="">—</option>
+              {profesionales.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {hayAlgo && !tarjeta && total > 0 && (
           <label className="flex min-h-toque items-center gap-3">
             <input type="checkbox" checked={conFactura} onChange={(e) => setConFactura(e.target.checked)} className="size-6 accent-dorado-oscuro" />

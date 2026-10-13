@@ -8,6 +8,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
+  customType,
   boolean,
   check,
   date,
@@ -318,6 +319,9 @@ export const profesionales = pgTable("profesionales", {
   color: text().notNull().default("#b08d57"),
   activo: boolean().notNull().default(true),
   orden: integer().notNull().default(0),
+  /** Comisión sobre lo que vende (base sin IVA), en centésimas de punto: 1000 = 10 %. */
+  comisionServicios: integer().notNull().default(0),
+  comisionProductos: integer().notNull().default(0),
 });
 
 /** Qué tratamientos hace cada profesional. Si no tiene ninguno apuntado, los hace todos. */
@@ -470,6 +474,8 @@ export const ventas = pgTable(
     clienteId: uuid().references(() => clientes.id),
     citaId: uuid().references(() => citas.id),
     devolucionDe: uuid(),
+    /** Quién atendió (para los informes por profesional y las comisiones). */
+    profesionalId: uuid().references(() => profesionales.id),
     total: integer().notNull(),
     /** La venta de una tarjeta regalo no lleva factura: se factura lo que se paga con ella al usarla. */
     conFactura: boolean().notNull().default(true),
@@ -962,4 +968,78 @@ export const mensajes = pgTable(
       .on(t.citaId, t.plantilla)
       .where(sql`${t.canal} = 'whatsapp_api' and ${t.citaId} is not null and ${t.estado} <> 'fallido'`),
   ],
+);
+
+// ── Fase 7: fotos y consentimientos informados ──────────────────────────────
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+/** Fotos de la ficha (antes y después). Se guardan reducidas dentro de la base de datos: así entran en las copias. */
+export const fotosClientes = pgTable(
+  "fotos_clientes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clienteId: uuid()
+      .notNull()
+      .references(() => clientes.id),
+    tipo: text({ enum: ["antes", "despues", "otra"] }).notNull(),
+    nota: text(),
+    citaId: uuid().references(() => citas.id),
+    mime: text({ enum: ["image/jpeg", "image/png", "image/webp"] }).notNull(),
+    datos: bytea().notNull(),
+    subidaPor: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    subidaEn: creadoEn(),
+  },
+  (t) => [index("fotos_cliente").on(t.clienteId, t.subidaEn), check("fotos_tamano", sql`octet_length(${t.datos}) <= 3145728`)],
+);
+
+/** Modelos de consentimiento informado (texto que firma la clienta), y para qué tratamientos hacen falta. */
+export const modelosConsentimiento = pgTable("modelos_consentimiento", {
+  id: uuid().primaryKey().defaultRandom(),
+  nombre: text().notNull().unique(),
+  texto: text().notNull(),
+  activo: boolean().notNull().default(true),
+  actualizadoEn: creadoEn(),
+});
+
+export const modelosConsentimientoTratamientos = pgTable(
+  "modelos_consentimiento_tratamientos",
+  {
+    modeloId: uuid()
+      .notNull()
+      .references(() => modelosConsentimiento.id),
+    tratamientoId: uuid()
+      .notNull()
+      .references(() => tratamientos.id),
+  },
+  (t) => [primaryKey({ columns: [t.modeloId, t.tratamientoId] })],
+);
+
+/** Consentimientos firmados en el TPV: copia del texto firmado y la firma. Solo se pueden revocar. */
+export const consentimientosFirmados = pgTable(
+  "consentimientos_firmados",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    clienteId: uuid()
+      .notNull()
+      .references(() => clientes.id),
+    modeloId: uuid()
+      .notNull()
+      .references(() => modelosConsentimiento.id),
+    nombreModelo: text().notNull(),
+    texto: text().notNull(),
+    /** Firma dibujada con el dedo (imagen PNG en formato data:). */
+    firma: text().notNull(),
+    firmante: text().notNull(),
+    citaId: uuid().references(() => citas.id),
+    registradoPor: uuid()
+      .notNull()
+      .references(() => usuarios.id),
+    firmadoEn: creadoEn(),
+    revocadoEn: fecha(),
+    revocadoPor: uuid().references(() => usuarios.id),
+  },
+  (t) => [index("consentimientos_firmados_cliente").on(t.clienteId, t.firmadoEn), check("firma_tamano", sql`length(${t.firma}) <= 400000`)],
 );

@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@adela/db", "@adela/dominio", "@adela/ui"],
   serverExternalPackages: ["postgres"],
   poweredByHeader: false,
+  // Las fotos de las fichas (ya reducidas en el equipo) pasan por una acción del servidor.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   async headers() {
     return [
       {

@@ -11,7 +11,7 @@ export function FormularioProfesional({
   usuarios,
   tratamientos,
 }: {
-  valores?: { id: string; nombre: string; color: string; usuarioId: string | null; activo: boolean; tratamientoIds: string[] };
+  valores?: { id: string; nombre: string; color: string; usuarioId: string | null; activo: boolean; tratamientoIds: string[]; comisionServicios: number; comisionProductos: number };
   usuarios: { id: string; nombre: string }[];
   tratamientos: { id: string; nombre: string; categoria: string }[];
 }) {
@@ -47,6 +47,14 @@ export function FormularioProfesional({
             <option value="si">Atiende citas</option>
             <option value="no">No atiende (oculta)</option>
           </select>
+        </label>
+        <label className="block">
+          Comisión en servicios (%)
+          <input name="comisionServicios" inputMode="decimal" defaultValue={valores ? String(valores.comisionServicios / 100).replace(".", ",") : "0"} className={campo} />
+        </label>
+        <label className="block">
+          Comisión en productos (%)
+          <input name="comisionProductos" inputMode="decimal" defaultValue={valores ? String(valores.comisionProductos / 100).replace(".", ",") : "0"} className={campo} />
         </label>
       </div>
       <fieldset className="space-y-2">

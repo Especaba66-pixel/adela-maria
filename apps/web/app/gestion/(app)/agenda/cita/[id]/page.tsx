@@ -6,6 +6,7 @@ import { EstadoCitaChip } from "@/components/EstadoCita";
 import { diaLargo, fechaHora } from "@/lib/fechas";
 import { detalleCita, profesionalDeUsuario, profesionalesActivos } from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
+import { consentimientosQueFaltan } from "@/server/fichas";
 import { BotonCancelarSerie, BotonesEstado, FormularioMover } from "./Acciones";
 
 export default async function Cita({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ creada?: string; canceladas?: string }> }) {
@@ -24,6 +25,7 @@ export default async function Cita({ params, searchParams }: { params: Promise<{
   const posibles = ESTADOS_CITA.filter((e) => puedeCambiarEstado(d.c.estado, e));
   const servicios = d.servicios.map((s) => s.nombre).join(" y ");
   const anonima = Boolean(d.cliente.anonimizadaEn);
+  const faltan = !anonima && d.c.estado !== "cancelada" ? ((await consentimientosQueFaltan([{ id: d.c.id, clienteId: d.cliente.id }])).get(d.c.id) ?? []) : [];
   const mensaje =
     `Hola, ${d.cliente.nombre}. Te ${d.c.estado === "pendiente" ? "confirmamos" : "recordamos"} tu cita de ${servicios} el ` +
     `${diaLargo(ini.fecha)} a las ${horaATexto(ini.minutos)}. Adela María · Belleza holística`;
@@ -46,6 +48,16 @@ export default async function Cita({ params, searchParams }: { params: Promise<{
         <EstadoCitaChip estado={d.c.estado} />
       </div>
 
+      {faltan.map((m) => (
+        <Aviso key={m.id} prioridad="importante">
+          Falta que firme «{m.nombre}».{" "}
+          {gestiona && (
+            <Link href={`/gestion/clientas/${d.cliente.id}/consentimiento?modelo=${m.id}&cita=${d.c.id}`} className="font-semibold underline">
+              Firmar ahora
+            </Link>
+          )}
+        </Aviso>
+      ))}
       <Tarjeta>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
           <dt className="text-tinta-suave">Clienta</dt>

@@ -13,3 +13,5 @@ export * from "./bonos";
 export * from "./stock";
 export * from "./avisos";
 export * from "./whatsapp";
+export * from "./fichas";
+export * from "./informes";

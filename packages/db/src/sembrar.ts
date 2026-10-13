@@ -1,12 +1,12 @@
 /**
  * Datos iniciales. Se puede ejecutar varias veces: solo añade lo que falta.
  */
-import { PLANTILLAS_INICIALES, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
-import { and, eq, isNull } from "drizzle-orm";
+import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { categorias, centro, horarios, plantillas, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { categorias, centro, horarios, modelosConsentimiento, modelosConsentimientoTratamientos, plantillas, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -109,6 +109,14 @@ export async function sembrar(
           .values(incluidos.map((t) => ({ tipoBonoId: tipo!.id, tratamientoId: t.id })))
           .onConflictDoNothing();
       }
+    }
+
+    // Consentimientos informados de partida (solo los que no existen; los tratamientos que los piden, por nombre).
+    for (const m of MODELOS_CONSENTIMIENTO_INICIALES) {
+      const [nuevo] = await tx.insert(modelosConsentimiento).values({ nombre: m.nombre, texto: m.texto }).onConflictDoNothing().returning();
+      if (!nuevo || m.tratamientos.length === 0) continue;
+      const piden = await tx.select({ id: tratamientos.id }).from(tratamientos).where(inArray(tratamientos.nombre, m.tratamientos));
+      if (piden.length) await tx.insert(modelosConsentimientoTratamientos).values(piden.map((t) => ({ modeloId: nuevo.id, tratamientoId: t.id })));
     }
   });
 

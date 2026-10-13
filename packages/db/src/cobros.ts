@@ -223,6 +223,8 @@ export type UsoBono = { tratamientoId: string } & ({ bonoId: string; tipoBonoNue
 export interface Cobro {
   clienteId?: string | null;
   citaId?: string | null;
+  /** Quién atendió. Si no se dice y es una cita, la profesional de la cita. */
+  profesionalId?: string | null;
   /** Lo que se cobra: tratamientos (`tratamientoId`), bonos que se venden (`tipoBonoId`) o productos (`productoId`). */
   lineas: (LineaEntrada & { tratamientoId?: string | null; tipoBonoId?: string | null; productoId?: string | null })[];
   pagos: PagoEntrada[];
@@ -357,10 +359,12 @@ export async function cobrar(db: BaseDatos, usuarioId: string, c: Cobro): Promis
   if (em && !em.ok) return em;
   const caja = await cajaAbierta(db);
   if (hayVenta && !caja) return error("Primero abre la caja.");
+  let profesionalId = c.profesionalId ?? null;
   if (c.citaId) {
     const [cita] = await db.select().from(citas).where(eq(citas.id, c.citaId));
     if (!cita || cita.estado === "cancelada") return error("Esa cita no se puede cobrar.");
     if (await citaCobrada(db, c.citaId)) return error("Esa cita ya está cobrada.");
+    profesionalId ??= cita.profesionalId;
   }
 
   try {
@@ -372,7 +376,7 @@ export async function cobrar(db: BaseDatos, usuarioId: string, c: Cobro): Promis
       if (hayVenta) {
         const [v] = await tx
           .insert(ventas)
-          .values({ clienteId: c.clienteId ?? null, citaId: c.citaId ?? null, total, creadaPor: usuarioId })
+          .values({ clienteId: c.clienteId ?? null, citaId: c.citaId ?? null, profesionalId, total, creadaPor: usuarioId })
           .returning();
         ventaId = v!.id;
         await tx.insert(lineasVenta).values(
@@ -510,7 +514,7 @@ export async function devolver(db: BaseDatos, usuarioId: string, ventaId: string
 
   const r = await db.transaction(async (tx) => {
     const lineas = lineasOriginales.map((l) => ({ ...l, cantidad: -l.cantidad, total: -l.total }));
-    const [dev] = await tx.insert(ventas).values({ clienteId: v.clienteId, devolucionDe: v.id, total: -v.total, creadaPor: usuarioId }).returning();
+    const [dev] = await tx.insert(ventas).values({ clienteId: v.clienteId, devolucionDe: v.id, profesionalId: v.profesionalId, total: -v.total, creadaPor: usuarioId }).returning();
     await tx.insert(lineasVenta).values(lineas.map((l) => ({ ...l, ventaId: dev!.id })));
     for (const p of conTarjeta) {
       const [pago] = await tx.insert(pagos).values({ ventaId: dev!.id, metodo: "tarjeta_regalo", importe: -p.importe, tarjetaRegaloId: p.tarjetaRegaloId, sesionCajaId: caja.id, usuarioId }).returning();

@@ -12,6 +12,10 @@ import { EnviarWhatsapp } from "@/components/EnviarWhatsapp";
 import { enviable } from "@/server/mensajes";
 import { apiWhatsapp, ultimoDeLaClienta } from "@/server/whatsapp";
 import { Responder } from "./Responder";
+import { NOMBRE_TIPO_FOTO } from "@adela/dominio";
+import { consentimientosDeClienta, fotosDeClienta, modelos } from "@/server/fichas";
+import { borrar } from "./acciones-fichas";
+import { SubirFoto } from "./SubirFoto";
 import { bonosDeClienta } from "@/server/bonos";
 import { suprimir } from "../acciones";
 import { FormularioClienta } from "../FormularioClienta";
@@ -34,7 +38,14 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
     );
   }
   const esAdmin = puede(usuario.rol, "configuracion.gestionar");
-  const [bonos, mensajes, plantillas] = await Promise.all([puede(usuario.rol, "cobrar") ? bonosDeClienta(id) : [], mensajesDeClienta(id), plantillasGuardadas()]);
+  const [bonos, mensajes, plantillas, fotos, firmados, modelosActivos] = await Promise.all([
+    puede(usuario.rol, "cobrar") ? bonosDeClienta(id) : [],
+    mensajesDeClienta(id),
+    plantillasGuardadas(),
+    fotosDeClienta(id),
+    consentimientosDeClienta(id),
+    modelos(true),
+  ]);
   // Próxima cita (para el recordatorio con su fecha y hora).
   const ahora = Date.now();
   const proxima = f.eventos
@@ -141,6 +152,58 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
         </section>
 
         <section aria-labelledby="datos" className="space-y-3">
+          <Tarjeta className="space-y-3">
+            <h2 className="text-xl">Consentimientos</h2>
+            {firmados.length > 0 && (
+              <ul className="space-y-1" aria-label="Consentimientos firmados">
+                {firmados.map((f) => (
+                  <li key={f.id}>
+                    <Link href={`/gestion/clientas/${c.id}/consentimiento/${f.id}`} className="underline">
+                      {f.nombre}
+                    </Link>{" "}
+                    <span className="text-sm text-tinta-suave">
+                      · firmado el {fechaHora(f.firmadoEn)}
+                      {f.revocadoEn && <strong className="text-urgente"> · retirado</strong>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {modelosActivos.map((m) => (
+                <Link key={m.id} href={`/gestion/clientas/${c.id}/consentimiento?modelo=${m.id}`} className="inline-flex min-h-10 items-center rounded-lg border-2 border-dorado px-3 text-sm font-semibold text-dorado-oscuro hover:bg-crema">
+                  Firmar: {m.nombre}
+                </Link>
+              ))}
+            </div>
+          </Tarjeta>
+          <Tarjeta className="space-y-3">
+            <h2 className="text-xl">Fotos</h2>
+            {fotos.length > 0 && (
+              <ul className="grid grid-cols-3 gap-2" aria-label="Fotos">
+                {fotos.map((f) => (
+                  <li key={f.id} className="space-y-1">
+                    <a href={`/gestion/clientas/${c.id}/fotos/${f.id}`} target="_blank" rel="noopener">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/gestion/clientas/${c.id}/fotos/${f.id}`} alt={`${NOMBRE_TIPO_FOTO[f.tipo]} · ${fechaHora(f.subidaEn)}`} className="aspect-square w-full rounded-lg object-cover" />
+                    </a>
+                    <div className="text-xs text-tinta-suave">
+                      {NOMBRE_TIPO_FOTO[f.tipo]} · {fechaHora(f.subidaEn).slice(0, 10)}
+                      {f.nota && ` · ${f.nota}`}
+                    </div>
+                    <form action={borrar}>
+                      <input type="hidden" name="cliente" value={c.id} />
+                      <input type="hidden" name="foto" value={f.id} />
+                      <button type="submit" className="text-xs text-urgente underline">
+                        Borrar
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <SubirFoto clienteId={c.id} />
+          </Tarjeta>
           <Tarjeta className="space-y-3">
             <h2 className="text-xl">Apuntar una tarea sobre {c.nombre.split(" ")[0]}</h2>
             <FormularioTarea clienteId={c.id} />
