@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["postgres"],
   poweredByHeader: false,
   // Las fotos de las fichas (ya reducidas en el equipo) pasan por una acción del servidor.
-  experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  // Desde el móvil se entra por Tailscale (https://<equipo>.<red>.ts.net), que reenvía al TPV.
+  experimental: { serverActions: { bodySizeLimit: "4mb", allowedOrigins: ["*.ts.net"] } },
   async headers() {
     return [
       {

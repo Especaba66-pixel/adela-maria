@@ -286,7 +286,7 @@ export function Tpv({
         : `Cobrar ${formatearEuros(total)}`;
 
   return (
-    <div className="grid grid-cols-[14rem_1fr_22rem] gap-4">
+    <div className="grid gap-4 pb-20 lg:grid-cols-[14rem_1fr_22rem] lg:pb-0">
       {/* Citas de hoy por cobrar */}
       <section aria-label="Citas por cobrar" className="space-y-2">
         <h2 className="text-2xl">Por cobrar hoy</h2>
@@ -382,7 +382,14 @@ export function Tpv({
       </section>
 
       {/* Cuenta y cobro */}
-      <section aria-label="Cuenta" className="space-y-3">
+      {/* En el móvil la cuenta queda debajo del catálogo: una barra fija lleva a ella. */}
+      {hayAlgo && (
+        <a href="#cuenta" className="fixed inset-x-0 bottom-0 z-10 flex min-h-boton items-center justify-between gap-4 border-t border-borde bg-dorado-oscuro px-4 text-lg font-semibold text-white lg:hidden">
+          <span>Ver la cuenta</span>
+          <span>{formatearEuros(total)}</span>
+        </a>
+      )}
+      <section id="cuenta" aria-label="Cuenta" className="scroll-mt-20 space-y-3">
         <Tarjeta className="space-y-3 p-4">
           <div className="flex items-baseline justify-between">
             <h2 className="text-2xl">{tarjeta ? "Tarjeta regalo" : clienta ? clienta.nombre : "Cuenta"}</h2>

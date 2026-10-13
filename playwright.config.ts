@@ -45,10 +45,21 @@ export default defineConfig({
   projects: [
     {
       name: "tpv",
+      testIgnore: /movil\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1366, height: 768 },
         hasTouch: true,
+        launchOptions: process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
+      },
+    },
+    {
+      // Móvil: va después de todo lo del TPV, para recorrer las pantallas con datos.
+      name: "movil",
+      testMatch: /movil\.spec\.ts/,
+      dependencies: ["tpv"],
+      use: {
+        ...devices["Pixel 7"],
         launchOptions: process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
       },
     },

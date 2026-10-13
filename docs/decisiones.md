@@ -262,3 +262,13 @@ una cita de hoy o mañana pide un consentimiento que la clienta no tiene, sale e
 partida deben revisarse con la asesoría.
 
 **Al suprimir los datos de una clienta** se borran también sus fotos y sus consentimientos firmados.
+
+## Gestión desde el móvil
+
+**Una sola app para TPV y móvil**: las pantallas se adaptan (en el móvil, barra arriba con «Menú»; en el TPV, menú
+lateral) y se instala como app en la pantalla de inicio. Una prueba recorre todas las pantallas con tamaño de móvil y
+falla si alguna obliga a desplazar en horizontal.
+
+**Acceso desde fuera con Tailscale** (gratis): red privada y cifrada entre el móvil y el TPV, con https. La app no se
+abre a internet y los datos siguen en el TPV. Cada móvil se registra como equipo de confianza y entra con PIN; si se
+pierde, se quita en Configuración → Equipos y en Tailscale.
