@@ -148,8 +148,6 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 </header>
 
 <main id="inicio">
-  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
-
   <section class="portada${pase.length ? " con-fotos" : ""}">
     ${pase.length ? `<div class="pase" aria-hidden="true">${pase.map((f, i) => `<img src="${esc(f.archivo)}" alt="" style="animation-delay:${i * SEGUNDOS_FOTO}s"${i ? ' loading="lazy"' : ""} decoding="async">`).join("")}</div>` : ""}
     <div class="contenedor portada-texto">
@@ -158,6 +156,10 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <p class="entrada aparece">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
     </div>
   </section>
+
+  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
+
+
 
   <section id="tratamientos" class="contenedor bloque" aria-labelledby="titulo-tratamientos">
     <h2 id="titulo-tratamientos" class="aparece">Tratamientos</h2>
@@ -352,7 +354,10 @@ a{color:var(--dorado-oscuro)}
 .legal{font-size:.85rem;margin-top:1rem!important}
 /* Movimiento */
 .portada{position:relative;overflow:hidden}
-.portada.con-fotos{min-height:clamp(26rem,80vh,40rem);display:flex;align-items:center;justify-content:center;color:#fff}
+.portada.con-fotos{min-height:clamp(15rem,40svh,26rem);padding:1.5rem 0;display:flex;align-items:center;justify-content:center;color:#fff}
+.con-fotos .sello{width:min(150px,34vw);margin-bottom:.75rem}
+.con-fotos h2{font-size:clamp(2rem,7.5vw,3.4rem)}
+.con-fotos .entrada{font-size:1rem;margin:.5rem auto 0}
 .pase{position:absolute;inset:0}
 .pase img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity,transform}
 .portada.con-fotos::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(43,38,32,.25),rgba(43,38,32,.55))}

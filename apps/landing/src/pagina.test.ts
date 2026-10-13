@@ -48,11 +48,12 @@ describe("landing", () => {
     expect(html).toContain("El día D");
   });
 
-  it("con el servicio de reservas, lo primero es el calendario; sin él, se explica cómo pedir cita", () => {
+  it("con el servicio de reservas, el calendario va justo después de la portada; sin él, se explica cómo pedir cita", () => {
     const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, reservasApi: "https://reservas.ejemplo.workers.dev" });
     const main = con.slice(con.indexOf("<main"));
     expect(main.indexOf('id="reservar"')).toBeLessThan(main.indexOf('id="tratamientos"'));
-    expect(main.indexOf('id="reservar"')).toBeLessThan(main.indexOf('class="portada"'));
+    // Arriba la portada con las fotos y el logo; justo debajo, el calendario.
+    expect(main.indexOf('class="portada')).toBeLessThan(main.indexOf('id="reservar"'));
     expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');
     expect(con).toContain('data-reservar="Axilas"');
     expect(con).toContain("Si reservas aquí, guardamos tu nombre y tu teléfono");

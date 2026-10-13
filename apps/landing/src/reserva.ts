@@ -55,7 +55,7 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
 }
 
 export const ESTILOS_RESERVA = `
-.reserva{padding:2rem 0 2.5rem;background:linear-gradient(var(--fondo),var(--crema))}
+.reserva{padding:1.25rem 0 2.5rem;background:linear-gradient(var(--fondo),var(--crema))}
 .reserva h1{font-size:clamp(2.2rem,8vw,3.2rem);text-align:center}
 .reserva .entrada{text-align:center;margin:.5rem auto 1.5rem}
 .calendario{max-width:44rem;margin:0 auto;background:var(--superficie);border:1px solid var(--borde);border-radius:1.25rem;padding:1.25rem;display:grid;gap:1.25rem;box-shadow:0 10px 30px rgba(122,92,46,.08)}
