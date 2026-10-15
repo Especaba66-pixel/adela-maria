@@ -1,7 +1,7 @@
 /**
  * Datos iniciales. Se puede ejecutar varias veces: solo añade lo que falta.
  */
-import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
+import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, normalizarTelefono, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
@@ -37,7 +37,7 @@ export async function sembrar(
   await db.transaction(async (tx) => {
     let [c] = await tx.select().from(centro).limit(1);
     if (!c) {
-      [c] = await tx.insert(centro).values({ nombre: NOMBRE_CENTRO, direccion: CONTACTO.direccion }).returning();
+      [c] = await tx.insert(centro).values({ nombre: NOMBRE_CENTRO, direccion: CONTACTO.direccion, telefono: CONTACTO.whatsapp ? normalizarTelefono(CONTACTO.whatsapp) : null }).returning();
       resumen.centroCreado = true;
     }
     const centroId = c!.id;
