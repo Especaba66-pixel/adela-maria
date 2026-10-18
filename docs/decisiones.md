@@ -301,3 +301,16 @@ unidades, 7 de ellas de regalo) entra como producto de venta con el mismo 30 %; 
 abaratan el coste medio. El resto (28 productos de cabina, 918,30 € de base) va solo a gastos, sin stock, como decidió
 el centro. La parte de venta y la de cabina quedan como dos gastos con el mismo número y suman exactamente el documento.
 El documento es un **presupuesto**, no una factura: para deducir el IVA hace falta la factura del proveedor.
+
+## Acceso con correo e invitada (18 de octubre de 2026)
+
+**Los equipos se registran con correo y contraseña de la app.** El correo sustituye al nombre de usuario; la
+contraseña es la de la app, no la del correo (no se usa la cuenta de Hotmail ni se envían correos: la app está en el
+TPV). Al actualizar, la administración que se instaló como `adela` pasa a entrar con `adelamaria_16@hotmail.com`, con la
+misma contraseña. En Configuración → Usuarios se puede cambiar el correo de cualquiera.
+
+**Rol «Invitada (soporte)»** para quien construye y mantiene el sistema (Espe, `especaba66@hotmail.com`): puede hacer
+todo y registrar equipos con su correo, pero no cuenta como administración del centro, no aparece como profesional y
+no puede crear administradoras ni cambiar ni desactivar a la administración. La administración le quita el acceso
+cuando quiera (Usuarios → Editar → Desactivado) y sus sesiones se cierran al momento. La cuenta la crea la
+administración desde la app: así la contraseña no queda escrita en ningún archivo.

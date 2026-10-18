@@ -21,7 +21,7 @@ test("en un equipo sin registrar no se puede entrar con PIN", async () => {
 });
 
 test("rechaza una contraseña incorrecta sin decir si el usuario existe", async () => {
-  await pagina.getByLabel("Usuario de administración").fill("adela");
+  await pagina.getByLabel("Correo").fill("adelamaria_16@hotmail.com");
   await pagina.getByLabel("Contraseña").fill("no-es-esta-contrasena");
   await pagina.getByRole("button", { name: "Registrar este equipo" }).click();
   await expect(alerta(pagina)).toHaveText("Usuario o contraseña incorrectos.");
@@ -59,7 +59,7 @@ test("da de alta a Lucía en recepción solo con PIN, sin contraseña", async ()
   await pagina.goto("/gestion/mas/configuracion/usuarios");
   const form = formularioNuevo();
   await form.getByLabel("Nombre").fill("Lucía");
-  await form.getByLabel("Usuario").fill("lucia");
+  await form.getByLabel("Correo (o usuario) para entrar").fill("lucia");
   await form.getByLabel("Rol").selectOption("recepcion");
   await form.getByLabel(/PIN/).fill("3579");
   await form.getByRole("button", { name: "Crear usuario" }).click();
@@ -70,7 +70,7 @@ test("da de alta a Lucía en recepción solo con PIN, sin contraseña", async ()
 test("no deja crear un PIN trivial", async () => {
   const form = formularioNuevo();
   await form.getByLabel("Nombre").fill("Prueba");
-  await form.getByLabel("Usuario").fill("prueba");
+  await form.getByLabel("Correo (o usuario) para entrar").fill("prueba");
   await form.getByLabel("Rol").selectOption("profesional");
   await form.getByLabel(/PIN/).fill("1234");
   await form.getByRole("button", { name: "Crear usuario" }).click();
@@ -80,7 +80,7 @@ test("no deja crear un PIN trivial", async () => {
 test("no deja crear otra administradora sin contraseña", async () => {
   const form = formularioNuevo();
   await form.getByLabel("Nombre").fill("Otra");
-  await form.getByLabel("Usuario").fill("otra");
+  await form.getByLabel("Correo (o usuario) para entrar").fill("otra");
   await form.getByLabel("Rol").selectOption("administrador");
   await form.getByLabel(/PIN/).fill("8024");
   await form.getByRole("button", { name: "Crear usuario" }).click();
@@ -147,11 +147,52 @@ test("no se puede quitar la administración a la única administradora", async (
 test("el personal sin administración no puede registrar equipos", async ({ browser }) => {
   const otra = await browser.newPage();
   await otra.goto("/gestion/registrar-equipo");
-  await otra.getByLabel("Usuario de administración").fill("lucia");
+  await otra.getByLabel("Correo").fill("lucia");
   await otra.getByLabel("Contraseña").fill("cualquier-cosa-larga");
   await otra.getByRole("button", { name: "Registrar este equipo" }).click();
   await expect(alerta(otra)).toHaveText("Usuario o contraseña incorrectos.");
   await otra.close();
+});
+
+test("Adela da acceso a Espe como invitada, con su correo", async () => {
+  await pagina.goto("/gestion/mas/configuracion/usuarios");
+  const form = formularioNuevo();
+  await form.getByLabel("Nombre").fill("Espe");
+  await form.getByLabel("Correo (o usuario) para entrar").fill("Especaba66@Hotmail.com");
+  await form.getByLabel("Rol").selectOption("invitada");
+  await form.getByLabel(/PIN/).fill("7391");
+  await form.getByLabel(/Contraseña/).fill("contrasena-de-espe");
+  await form.getByRole("button", { name: "Crear usuario" }).click();
+  await expect(pagina.getByText("Espe ya puede entrar.")).toBeVisible();
+  await expect(pagina.getByRole("region", { name: "Espe" })).toContainText("especaba66@hotmail.com · Invitada (soporte)");
+});
+
+test("la invitada registra su propio equipo con el correo, configura, pero no puede tocar a la administración", async ({ browser }) => {
+  const espe = await browser.newPage();
+  await espe.goto("/gestion/registrar-equipo");
+  await espe.getByLabel("Nombre del equipo").fill("Ordenador de Espe");
+  await espe.getByLabel("Correo").fill("especaba66@hotmail.com");
+  await espe.getByLabel("Contraseña").fill("contrasena-de-espe");
+  await espe.getByRole("button", { name: "Registrar este equipo" }).click();
+  await expect(espe.getByTestId("usuario-actual")).toHaveText("Espe");
+
+  await espe.goto("/gestion/mas/configuracion/usuarios");
+  const adela = espe.getByRole("region", { name: "Adela" });
+  await adela.getByText("Editar").click();
+  await adela.getByLabel("Estado").selectOption("no");
+  await adela.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(adela.locator('[role="alert"]')).toHaveText("Solo la administración del centro puede dar o cambiar el acceso de administración.");
+
+  // Adela le quita el acceso cuando quiere: su sesión deja de valer.
+  await pagina.goto("/gestion/mas/configuracion/usuarios");
+  const ficha = pagina.getByRole("region", { name: "Espe" });
+  await ficha.getByText("Editar").click();
+  await ficha.getByLabel("Estado").selectOption("no");
+  await ficha.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(ficha.getByText("Cambios guardados.")).toBeVisible();
+  await espe.goto("/gestion");
+  await expect(espe).not.toHaveURL(/\/gestion$/);
+  await espe.close();
 });
 
 test("la administración pone el teléfono y la dirección, y la web de clientas los muestra", async () => {

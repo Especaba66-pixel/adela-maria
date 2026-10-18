@@ -62,7 +62,13 @@ afterAll(async () => cerrar());
 describe("datos iniciales", () => {
   it("crea centro, administradora, tarifas y bonos ligados a los faciales", async () => {
     const r = await sembrar(db, ADMIN, TARIFAS);
-    expect(r).toMatchObject({ centroCreado: true, adminCreado: true, tratamientosNuevos: 3, bonosNuevos: 1, avisos: [] });
+    expect(r).toMatchObject({
+      centroCreado: true,
+      adminCreado: true,
+      tratamientosNuevos: 3,
+      bonosNuevos: 1,
+      avisos: ["La administración se registra ahora con su correo: adelamaria_16@hotmail.com (la contraseña no cambia)."],
+    });
     const [prof] = await db.select().from(profesionales);
     expect(prof?.nombre).toBe("Adela");
     const [c] = await db.select().from(centro);
@@ -71,7 +77,8 @@ describe("datos iniciales", () => {
     const h = await db.select().from(horarios).where(eq(horarios.profesionalId, prof!.id));
     expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([1, 2, 3, 4, 5].map((d) => [d, 540, 840]));
 
-    const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adela"));
+    // La administración que instala con «adela» pasa a entrar con su correo.
+    const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adelamaria_16@hotmail.com"));
     expect(adela?.rol).toBe("administrador");
     expect(adela?.hashPin).not.toContain("2468");
     expect(await comprobarSecreto("2468", adela!.hashPin!)).toBe(true);
@@ -87,7 +94,7 @@ describe("datos iniciales", () => {
 
   it("se puede repetir sin duplicar nada", async () => {
     const r = await sembrar(db, ADMIN, TARIFAS);
-    expect(r).toMatchObject({ centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0 });
+    expect(r).toMatchObject({ centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, avisos: [] });
     expect(await db.$count(tratamientos)).toBe(3);
     expect(await db.$count(usuarios)).toBe(1);
   });

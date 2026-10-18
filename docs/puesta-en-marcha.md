@@ -34,7 +34,7 @@ Cuando termine, la app tendrá una dirección del tipo `https://adela-maria.onre
 ## 3. Primeros pasos en la app
 
 1. Abre `https://…onrender.com/gestion` **en el TPV**.
-2. Registra el equipo: usuario `adela`, la contraseña del paso 2 y nombre del equipo «TPV».
+2. Registra el equipo: el correo `adelamaria_16@hotmail.com`, la contraseña del paso 2 y nombre del equipo «TPV».
 3. En **Más → Configuración**:
    - **Datos del centro**: teléfono de WhatsApp del centro y dirección (las cabinas ya están en 2).
    - **Horario**: tu horario de la semana.

@@ -10,6 +10,7 @@ import {
   trasIntentoFallido,
   type Permiso,
   type Rol,
+  usaContrasena,
 } from "@adela/dominio";
 import { and, eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -143,7 +144,7 @@ function mensajeBloqueo(hasta: Date): string {
  */
 export async function registrarEquipo(datos: { usuario: string; contrasena: string; nombreEquipo: string }): Promise<Resultado> {
   const [u] = await db().select().from(usuarios).where(eq(usuarios.usuario, normalizarUsuario(datos.usuario)));
-  if (!u || !u.activo || u.rol !== "administrador" || !u.hashContrasena) {
+  if (!u || !u.activo || !usaContrasena(u.rol) || !u.hashContrasena) {
     await comprobarSecreto(datos.contrasena, await relleno());
     return { ok: false, error: ERROR_GENERICO };
   }

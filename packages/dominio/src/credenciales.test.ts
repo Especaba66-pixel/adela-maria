@@ -6,6 +6,11 @@ describe("credenciales", () => {
     expect(validarUsuario("adela")).toBeNull();
     expect(validarUsuario("maria.l")).toBeNull();
     expect(validarUsuario("ab")).not.toBeNull();
+    // También un correo, siempre en minúsculas.
+    expect(validarUsuario(normalizarUsuario(" Adelamaria_16@Hotmail.com "))).toBeNull();
+    expect(validarUsuario("especaba66@hotmail.com")).toBeNull();
+    expect(validarUsuario("adela@hotmail")).toBe("Revisa el correo.");
+    expect(validarUsuario("a b@hotmail.com")).toBe("Revisa el correo.");
     expect(validarUsuario("María")).not.toBeNull();
     expect(normalizarUsuario("  Adela ")).toBe("adela");
   });

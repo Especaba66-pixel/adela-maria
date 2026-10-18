@@ -1,11 +1,15 @@
 import "server-only";
 import { centro, registrarActividad, sesiones, usuarios } from "@adela/db";
-import { cifrarSecreto, esRol, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
+import { cifrarSecreto, esRol, normalizarUsuario, usaContrasena, validarContrasena, validarPin, validarUsuario, type Rol } from "@adela/dominio";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { requerirSesion } from "./auth";
 import { db } from "./db";
 
 export type Resultado = { ok: true; mensaje: string } | { ok: false; error: string };
+
+const SOLO_ADMINISTRACION = "Solo la administración del centro puede dar o cambiar el acceso de administración.";
+/** La invitada lo puede todo salvo dar administración o tocar a quien la tiene: el centro siempre manda. */
+const invitadaTocaAdministracion = (yo: Rol, ...roles: (string | undefined)[]) => yo === "invitada" && roles.includes("administrador");
 
 export async function crearUsuario(datos: {
   nombre: string;
@@ -19,7 +23,8 @@ export async function crearUsuario(datos: {
   const usuario = normalizarUsuario(datos.usuario);
   if (!nombre) return { ok: false, error: "Escribe el nombre." };
   if (!esRol(datos.rol)) return { ok: false, error: "Elige un rol." };
-  const esAdmin = datos.rol === "administrador";
+  if (invitadaTocaAdministracion(yo.rol, datos.rol)) return { ok: false, error: SOLO_ADMINISTRACION };
+  const esAdmin = usaContrasena(datos.rol);
   if (!datos.pin) return { ok: false, error: "Escribe un PIN: es como entra el personal." };
   const error =
     validarUsuario(usuario) ??
@@ -28,10 +33,10 @@ export async function crearUsuario(datos: {
   if (error) return { ok: false, error };
 
   const [existe] = await db().select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.usuario, usuario));
-  if (existe) return { ok: false, error: "Ya hay alguien con ese usuario." };
+  if (existe) return { ok: false, error: "Ya hay alguien con ese correo o usuario." };
 
   const [c] = await db().select({ id: centro.id }).from(centro).limit(1);
-  // Solo la administración tiene contraseña (para registrar equipos).
+  // Solo administración e invitada tienen contraseña (para registrar equipos).
   const hashContrasena = esAdmin ? await cifrarSecreto(datos.contrasena) : null;
   const hashPin = await cifrarSecreto(datos.pin);
   await db().transaction(async (tx) => {
@@ -50,16 +55,25 @@ async function cerrarSesionesDe(tx: Parameters<Parameters<ReturnType<typeof db>[
 
 export async function editarUsuario(
   id: string,
-  cambios: { rol?: string; activo?: boolean; contrasena?: string; pin?: string },
+  cambios: { usuario?: string; rol?: string; activo?: boolean; contrasena?: string; pin?: string },
 ): Promise<Resultado> {
   const { usuario: yo } = await requerirSesion("usuarios.gestionar");
   const [antes] = await db().select().from(usuarios).where(eq(usuarios.id, id));
   if (!antes) return { ok: false, error: "No existe ese usuario." };
+  if (invitadaTocaAdministracion(yo.rol, antes.rol, cambios.rol)) return { ok: false, error: SOLO_ADMINISTRACION };
 
   const valores: Partial<typeof usuarios.$inferInsert> = {};
   if (cambios.rol !== undefined && cambios.rol !== antes.rol) {
     if (!esRol(cambios.rol)) return { ok: false, error: "Rol no válido." };
     valores.rol = cambios.rol;
+  }
+  if (cambios.usuario !== undefined && normalizarUsuario(cambios.usuario) !== antes.usuario) {
+    const usuario = normalizarUsuario(cambios.usuario);
+    const error = validarUsuario(usuario);
+    if (error) return { ok: false, error };
+    const [otro] = await db().select({ id: usuarios.id }).from(usuarios).where(and(eq(usuarios.usuario, usuario), ne(usuarios.id, id)));
+    if (otro) return { ok: false, error: "Ya hay alguien con ese correo o usuario." };
+    valores.usuario = usuario;
   }
   if (cambios.activo !== undefined && cambios.activo !== antes.activo) valores.activo = cambios.activo;
   if (cambios.contrasena) {
@@ -73,8 +87,8 @@ export async function editarUsuario(
     valores.hashPin = await cifrarSecreto(cambios.pin);
   }
   if (Object.keys(valores).length === 0) return { ok: true, mensaje: "No había nada que cambiar." };
-  if (valores.rol === "administrador" && !antes.hashContrasena && !valores.hashContrasena) {
-    return { ok: false, error: "Para dar administración hay que ponerle también una contraseña." };
+  if (valores.rol && usaContrasena(valores.rol) && !antes.hashContrasena && !valores.hashContrasena) {
+    return { ok: false, error: "Para este rol hay que ponerle también una contraseña." };
   }
 
   // Siempre debe quedar al menos una persona con administración activa.

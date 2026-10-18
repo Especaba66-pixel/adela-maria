@@ -27,7 +27,7 @@ export default async function Usuarios() {
               <details>
                 <summary className="inline-flex min-h-toque cursor-pointer items-center text-dorado-oscuro">Editar</summary>
                 <div className="pt-3">
-                  <EditarUsuario id={u.id} rol={u.rol} activo={u.activo} esYo={u.id === yo.id} />
+                  <EditarUsuario id={u.id} usuario={u.usuario} rol={u.rol} activo={u.activo} esYo={u.id === yo.id} />
                 </div>
               </details>
             </Tarjeta>

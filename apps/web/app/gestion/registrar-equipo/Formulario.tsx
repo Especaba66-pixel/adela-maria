@@ -18,8 +18,8 @@ export function Formulario({ yaRegistrado }: { yaRegistrado: boolean }) {
         </label>
       )}
       <label className="block font-medium">
-        Usuario de administración
-        <input name="usuario" autoComplete="username" autoCapitalize="none" required className={campo} />
+        Correo
+        <input name="usuario" type="text" inputMode="email" autoComplete="username" autoCapitalize="none" required className={campo} />
       </label>
       <label className="block font-medium">
         Contraseña

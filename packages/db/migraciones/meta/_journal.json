@@ -99,6 +99,13 @@
       "when": 1792317514225,
       "tag": "0013_descuento_en_compras",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792322002881,
+      "tag": "0014_rol_invitada",
+      "breakpoints": true
     }
   ]
 }

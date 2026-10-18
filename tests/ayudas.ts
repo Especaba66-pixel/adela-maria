@@ -12,7 +12,7 @@ export async function teclearPin(page: Page, pin: string) {
 export async function registrarTpv(page: Page) {
   await page.goto("/gestion");
   await expect(page).toHaveURL(/\/gestion\/registrar-equipo$/);
-  await page.getByLabel("Usuario de administración").fill("adela");
+  await page.getByLabel("Correo").fill("adelamaria_16@hotmail.com");
   await page.getByLabel("Contraseña").fill("contrasena-de-prueba");
   await page.getByRole("button", { name: "Registrar este equipo" }).click();
   await expect(page.getByTestId("usuario-actual")).toHaveText("Adela");

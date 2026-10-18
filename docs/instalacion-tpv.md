@@ -40,7 +40,7 @@ Tarda unos minutos. Al terminar verás en el escritorio el acceso **«Adela Mar�
 ## 3. Primer uso
 
 1. Abre **«Adela María»** en el escritorio. Se abre en pantalla completa.
-2. Registra el equipo: usuario `adela`, tu contraseña, nombre del equipo «TPV».
+2. Registra el equipo: tu correo (`adelamaria_16@hotmail.com`), tu contraseña de la app, nombre del equipo «TPV».
 3. En **Más → Configuración**:
    - **Datos del centro**: nombre fiscal, NIF y dirección fiscal (sin ellos no se puede cobrar), y el mensaje del
      ticket.

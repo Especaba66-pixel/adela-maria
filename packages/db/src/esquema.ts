@@ -64,8 +64,9 @@ export const usuarios = pgTable(
       .notNull()
       .references(() => centro.id),
     nombre: text().notNull(),
+    /** Con lo que se registra un equipo: un correo o un nombre corto, en minúsculas. */
     usuario: text().notNull(),
-    /** Solo la administración tiene contraseña: la usa para registrar equipos de confianza. */
+    /** Solo administración e invitada tienen contraseña: la usan para registrar equipos de confianza. */
     hashContrasena: text(),
     /** El personal entra con PIN en los equipos de confianza. */
     hashPin: text(),
@@ -78,7 +79,8 @@ export const usuarios = pgTable(
   },
   (t) => [
     uniqueIndex("usuarios_usuario_unico").on(t.usuario),
-    check("usuarios_admin_con_contrasena", sql`${t.rol} <> 'administrador' or ${t.hashContrasena} is not null`),
+    // Administración e invitada entran con contraseña (correo + contraseña) para registrar equipos.
+    check("usuarios_admin_con_contrasena", sql`${t.rol}::text not in ('administrador', 'invitada') or ${t.hashContrasena} is not null`),
   ],
 );
 

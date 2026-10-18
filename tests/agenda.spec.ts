@@ -255,7 +255,7 @@ test("una profesional solo ve su propia agenda y no las fichas", async ({ browse
   await pagina.goto("/gestion/mas/configuracion/usuarios");
   const form = pagina.locator("form").filter({ has: pagina.getByRole("button", { name: "Crear usuario" }) });
   await form.getByLabel("Nombre").fill("Rocío");
-  await form.getByLabel("Usuario").fill("rocio");
+  await form.getByLabel("Correo (o usuario) para entrar").fill("rocio");
   await form.getByLabel("Rol").selectOption("profesional");
   await form.getByLabel(/PIN/).fill("5791");
   await form.getByRole("button", { name: "Crear usuario" }).click();

@@ -4,6 +4,7 @@
 import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, normalizarTelefono, cifrarSecreto, normalizarUsuario, validarContrasena, validarPin, validarUsuario } from "@adela/dominio";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
+import { CORREO_ADMINISTRACION, USUARIO_ADMINISTRACION_INSTALACION } from "./datos/accesos";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
 import { COMPRAS_INICIALES, GASTOS_INICIALES, PRODUCTOS_VENTA, PROVEEDORES_INICIALES, STOCK_MINIMO_INICIAL, totalGastoInicial, type CompraInicial, type GastoInicial, type ProductoVenta, type ProveedorInicial } from "./datos/productos";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
@@ -76,6 +77,27 @@ export async function sembrar(
         .returning();
       await registrarActividad(tx, { usuarioId: null, accion: "usuario.crear", entidad: "usuarios", entidadId: nuevo!.id, despues: nuevo });
       resumen.adminCreado = true;
+    }
+
+    // La administración entra con su correo: si sigue con el usuario de la instalación, pasa a ser el correo.
+    const [conCorreo] = await tx.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.usuario, CORREO_ADMINISTRACION));
+    if (!conCorreo) {
+      const [antiguo] = await tx
+        .select()
+        .from(usuarios)
+        .where(and(eq(usuarios.rol, "administrador"), eq(usuarios.usuario, USUARIO_ADMINISTRACION_INSTALACION)));
+      if (antiguo) {
+        await tx.update(usuarios).set({ usuario: CORREO_ADMINISTRACION }).where(eq(usuarios.id, antiguo.id));
+        await registrarActividad(tx, {
+          usuarioId: null,
+          accion: "usuario.editar",
+          entidad: "usuarios",
+          entidadId: antiguo.id,
+          antes: { usuario: antiguo.usuario },
+          despues: { usuario: CORREO_ADMINISTRACION },
+        });
+        resumen.avisos.push(`La administración se registra ahora con su correo: ${CORREO_ADMINISTRACION} (la contraseña no cambia).`);
+      }
     }
 
     // La administración atiende citas: es la primera profesional (su horario se pone en Configuración).

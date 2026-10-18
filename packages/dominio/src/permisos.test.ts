@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERMISOS, esRol, puede } from "./permisos";
+import { PERMISOS, esRol, puede, usaContrasena } from "./permisos";
 
 describe("permisos", () => {
   it("el administrador puede todo", () => {
@@ -30,6 +30,13 @@ describe("permisos", () => {
     expect(puede("profesional", "agenda.gestionar")).toBe(false);
     expect(puede("profesional", "clientas.gestionar")).toBe(false);
     expect(puede("profesional", "caja.abrir_cerrar")).toBe(false);
+  });
+
+  it("la invitada (quien mantiene el sistema) puede todo y entra con contraseña, como la administración", () => {
+    for (const p of PERMISOS) expect(puede("invitada", p)).toBe(true);
+    expect(usaContrasena("invitada")).toBe(true);
+    expect(usaContrasena("administrador")).toBe(true);
+    expect(usaContrasena("recepcion")).toBe(false);
   });
 
   it("reconoce los roles válidos", () => {

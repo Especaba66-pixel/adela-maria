@@ -16,11 +16,11 @@ export default async function RegistrarEquipo() {
             <Marca grande />
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl">{yaRegistrado ? "Entrada de administración" : "Registrar este equipo"}</h1>
+            <h1 className="text-3xl">{yaRegistrado ? "Entrada con correo" : "Registrar este equipo"}</h1>
             <p className="text-tinta-suave">
               {yaRegistrado
                 ? "Este equipo ya está registrado. Lo normal es entrar con PIN."
-                : "Solo se hace una vez por equipo. Después, el personal entra con su PIN, sin contraseñas."}
+                : "Solo se hace una vez por equipo, con el correo y la contraseña de la app. Después, el personal entra con su PIN."}
             </p>
           </div>
         </div>

@@ -2,9 +2,13 @@
 
 export const LONGITUD_MINIMA_CONTRASENA = 10;
 
+/** Un correo (adelamaria_16@hotmail.com) o un nombre corto (adela). Siempre en minúsculas. */
 export function validarUsuario(usuario: string): string | null {
+  if (usuario.includes("@")) {
+    return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(usuario) && usuario.length <= 254 ? null : "Revisa el correo.";
+  }
   if (!/^[a-z0-9._-]{3,32}$/.test(usuario)) {
-    return "El usuario debe tener de 3 a 32 caracteres: letras minúsculas sin tilde, números, punto o guion.";
+    return "Escribe un correo, o un usuario de 3 a 32 caracteres: letras minúsculas sin tilde, números, punto o guion.";
   }
   return null;
 }

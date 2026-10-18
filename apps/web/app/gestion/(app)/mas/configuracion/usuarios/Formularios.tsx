@@ -41,8 +41,8 @@ export function NuevoUsuario() {
           <input name="nombre" required className={campo} />
         </label>
         <label className="block">
-          Usuario
-          <input name="usuario" required autoCapitalize="none" className={campo} />
+          Correo (o usuario) para entrar
+          <input name="usuario" required autoCapitalize="none" autoComplete="off" className={campo} />
         </label>
         <label className="block">
           Rol
@@ -53,7 +53,7 @@ export function NuevoUsuario() {
           <input name="pin" inputMode="numeric" pattern="\d{4,6}" required className={campo} />
         </label>
         <label className="col-span-2 block">
-          Contraseña (solo administración, mínimo 10 caracteres)
+          Contraseña (administración e invitada, mínimo 10 caracteres; no uses la de tu correo)
           <input name="contrasena" type="password" autoComplete="new-password" minLength={10} className={campo} />
         </label>
       </div>
@@ -64,13 +64,17 @@ export function NuevoUsuario() {
   );
 }
 
-export function EditarUsuario({ id, rol, activo, esYo }: { id: string; rol: Rol; activo: boolean; esYo: boolean }) {
+export function EditarUsuario({ id, usuario, rol, activo, esYo }: { id: string; usuario: string; rol: Rol; activo: boolean; esYo: boolean }) {
   const [estado, accion, pendiente] = useActionState(accionEditar, null);
   return (
     <form onSubmit={sinReinicio(accion)} className="space-y-3">
       <input type="hidden" name="id" value={id} />
       <Mensaje estado={estado} />
       <div className="grid grid-cols-2 gap-3">
+        <label className="col-span-2 block">
+          Correo (o usuario) para entrar
+          <input name="usuario" defaultValue={usuario} required autoCapitalize="none" autoComplete="off" className={campo} />
+        </label>
         <label className="block">
           Rol
           <SelectorRol valor={rol} />
@@ -87,7 +91,7 @@ export function EditarUsuario({ id, rol, activo, esYo }: { id: string; rol: Rol;
           <input name="pin" inputMode="numeric" pattern="\d{4,6}" className={campo} />
         </label>
         <label className="block">
-          Nueva contraseña (solo administración)
+          Nueva contraseña (administración e invitada)
           <input name="contrasena" type="password" autoComplete="new-password" minLength={10} className={campo} />
         </label>
       </div>

@@ -18,6 +18,7 @@ export async function accionCrear(_: Resultado | null, f: FormData): Promise<Res
 
 export async function accionEditar(_: Resultado | null, f: FormData): Promise<Resultado> {
   const r = await editarUsuario(texto(f, "id"), {
+    usuario: texto(f, "usuario") || undefined,
     rol: texto(f, "rol") || undefined,
     activo: f.has("activo") ? f.get("activo") === "si" : undefined,
     contrasena: texto(f, "contrasena") || undefined,

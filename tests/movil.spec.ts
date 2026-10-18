@@ -46,7 +46,7 @@ test("se registra el móvil y se entra", async () => {
   await pagina.goto("/gestion");
   await expect(pagina).toHaveURL(/registrar-equipo/);
   expect(await sobresale(pagina)).toBeLessThanOrEqual(0);
-  await pagina.getByLabel("Usuario de administración").fill("adela");
+  await pagina.getByLabel("Correo").fill("adelamaria_16@hotmail.com");
   await pagina.getByLabel("Contraseña").fill("contrasena-de-prueba");
   await pagina.getByRole("button", { name: "Registrar este equipo" }).click();
   await expect(pagina.getByRole("button", { name: "Menú" })).toBeVisible();
