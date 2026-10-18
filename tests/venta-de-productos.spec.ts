@@ -47,6 +47,7 @@ test("y los productos: uno para vender, con aviso al quedar 1, y otro de cabina"
 test("una compra entra en el stock y queda en los gastos", async () => {
   await pagina.getByRole("link", { name: "Registrar una compra" }).click();
   const compra = pagina.getByRole("form", { name: "Compra" });
+  await compra.getByLabel("Proveedor").selectOption({ label: "Cosmética Levante" });
   await compra.getByLabel("Nº de factura").fill("F-2026-118");
   const linea = compra.getByRole("group", { name: "Línea 1" });
   await linea.getByLabel("Producto").selectOption({ label: "Sérum vitamina C" });
@@ -114,4 +115,30 @@ test("el registro de actividad recoge compras y gastos", async () => {
   for (const accion of ["Añadió un proveedor", "Añadió un producto", "Registró una compra", "Hizo un recuento de stock", "Anotó un gasto"]) {
     await expect(pagina.getByRole("row").filter({ hasText: accion }).first()).toBeVisible();
   }
+});
+
+test("una compra con descuento del pedido se anota por el total exacto de la factura", async () => {
+  await pagina.goto("/gestion/mas/stock/compra");
+  const compra = pagina.getByRole("form", { name: "Compra" });
+  await compra.getByLabel("Proveedor").selectOption({ label: "Cosmética Levante" });
+  await compra.getByLabel("Nº de factura").fill("F-2026-131");
+  const linea = compra.getByRole("group", { name: "Línea 1" });
+  await linea.getByLabel("Producto").selectOption({ label: "Cera tibia" });
+  await linea.getByLabel("Cantidad").fill("2");
+  await linea.getByLabel(/Coste/).fill("5,00");
+  // 10,00 € menos 1,00 € de descuento: base 9,00 €; el IVA calculado es 1,89 €, la factura dice 1,90 €.
+  await compra.getByLabel(/Descuento del pedido/).fill("1,00");
+  await expect(pagina.getByTestId("total-compra")).toContainText("Total 10,89 €");
+  await compra.getByLabel("Total de la factura (€)").fill("20,00");
+  await expect(compra.getByText(/no cuadra/)).toBeVisible();
+  await compra.getByLabel("Total de la factura (€)").fill("10,90");
+  await expect(pagina.getByTestId("total-compra")).toContainText("Base 9,00 € · IVA 1,90 € · Total 10,90 €");
+  await compra.getByRole("button", { name: "Registrar compra" }).click();
+  await expect(pagina.getByText(/Compra registrada por 10,90\s€/)).toBeVisible();
+});
+
+test("los productos de Arganour vienen cargados, con su precio de venta y su stock", async () => {
+  await pagina.goto("/gestion/mas/stock");
+  await expect(pagina.getByTestId("stock-D-Glow - Crema facial iluminadora")).toHaveText("3");
+  await expect(pagina.getByTestId("stock-Agua micelar")).toHaveText("2");
 });

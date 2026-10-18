@@ -272,3 +272,26 @@ falla si alguna obliga a desplazar en horizontal.
 **Acceso desde fuera con Tailscale** (gratis): red privada y cifrada entre el móvil y el TPV, con https. La app no se
 abre a internet y los datos siguen en el TPV. Cada móvil se registra como equipo de confianza y entra con PIN; si se
 pierde, se quita en Configuración → Equipos y en Tailscale.
+
+## Productos de venta (18 de octubre de 2026)
+
+**Primera compra cargada sola**: la factura INV-ES-21420 de Arganour (27 de agosto de 2026, 290,27 €) está en
+`packages/db/src/datos/productos.ts` línea a línea, igual que en la factura. Al actualizar el TPV, `pnpm db:seed` da de
+alta el proveedor, los 25 productos y la compra una sola vez (la reconoce por proveedor y nº de factura): el stock
+sube y el gasto queda en el trimestre 3 por el total exacto de la factura.
+
+**Precio de venta = coste real + 30 % + IVA del 21 %**, redondeado hacia arriba a los 10 céntimos (el margen nunca
+queda por debajo del 30 %). El coste real reparte el descuento del pedido (30 %) entre todas las líneas; si un producto
+viene varias veces con precios distintos, se usa la media. El margen se cambia en `MARGEN_VENTA`. Lo que se cambie
+después en la app no se pisa al actualizar.
+
+**Compras con descuento y total de factura**: el formulario de compra admite el descuento del pedido y el total que
+dice la factura. Los proveedores redondean el IVA línea a línea y puede diferir en algún céntimo del calculado; si se
+indica el total, el gasto se anota por ese total exacto. Si difiere más de un céntimo por línea (mínimo 5), la app
+avisa de que no cuadra: suele ser una cifra mal copiada.
+
+**Sin aviso de stock bajo al cargarlos**: de casi todos se compró una sola unidad y con mínimo 1 saldrían 11 avisos de
+«reponer» desde el primer día. El mínimo se pone en cada producto cuando el centro decida reponerlo.
+
+**En la web**: sección «Productos» por grupos, con precio y botón «Lo quiero» que abre WhatsApp con el mensaje escrito.
+No enseña el stock (la web no está conectada al TPV).

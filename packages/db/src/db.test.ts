@@ -9,16 +9,20 @@ import {
   citas,
   clientes,
   consentimientos,
+  gastos,
   horarios,
+  productos,
   profesionales,
   sembrar,
   solicitudesReserva,
+  stock,
   tiposBono,
   tiposBonoTratamientos,
   tratamientos,
   usuarios,
   type BaseDatos,
 } from "./index";
+import { COMPRAS_INICIALES, PRODUCTOS_VENTA, PROVEEDORES_INICIALES } from "./datos";
 import { baseDePruebas } from "./pruebas/preparar";
 
 let db: BaseDatos;
@@ -86,6 +90,25 @@ describe("datos iniciales", () => {
     expect(r).toMatchObject({ centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0 });
     expect(await db.$count(tratamientos)).toBe(3);
     expect(await db.$count(usuarios)).toBe(1);
+  });
+
+  it("carga los productos de venta y su primera compra una sola vez, con el gasto exacto de la factura", async () => {
+    const datos = { categorias: [], bonos: [], proveedores: PROVEEDORES_INICIALES, productos: PRODUCTOS_VENTA, compras: COMPRAS_INICIALES };
+    const r = await sembrar(db, ADMIN, datos);
+    expect(r).toMatchObject({ productosNuevos: 25, comprasNuevas: 1 });
+    const lista = await stock.listaProductos(db);
+    expect(lista).toHaveLength(25);
+    expect(lista.reduce((s, p) => s + p.stock, 0)).toBe(43);
+    const dglow = lista.find((p) => p.nombre.startsWith("D-Glow"))!;
+    expect(dglow).toMatchObject({ uso: "venta", stock: 3, precioCentimos: 1280, ivaCentesimas: 2100, costeCentimos: 812, proveedor: "Arganour S.L.U.", stockMinimo: 0, bajo: false });
+    const [g] = await db.select().from(gastos).where(eq(gastos.numeroFactura, "INV-ES-21420"));
+    expect(g).toMatchObject({ fecha: "2026-08-27", categoria: "compras", base: 23_988, cuota: 5_039, total: 29_027 });
+
+    // Repetirlo (cada actualización del TPV lo hace) no duplica nada ni pisa un precio cambiado en la app.
+    await db.update(productos).set({ precioCentimos: 1_500 }).where(eq(productos.id, dglow.id));
+    expect(await sembrar(db, ADMIN, datos)).toMatchObject({ productosNuevos: 0, comprasNuevas: 0 });
+    expect(await db.$count(gastos)).toBe(1);
+    expect((await stock.listaProductos(db)).find((p) => p.id === dglow.id)).toMatchObject({ stock: 3, precioCentimos: 1_500 });
   });
 
   it("dejó rastro de la creación de la administradora, sin secretos", async () => {

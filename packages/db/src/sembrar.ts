@@ -5,8 +5,10 @@ import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, normalizarTelef
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
+import { COMPRAS_INICIALES, PRODUCTOS_VENTA, PROVEEDORES_INICIALES, STOCK_MINIMO_INICIAL, type CompraInicial, type ProductoVenta, type ProveedorInicial } from "./datos/productos";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { categorias, centro, horarios, modelosConsentimiento, modelosConsentimientoTratamientos, plantillas, profesionales, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { registrarCompra } from "./stock";
+import { categorias, centro, compras, horarios, modelosConsentimiento, modelosConsentimientoTratamientos, plantillas, productos, profesionales, proveedores, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -24,15 +26,26 @@ export interface ResumenSiembra {
   tratamientosNuevos: number;
   bonosNuevos: number;
   horarioCreado: boolean;
+  productosNuevos: number;
+  comprasNuevas: number;
   avisos: string[];
+}
+
+/** Lo que se carga en la base de datos. Lo que no se indica no se carga (las pruebas pasan solo lo que necesitan). */
+export interface DatosIniciales {
+  categorias: TarifaCategoria[];
+  bonos: TarifaBono[];
+  proveedores?: ProveedorInicial[];
+  productos?: ProductoVenta[];
+  compras?: CompraInicial[];
 }
 
 export async function sembrar(
   db: BaseDatos,
   admin: AdminInicial,
-  tarifas: { categorias: TarifaCategoria[]; bonos: TarifaBono[] } = { categorias: CATEGORIAS, bonos: BONOS },
+  tarifas: DatosIniciales = { categorias: CATEGORIAS, bonos: BONOS, proveedores: PROVEEDORES_INICIALES, productos: PRODUCTOS_VENTA, compras: COMPRAS_INICIALES },
 ): Promise<ResumenSiembra> {
-  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, horarioCreado: false, avisos: [] };
+  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, horarioCreado: false, productosNuevos: 0, comprasNuevas: 0, avisos: [] };
 
   await db.transaction(async (tx) => {
     let [c] = await tx.select().from(centro).limit(1);
@@ -118,7 +131,56 @@ export async function sembrar(
       const piden = await tx.select({ id: tratamientos.id }).from(tratamientos).where(inArray(tratamientos.nombre, m.tratamientos));
       if (piden.length) await tx.insert(modelosConsentimientoTratamientos).values(piden.map((t) => ({ modeloId: nuevo.id, tratamientoId: t.id })));
     }
+
+    // Proveedores y productos de venta (los que ya existen no se tocan: el centro puede haber cambiado el precio).
+    for (const p of tarifas.proveedores ?? []) {
+      await tx.insert(proveedores).values({ nombre: p.nombre, nif: p.nif, telefono: p.telefono, email: p.email, notas: p.notas ?? null }).onConflictDoNothing();
+    }
+    for (const p of tarifas.productos ?? []) {
+      const [prov] = await tx.select({ id: proveedores.id }).from(proveedores).where(eq(proveedores.nombre, p.proveedor));
+      const nuevos = await tx
+        .insert(productos)
+        .values({
+          nombre: p.nombre,
+          uso: "venta",
+          precioCentimos: p.precioCentimos,
+          ivaCentesimas: p.ivaCentesimas,
+          costeCentimos: p.costeCentimos,
+          stockMinimo: STOCK_MINIMO_INICIAL,
+          proveedorId: prov?.id ?? null,
+        })
+        .onConflictDoNothing()
+        .returning({ id: productos.id });
+      resumen.productosNuevos += nuevos.length;
+    }
   });
+
+  // Compras ya pagadas: entran en el stock y en los gastos una sola vez (se reconocen por proveedor y nº de factura).
+  // Van con las reglas de siempre (registrarCompra), a nombre de la primera administradora.
+  for (const c of tarifas.compras ?? []) {
+    const [prov] = await db.select().from(proveedores).where(eq(proveedores.nombre, c.proveedor));
+    if (!prov) throw new Error(`Falta el proveedor «${c.proveedor}».`);
+    const [ya] = await db.select({ id: compras.id }).from(compras).where(and(eq(compras.proveedorId, prov.id), eq(compras.numeroFactura, c.numeroFactura)));
+    if (ya) continue;
+    const nombres = [...new Set(c.lineas.map(([nombre]) => nombre))];
+    const filas = await db.select({ id: productos.id, nombre: productos.nombre }).from(productos).where(inArray(productos.nombre, nombres));
+    const idDe = new Map(filas.map((f) => [f.nombre, f.id]));
+    const faltan = nombres.filter((n) => !idDe.has(n));
+    if (faltan.length) throw new Error(`La compra ${c.numeroFactura} tiene productos que no existen: ${faltan.join(", ")}.`);
+    const [admin] = await db.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.rol, "administrador")).limit(1);
+    const r = await registrarCompra(db, admin!.id, {
+      proveedorId: prov.id,
+      fecha: c.fecha,
+      numeroFactura: c.numeroFactura,
+      ivaCentesimas: c.ivaCentesimas,
+      descuento: c.descuento,
+      totalFactura: c.totalFactura,
+      lineas: c.lineas.map(([nombre, cantidad, costeUnitario]) => ({ productoId: idDe.get(nombre)!, cantidad, costeUnitario })),
+      notas: "Cargada con los datos iniciales.",
+    });
+    if (!r.ok) throw new Error(`No se pudo cargar la compra ${c.numeroFactura}: ${r.error}`);
+    resumen.comprasNuevas++;
+  }
 
   return resumen;
 }

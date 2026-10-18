@@ -1,5 +1,5 @@
 /** Genera la landing en dist/index.html. Uso: pnpm --filter @adela/landing build */
-import { BONOS, CATEGORIAS, CONTACTO } from "@adela/db/datos";
+import { BONOS, CATEGORIAS, CONTACTO, PRODUCTOS_VENTA } from "@adela/db/datos";
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
@@ -38,7 +38,7 @@ const trabajos = TIPOS.map(([carpeta, titulo]) => {
 });
 writeFileSync(
   `${dist}/index.html`,
-  construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto: CONTACTO, trabajos, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
+  construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto: CONTACTO, trabajos, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
 );
 // Tipografías junto a la página.
 const require = createRequire(import.meta.url);

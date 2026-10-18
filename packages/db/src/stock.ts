@@ -6,6 +6,8 @@ import {
   partesMadrid,
   stockBajo,
   totalCompra,
+  errorAjustesCompra,
+  costeConDescuento,
   validarProducto,
   type CategoriaGasto,
   type DatosProducto,
@@ -169,7 +171,12 @@ export interface Compra {
   fecha: string;
   numeroFactura?: string;
   ivaCentesimas: number;
+  /** Líneas tal como vienen en la factura (un producto puede repetirse con precios distintos). */
   lineas: { productoId: string; cantidad: number; costeUnitario: number }[];
+  /** Descuento sobre el pedido, sin IVA. */
+  descuento?: number;
+  /** Total de la factura con IVA: si se indica, el gasto se anota por ese total exacto. */
+  totalFactura?: number;
   notas?: string;
 }
 
@@ -183,17 +190,30 @@ export async function registrarCompra(db: BaseDatos, usuarioId: string, c: Compr
   if (!Number.isInteger(c.ivaCentesimas) || c.ivaCentesimas < 0 || c.ivaCentesimas > 10_000) return error("Revisa el IVA.");
   const [prov] = await db.select().from(proveedores).where(eq(proveedores.id, c.proveedorId));
   if (!prov) return error("Elige el proveedor.");
-  const { base, cuota, total } = totalCompra(c.lineas, c.ivaCentesimas);
+  const ajustes = { descuento: c.descuento ?? 0, totalFactura: c.totalFactura };
+  const errorAjustes = errorAjustesCompra(c.lineas, c.ivaCentesimas, ajustes);
+  if (errorAjustes) return error(errorAjustes);
+  const { base, cuota, total } = totalCompra(c.lineas, c.ivaCentesimas, ajustes);
+  // Coste real por unidad de cada producto: media de sus líneas, con el descuento del pedido repartido.
+  const suma = c.lineas.reduce((s, l) => s + l.cantidad * l.costeUnitario, 0);
+  const porProducto = new Map<string, { unidades: number; importe: number }>();
+  for (const l of c.lineas) {
+    const p = porProducto.get(l.productoId) ?? { unidades: 0, importe: 0 };
+    porProducto.set(l.productoId, { unidades: p.unidades + l.cantidad, importe: p.importe + l.cantidad * l.costeUnitario });
+  }
 
   const r = await db.transaction(async (tx) => {
     const [compra] = await tx
       .insert(compras)
-      .values({ proveedorId: c.proveedorId, fecha: c.fecha, numeroFactura: textoONull(c.numeroFactura), notas: textoONull(c.notas), usuarioId })
+      .values({ proveedorId: c.proveedorId, fecha: c.fecha, numeroFactura: textoONull(c.numeroFactura), descuento: ajustes.descuento, notas: textoONull(c.notas), usuarioId })
       .returning();
     await tx.insert(lineasCompra).values(c.lineas.map((l, orden) => ({ compraId: compra!.id, orden, ...l })));
     for (const l of c.lineas) {
       await tx.insert(movimientosStock).values({ productoId: l.productoId, tipo: "compra", cantidad: l.cantidad, compraId: compra!.id, usuarioId });
-      await tx.update(productos).set({ costeCentimos: l.costeUnitario }).where(eq(productos.id, l.productoId));
+    }
+    for (const [productoId, p] of porProducto) {
+      const coste = costeConDescuento(Math.round(p.importe / p.unidades), suma, ajustes.descuento);
+      await tx.update(productos).set({ costeCentimos: coste }).where(eq(productos.id, productoId));
     }
     await tx.insert(gastos).values({
       fecha: c.fecha,
@@ -208,7 +228,7 @@ export async function registrarCompra(db: BaseDatos, usuarioId: string, c: Compr
       compraId: compra!.id,
       usuarioId,
     });
-    await registrarActividad(tx, { usuarioId, accion: "compra.registrar", entidad: "compras", entidadId: compra!.id, despues: { proveedor: prov.nombre, total, lineas: c.lineas.length } });
+    await registrarActividad(tx, { usuarioId, accion: "compra.registrar", entidad: "compras", entidadId: compra!.id, despues: { proveedor: prov.nombre, total, lineas: c.lineas.length, descuento: ajustes.descuento } });
     return { compraId: compra!.id, total };
   });
   return { ok: true, valor: r };

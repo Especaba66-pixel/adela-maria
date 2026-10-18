@@ -1,3 +1,5 @@
+import { formatearEuros } from "./dinero";
+
 /**
  * Stock, compras y gastos. El stock de un producto es la suma de sus movimientos (entradas en positivo, salidas
  * en negativo). Importes en céntimos.
@@ -49,11 +51,55 @@ export function desglosarTotal(total: number, ivaCentesimas: number): { base: nu
   return { base, cuota: total - base, total };
 }
 
-/** Totales de una compra: base (suma de líneas sin IVA), cuota y total. */
-export function totalCompra(lineas: { cantidad: number; costeUnitario: number }[], ivaCentesimas: number) {
-  const base = lineas.reduce((s, l) => s + l.cantidad * l.costeUnitario, 0);
-  const cuota = Math.round((base * ivaCentesimas) / 10_000);
+/** Lo que añade una factura de proveedor a la suma de sus líneas. Importes en céntimos. */
+export interface AjustesCompra {
+  /** Descuento sobre el pedido, sin IVA (el «descuento de pedido» de la factura). */
+  descuento?: number;
+  /** Total que dice la factura, IVA incluido. Si se indica, manda sobre el IVA calculado: los proveedores redondean
+   *  el IVA línea a línea y puede diferir en algún céntimo del calculado sobre la base. */
+  totalFactura?: number;
+}
+
+/** Totales de una compra: base (suma de líneas sin IVA, menos el descuento), cuota y total. */
+export function totalCompra(lineas: { cantidad: number; costeUnitario: number }[], ivaCentesimas: number, ajustes: AjustesCompra = {}) {
+  const base = lineas.reduce((s, l) => s + l.cantidad * l.costeUnitario, 0) - (ajustes.descuento ?? 0);
+  const cuota = ajustes.totalFactura != null ? ajustes.totalFactura - base : Math.round((base * ivaCentesimas) / 10_000);
   return { base, cuota, total: base + cuota };
+}
+
+/**
+ * Comprueba el descuento y el total de la factura. Se admite que el IVA de la factura difiera del calculado en un
+ * céntimo por línea (redondeos del proveedor), con un mínimo de 5: más que eso suele ser un número mal copiado.
+ */
+export function errorAjustesCompra(lineas: { cantidad: number; costeUnitario: number }[], ivaCentesimas: number, ajustes: AjustesCompra): string | null {
+  const suma = lineas.reduce((s, l) => s + l.cantidad * l.costeUnitario, 0);
+  const descuento = ajustes.descuento ?? 0;
+  if (!Number.isInteger(descuento) || descuento < 0) return "Revisa el descuento.";
+  if (descuento > suma) return "El descuento no puede ser mayor que la suma de los productos.";
+  if (ajustes.totalFactura == null) return null;
+  if (!Number.isInteger(ajustes.totalFactura) || ajustes.totalFactura < 0) return "Revisa el total de la factura.";
+  const base = suma - descuento;
+  const calculada = Math.round((base * ivaCentesimas) / 10_000);
+  const cuota = ajustes.totalFactura - base;
+  if (cuota < 0 || Math.abs(cuota - calculada) > Math.max(5, lineas.length)) {
+    return `El total de la factura no cuadra: con esos productos, descuento e IVA debería ser unos ${formatearEuros(base + calculada)}. Revisa las cifras.`;
+  }
+  return null;
+}
+
+/** Coste real de una unidad tras repartir el descuento del pedido en proporción entre todas las líneas. */
+export function costeConDescuento(costeUnitario: number, sumaLineas: number, descuento: number): number {
+  if (sumaLineas <= 0 || descuento <= 0) return costeUnitario;
+  return Math.round((costeUnitario * (sumaLineas - descuento)) / sumaLineas);
+}
+
+/**
+ * Precio de venta al público (IVA incluido) a partir del coste sin IVA y del margen sobre el coste.
+ * Se redondea hacia arriba a los 10 céntimos, para que el margen nunca quede por debajo del pedido.
+ */
+export function precioConMargen(costeSinIva: number, margenCentesimas: number, ivaCentesimas: number): number {
+  const conIva = (costeSinIva * (10_000 + margenCentesimas) * (10_000 + ivaCentesimas)) / 100_000_000;
+  return Math.ceil(Math.round(conIva * 1000) / 1000 / 10) * 10;
 }
 
 export const CATEGORIAS_GASTO = ["compras", "alquiler", "suministros", "material", "formacion", "publicidad", "seguros", "gestoria", "otros"] as const;

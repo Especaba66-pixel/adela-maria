@@ -64,7 +64,15 @@ export interface LineaCompraForm {
   coste: string;
 }
 
-export async function comprar(d: { proveedorId: string; fecha: string; numeroFactura: string; iva: string; lineas: LineaCompraForm[] }): Promise<{ error: string }> {
+export async function comprar(d: {
+  proveedorId: string;
+  fecha: string;
+  numeroFactura: string;
+  iva: string;
+  descuento?: string;
+  totalFactura?: string;
+  lineas: LineaCompraForm[];
+}): Promise<{ error: string }> {
   const { usuario } = await requerirSesion("stock.gestionar");
   const iva = leerIva(d.iva);
   if (iva == null) return { error: "Revisa el IVA de la factura (por ejemplo: 21)." };
@@ -75,7 +83,19 @@ export async function comprar(d: { proveedorId: string; fecha: string; numeroFac
     if (coste == null || !Number.isInteger(cantidad) || cantidad <= 0) return { error: "Revisa las cantidades y los costes (por ejemplo: 3 y 4,20)." };
     lineas.push({ productoId: l.productoId, cantidad, costeUnitario: coste });
   }
-  const r = await stock.registrarCompra(db(), usuario.id, { proveedorId: d.proveedorId, fecha: d.fecha, numeroFactura: d.numeroFactura, ivaCentesimas: iva, lineas });
+  const descuento = d.descuento?.trim() ? leerEuros(d.descuento) : 0;
+  if (descuento == null) return { error: "Revisa el descuento (por ejemplo: 102,60)." };
+  const totalFactura = d.totalFactura?.trim() ? leerEuros(d.totalFactura) : null;
+  if (totalFactura === undefined) return { error: "Revisa el total de la factura (por ejemplo: 290,27)." };
+  const r = await stock.registrarCompra(db(), usuario.id, {
+    proveedorId: d.proveedorId,
+    fecha: d.fecha,
+    numeroFactura: d.numeroFactura,
+    ivaCentesimas: iva,
+    descuento,
+    totalFactura: totalFactura ?? undefined,
+    lineas,
+  });
   if (!r.ok) return { error: r.error };
   refrescar();
   redirect(`/gestion/mas/stock?compra=${r.valor.total}`);

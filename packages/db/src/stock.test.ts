@@ -69,6 +69,43 @@ describe("compras", () => {
   });
 });
 
+describe("compras con descuento de pedido", () => {
+  it("el gasto se anota por el total exacto de la factura y el coste del producto ya lleva el descuento", async () => {
+    const serum = valor(await stock.guardarProducto(db, adela, { nombre: "Sérum de prueba", uso: "venta", precio: 1500, iva: 2100, stockMinimo: 0 }));
+    const r = await stock.registrarCompra(db, adela, {
+      proveedorId: proveedor,
+      fecha: "2026-10-14",
+      numeroFactura: "F-78",
+      ivaCentesimas: 2100,
+      // El mismo producto dos veces con precios distintos, como en las facturas reales.
+      lineas: [
+        { productoId: serum, cantidad: 1, costeUnitario: 1000 },
+        { productoId: serum, cantidad: 1, costeUnitario: 1002 },
+      ],
+      descuento: 600,
+      totalFactura: 1697,
+    });
+    expect(r).toMatchObject({ ok: true, valor: { total: 1697 } });
+    const [g] = await db.select().from(gastos).where(eq(gastos.numeroFactura, "F-78"));
+    expect(g).toMatchObject({ base: 1402, cuota: 295, total: 1697 });
+    expect(await stock.stockDeProducto(db, serum)).toBe(2);
+    expect((await stock.listaProductos(db)).find((p) => p.id === serum)).toMatchObject({ costeCentimos: 701 });
+  });
+
+  it("rechaza un total de factura que no cuadra, sin guardar nada", async () => {
+    const antes = await db.$count(gastos);
+    const r = await stock.registrarCompra(db, adela, {
+      proveedorId: proveedor,
+      fecha: "2026-10-14",
+      ivaCentesimas: 2100,
+      lineas: [{ productoId: crema, cantidad: 1, costeUnitario: 1000 }],
+      totalFactura: 2000,
+    });
+    expect(r).toMatchObject({ ok: false, error: /no cuadra/ });
+    expect(await db.$count(gastos)).toBe(antes);
+  });
+});
+
 describe("ventas y consumo en cabina", () => {
   it("vender un producto lo descuenta del stock en el mismo cobro, y al llegar al mínimo avisa", async () => {
     valor(await cobros.cobrar(db, adela, { lineas: [lineaCrema(2)], pagos: [{ metodo: "tarjeta", importe: 5000 }] }));

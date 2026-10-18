@@ -1,4 +1,4 @@
-import { BONOS, CATEGORIAS } from "@adela/db/datos";
+import { BONOS, CATEGORIAS, PRODUCTOS_VENTA } from "@adela/db/datos";
 import { describe, expect, it } from "vitest";
 import { construirPagina, duracionTexto } from "./pagina";
 
@@ -17,6 +17,17 @@ describe("landing", () => {
     expect(html).toContain("1 h 30 min · <strong>30 €</strong>");
     expect(html).toContain("5 min · <strong>3 €</strong>");
     expect(html).toContain("¿Qué necesita tu piel?");
+  });
+
+  it("muestra los productos por grupos con su precio, y un botón para reservarlos por WhatsApp", () => {
+    const conProductos = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto });
+    expect(conProductos).toContain('id="productos"');
+    for (const p of PRODUCTOS_VENTA) expect(conProductos).toContain(p.nombre);
+    expect(conProductos).toContain('<h3 id="prod-Sérums">Sérums</h3>');
+    expect(conProductos).toMatch(/D-Glow - Crema facial iluminadora<\/div>\s*<div class="detalle"><strong>12,80[\s\u00a0]€<\/strong>/);
+    expect(conProductos).toContain('aria-label="Reservar por WhatsApp: Agua micelar"');
+    // Sin productos, no hay sección vacía.
+    expect(html).not.toContain('id="productos"');
   });
 
   it("muestra los bonos y que no caducan", () => {

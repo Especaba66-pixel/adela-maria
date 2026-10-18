@@ -1,0 +1,2 @@
+ALTER TABLE "compras" ADD COLUMN "descuento" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "compras" ADD CONSTRAINT "compras_descuento_no_negativo" CHECK ("compras"."descuento" >= 0);

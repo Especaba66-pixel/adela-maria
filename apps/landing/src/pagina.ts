@@ -10,6 +10,8 @@ import { ESTILOS_RESERVA, SCRIPT_RESERVA, bloqueReserva } from "./reserva";
 export interface DatosLanding {
   categorias: TarifaCategoria[];
   bonos: TarifaBono[];
+  /** Productos que se venden en el centro, con su precio (IVA incluido), en el orden en que se muestran. */
+  productos?: { nombre: string; grupo: string; precioCentimos: number }[];
   /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
   trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
@@ -102,6 +104,35 @@ export function construirPagina(d: DatosLanding): string {
     )
     .join("");
 
+  const grupos = [...new Set((d.productos ?? []).map((p) => p.grupo))];
+  const productos = grupos
+    .map(
+      (g) => `
+      <section class="categoria aparece" aria-labelledby="prod-${esc(g)}">
+        <h3 id="prod-${esc(g)}">${esc(g)}</h3>
+        <ul class="lista">
+          ${(d.productos ?? [])
+            .filter((p) => p.grupo === g)
+            .map(
+              (p) => `
+          <li class="tratamiento">
+            <div>
+              <div class="nombre">${esc(p.nombre)}</div>
+              <div class="detalle"><strong>${precioTexto(p.precioCentimos)}</strong></div>
+            </div>
+            ${
+              telefono
+                ? `<a class="boton boton-secundario" href="${esc(enlaceWhatsapp(telefono, `Hola, me gustaría reservar «${p.nombre}». `))}" target="_blank" rel="noopener" aria-label="Reservar por WhatsApp: ${esc(p.nombre)}">Lo quiero</a>`
+                : ""
+            }
+          </li>`,
+            )
+            .join("")}
+        </ul>
+      </section>`,
+    )
+    .join("");
+
   const ctaPrincipal = enlaceCita()
     ? `<a class="boton boton-principal" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita por WhatsApp</a>`
     : `<p class="pronto">Muy pronto podrás pedir cita por WhatsApp desde aquí.</p>`;
@@ -173,6 +204,16 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <p class="nota-centrada">Adaptados a las necesidades de tu piel. <strong>No caducan.</strong></p>
     <ul class="lista">${bonos}
     </ul>
+  </section>`
+      : ""
+  }
+
+  ${
+    productos
+      ? `<section id="productos" class="contenedor bloque" aria-labelledby="titulo-productos">
+    <h2 id="titulo-productos" class="aparece">Productos</h2>
+    <p class="nota-centrada">Cosmética facial y aceites para seguir cuidándote en casa. Están a la venta en el centro: pregúntanos cuál va mejor con tu piel.</p>
+    ${productos}
   </section>`
       : ""
   }

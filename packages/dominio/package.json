@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts", "./agenda": "./src/agenda.ts", "./reservas": "./src/reservas.ts" },
+  "exports": { ".": "./src/index.ts", "./agenda": "./src/agenda.ts", "./reservas": "./src/reservas.ts", "./stock": "./src/stock.ts" },
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "vitest run"

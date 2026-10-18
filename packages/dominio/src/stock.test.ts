@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aCsv, desglosarTotal, stockBajo, stockDe, totalCompra, trimestre, validarProducto } from "./stock";
+import { aCsv, costeConDescuento, desglosarTotal, errorAjustesCompra, precioConMargen, stockBajo, stockDe, totalCompra, trimestre, validarProducto } from "./stock";
 
 describe("stock", () => {
   it("el stock es la suma de movimientos y avisa al llegar al mínimo", () => {
@@ -30,6 +30,34 @@ describe("compras y gastos", () => {
 
   it("suma una compra", () => {
     expect(totalCompra([{ cantidad: 3, costeUnitario: 1000 }, { cantidad: 2, costeUnitario: 250 }], 2100)).toEqual({ base: 3500, cuota: 735, total: 4235 });
+  });
+
+  it("una compra con descuento de pedido y el total exacto de la factura", () => {
+    const lineas = [{ cantidad: 2, costeUnitario: 1000 }, { cantidad: 1, costeUnitario: 1001 }];
+    // 30,01 € de productos, 9,00 € de descuento: base 21,01 €. IVA calculado 4,41 €; la factura dice 4,42 €.
+    expect(totalCompra(lineas, 2100, { descuento: 900 })).toEqual({ base: 2101, cuota: 441, total: 2542 });
+    expect(totalCompra(lineas, 2100, { descuento: 900, totalFactura: 2543 })).toEqual({ base: 2101, cuota: 442, total: 2543 });
+    expect(errorAjustesCompra(lineas, 2100, { descuento: 900, totalFactura: 2543 })).toBeNull();
+    expect(errorAjustesCompra(lineas, 2100, { descuento: 900, totalFactura: 3543 })).toMatch(/no cuadra/);
+    expect(errorAjustesCompra(lineas, 2100, { descuento: 5000 })).toMatch(/mayor que la suma/);
+    expect(errorAjustesCompra(lineas, 2100, { descuento: -1 })).toMatch(/descuento/);
+  });
+
+  it("el coste real reparte el descuento del pedido", () => {
+    expect(costeConDescuento(1000, 4000, 1200)).toBe(700);
+    expect(costeConDescuento(1000, 4000, 0)).toBe(1000);
+  });
+
+  it("el precio de venta lleva el margen sobre el coste y el IVA, redondeado hacia arriba a 10 céntimos", () => {
+    // 10 € de coste + 30 % = 13 € + 21 % IVA = 15,73 € → 15,80 €.
+    expect(precioConMargen(1000, 3000, 2100)).toBe(1580);
+    // Un resultado ya redondo no sube: 1000 × 1,3 × 1 = 13,00 €.
+    expect(precioConMargen(1000, 3000, 0)).toBe(1300);
+    for (const coste of [1, 99, 288, 431, 985, 12345]) {
+      const precio = precioConMargen(coste, 3000, 2100);
+      expect(precio % 10).toBe(0);
+      expect(precio / 1.21).toBeGreaterThanOrEqual(coste * 1.3 - 1e-9);
+    }
   });
 
   it("trimestres naturales", () => {

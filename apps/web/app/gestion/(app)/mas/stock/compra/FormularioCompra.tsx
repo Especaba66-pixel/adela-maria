@@ -1,5 +1,5 @@
 "use client";
-import { eurosACentimos, formatearEuros, totalCompra } from "@adela/dominio";
+import { errorAjustesCompra, eurosACentimos, formatearEuros, totalCompra } from "@adela/dominio";
 import { Aviso, Boton, Tarjeta } from "@adela/ui";
 import { useState, useTransition } from "react";
 import { comprar, type LineaCompraForm } from "../acciones";
@@ -20,6 +20,8 @@ export function FormularioCompra({
   const [fecha, setFecha] = useState(hoy);
   const [numeroFactura, setNumero] = useState("");
   const [iva, setIva] = useState("21");
+  const [descuento, setDescuento] = useState("");
+  const [totalFactura, setTotalFactura] = useState("");
   const [lineas, setLineas] = useState<LineaCompraForm[]>([{ productoId: "", cantidad: "1", coste: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [guardando, iniciar] = useTransition();
@@ -31,7 +33,11 @@ export function FormularioCompra({
     return l.productoId && coste !== null && Number.isInteger(cantidad) && cantidad > 0 ? [{ cantidad, costeUnitario: coste }] : [];
   });
   const ivaN = Math.round(Number(iva.replace(",", ".")) * 100);
-  const totales = Number.isFinite(ivaN) ? totalCompra(validas, ivaN) : null;
+  const descuentoN = descuento.trim() ? eurosACentimos(descuento) : 0;
+  const totalN = totalFactura.trim() ? eurosACentimos(totalFactura) : undefined;
+  const ajustes = { descuento: descuentoN ?? 0, totalFactura: totalN ?? undefined };
+  const aviso = Number.isFinite(ivaN) && validas.length > 0 ? errorAjustesCompra(validas, ivaN, ajustes) : null;
+  const totales = Number.isFinite(ivaN) && !aviso ? totalCompra(validas, ivaN, ajustes) : null;
   // Primero los productos de ese proveedor.
   const ordenados = [...productos].sort((a, b) => Number(b.proveedorId === proveedorId) - Number(a.proveedorId === proveedorId) || a.nombre.localeCompare(b.nombre));
 
@@ -43,7 +49,7 @@ export function FormularioCompra({
         e.preventDefault();
         setError(null);
         iniciar(async () => {
-          const r = await comprar({ proveedorId, fecha, numeroFactura, iva, lineas });
+          const r = await comprar({ proveedorId, fecha, numeroFactura, iva, descuento, totalFactura, lineas });
           if (r?.error) setError(r.error);
         });
       }}
@@ -115,6 +121,15 @@ export function FormularioCompra({
           IVA (%)
           <input inputMode="decimal" value={iva} onChange={(e) => setIva(e.target.value)} className={campo} />
         </label>
+        <label className="block w-44">
+          Descuento del pedido sin IVA (€)
+          <input inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="0" className={campo} />
+        </label>
+        <label className="block w-44">
+          Total de la factura (€)
+          <input inputMode="decimal" value={totalFactura} onChange={(e) => setTotalFactura(e.target.value)} placeholder="Opcional" className={campo} />
+        </label>
+        {aviso && <p className="text-lg text-urgente">{aviso}</p>}
         {totales && (
           <div className="text-lg" data-testid="total-compra">
             Base {formatearEuros(totales.base)} · IVA {formatearEuros(totales.cuota)} · <strong>Total {formatearEuros(totales.total)}</strong>

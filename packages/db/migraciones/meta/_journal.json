@@ -92,6 +92,13 @@
       "when": 1791896506695,
       "tag": "0012_informes_equipo_y_fichas",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792317514225,
+      "tag": "0013_descuento_en_compras",
+      "breakpoints": true
     }
   ]
 }

@@ -786,12 +786,14 @@ export const compras = pgTable("compras", {
     .references(() => proveedores.id),
   fecha: date({ mode: "string" }).notNull(),
   numeroFactura: text(),
+  /** Descuento sobre el pedido, sin IVA (las líneas guardan el precio tal como viene en la factura). */
+  descuento: integer().notNull().default(0),
   notas: text(),
   usuarioId: uuid()
     .notNull()
     .references(() => usuarios.id),
   creadaEn: creadoEn(),
-});
+}, (t) => [check("compras_descuento_no_negativo", sql`${t.descuento} >= 0`)]);
 
 export const lineasCompra = pgTable(
   "lineas_compra",
