@@ -1,5 +1,8 @@
 /**
- * Productos de venta y su primera compra (factura INV-ES-21420 de Arganour, 27 de agosto de 2026).
+ * Productos de venta y las compras con que llegaron:
+ * - Arganour, factura INV-ES-21420 del 27 de agosto de 2026 (todo para vender).
+ * - Área Estética, documento SF 26000034 del 29 de junio de 2026: lo marcado en rojo es para vender; el resto es
+ *   para cabina y va solo a gastos (`GASTOS_INICIALES`), sin control de stock.
  *
  * El precio de venta no se escribe a mano: sale del coste real (precio de la factura con el 30 % de descuento del
  * pedido repartido) más el margen del centro y el IVA. Si cambia el margen, se cambia `MARGEN_VENTA` y nada más.
@@ -17,7 +20,7 @@ export const IVA_PRODUCTOS = 2_100;
  */
 export const STOCK_MINIMO_INICIAL = 0;
 
-export const GRUPOS_PRODUCTO = ["Sérums", "Cremas y contorno de ojos", "Limpieza y exfoliación", "Aceites", "Cuerpo"] as const;
+export const GRUPOS_PRODUCTO = ["Sérums y extractos", "Cremas y contorno de ojos", "Limpieza y exfoliación", "Aceites", "Cuerpo"] as const;
 export type GrupoProducto = (typeof GRUPOS_PRODUCTO)[number];
 
 export interface ProveedorInicial {
@@ -37,8 +40,25 @@ export interface CompraInicial {
   lineas: [producto: string, cantidad: number, costeUnitario: number][];
   /** Descuento de pedido, sin IVA. */
   descuento: number;
-  /** Total de la factura con IVA. */
-  totalFactura: number;
+  /** Total de la factura con IVA. Sin indicar cuando la factura incluye también productos de cabina (van aparte, en
+   *  `GASTOS_INICIALES`): entonces el IVA se calcula sobre estas líneas. */
+  totalFactura?: number;
+}
+
+export interface GastoInicial {
+  proveedor: string;
+  fecha: string;
+  numeroFactura: string;
+  concepto: string;
+  ivaCentesimas: number;
+  /** Detalle tal como viene en la factura: [código, descripción, unidades, importe sin IVA en céntimos]. */
+  lineas: [codigo: string, descripcion: string, unidades: number, importe: number][];
+}
+
+/** Total con IVA de un gasto inicial (el IVA, redondeado al céntimo sobre la suma de sus líneas). */
+export function totalGastoInicial(g: GastoInicial): number {
+  const base = g.lineas.reduce((s, [, , , importe]) => s + importe, 0);
+  return base + Math.round((base * g.ivaCentesimas) / 10_000);
 }
 
 export const PROVEEDORES_INICIALES: ProveedorInicial[] = [
@@ -49,14 +69,39 @@ export const PROVEEDORES_INICIALES: ProveedorInicial[] = [
     email: "hello@arganour.com",
     notas: "Calle Periana nº8, 29160 Casabermeja (Málaga).",
   },
+  {
+    nombre: "Área Estética S.L.",
+    nif: "B10466480",
+    telefono: "927 29 13 54",
+    email: "areaestetica@areaestetica.es",
+    notas: "Polígono Charca del Hambre, nave 14, 10190 Casar de Cáceres (Cáceres). www.areaestetica.es",
+  },
 ];
+
+/** Código del proveedor de cada producto (se guarda como referencia). */
+export const REFERENCIA_DE: Record<string, string> = {
+  "Extracto de olivo 15 ml": "MA040",
+  "Extracto de aloe vera 15 ml": "MA038",
+  "Extracto de soja orgánica 15 ml": "MA041",
+  "Sérum hidratante de jojoba 30 ml": "MA186",
+  "Crema hidratante total 50 ml": "MA030",
+  "Crema antiarrugas de aguacate 100 ml": "MA047",
+  "Crema regeneradora antiarrugas 100 ml": "MA048",
+};
 
 /** Grupo de cada producto en la web y en el TPV. El nombre es el de la factura, con mayúsculas normalizadas. */
 export const GRUPO_DE: Record<string, GrupoProducto> = {
-  "Balance - Sérum con Revinage (efecto retinol)": "Sérums",
-  "Porcelain - Sérum antimanchas": "Sérums",
-  "Purity - Sérum con vitamina C": "Sérums",
-  "Velvet - Sérum minimizador de poros": "Sérums",
+  "Balance - Sérum con Revinage (efecto retinol)": "Sérums y extractos",
+  "Porcelain - Sérum antimanchas": "Sérums y extractos",
+  "Purity - Sérum con vitamina C": "Sérums y extractos",
+  "Velvet - Sérum minimizador de poros": "Sérums y extractos",
+  "Sérum hidratante de jojoba 30 ml": "Sérums y extractos",
+  "Extracto de olivo 15 ml": "Sérums y extractos",
+  "Extracto de aloe vera 15 ml": "Sérums y extractos",
+  "Extracto de soja orgánica 15 ml": "Sérums y extractos",
+  "Crema hidratante total 50 ml": "Cremas y contorno de ojos",
+  "Crema antiarrugas de aguacate 100 ml": "Cremas y contorno de ojos",
+  "Crema regeneradora antiarrugas 100 ml": "Cremas y contorno de ojos",
   "Crema antiedad de día": "Cremas y contorno de ojos",
   "Crema antiedad de noche": "Cremas y contorno de ojos",
   "D-Glow - Crema facial iluminadora": "Cremas y contorno de ojos",
@@ -129,10 +174,78 @@ export const COMPRAS_INICIALES: CompraInicial[] = [
       ["Aceite de almendras dulces 100 % puro", 2, 574],
     ],
   },
+  {
+    // Solo las líneas marcadas en rojo (para vender). Las de 1 unidad a 0 € son las de regalo (descuento del 100 %).
+    proveedor: "Área Estética S.L.",
+    fecha: "2026-06-29",
+    numeroFactura: "SF 26000034",
+    ivaCentesimas: 2_100,
+    descuento: 0,
+    lineas: [
+      ["Extracto de olivo 15 ml", 1, 1_340],
+      ["Sérum hidratante de jojoba 30 ml", 1, 2_630],
+      ["Crema hidratante total 50 ml", 2, 2_480],
+      ["Crema hidratante total 50 ml", 1, 0],
+      ["Crema antiarrugas de aguacate 100 ml", 2, 3_170],
+      ["Crema antiarrugas de aguacate 100 ml", 1, 0],
+      ["Crema regeneradora antiarrugas 100 ml", 2, 3_800],
+      ["Crema regeneradora antiarrugas 100 ml", 1, 0],
+      ["Extracto de aloe vera 15 ml", 2, 1_340],
+      ["Extracto de aloe vera 15 ml", 1, 0],
+      ["Extracto de olivo 15 ml", 2, 1_340],
+      ["Extracto de olivo 15 ml", 1, 0],
+      ["Extracto de soja orgánica 15 ml", 2, 1_410],
+      ["Extracto de soja orgánica 15 ml", 1, 0],
+      ["Sérum hidratante de jojoba 30 ml", 2, 2_630],
+      ["Sérum hidratante de jojoba 30 ml", 1, 0],
+    ],
+  },
+];
+
+/** Productos de cabina: van a gastos, sin control de stock (decidido por el centro el 18 de octubre de 2026). */
+export const GASTOS_INICIALES: GastoInicial[] = [
+  {
+    proveedor: "Área Estética S.L.",
+    fecha: "2026-06-29",
+    numeroFactura: "SF 26000034",
+    concepto: "Productos de cabina",
+    ivaCentesimas: 2_100,
+    lineas: [
+      ["PR592", "Sinergia relajante 30 ml", 1, 2_660],
+      ["MA193", "Biocellular Botanic eye make-up remover 200 ml", 1, 1_900],
+      ["MA001", "Leche limpiadora pieles sensibles 200 ml", 1, 1_560],
+      ["MA056", "Scrub al karité 200 ml", 1, 2_160],
+      ["MA045", "Lifting mask hyaluronic acid 100 ml", 1, 3_030],
+      ["MA011", "Lifting serum hyaluronic acid 30 ml", 1, 4_590],
+      ["PR654", "Hyaluronic acid veils mask 6 uds.", 1, 5_040],
+      ["MA125", "Biocellular Damask rose eau de fleur 200 ml", 1, 1_870],
+      ["MA015", "Eye & lip contour lifting hyaluronic acid 15 ml", 1, 2_690],
+      ["MA027", "Energetic lifting complex cream 50 ml", 1, 3_690],
+      ["AC955", "Set de moxas con aplicador facial", 1, 6_340],
+      ["AC957", "Cucharas volcánicas", 1, 6_320],
+      ["PR214", "Biocellular synergy 15 ml", 1, 3_260],
+      ["MA816", "Revived skin cleansing balm with raspberry & ginger", 1, 2_360],
+      ["PR604", "Biocellular Massada TM complex 30 ml", 1, 5_270],
+      ["MA003", "Sensitive skin tonic with prebiotics 200 ml", 1, 1_560],
+      ["MA805", "Multivitamin fusion (10 × 3 ml)", 1, 3_330],
+      ["MA809", "C Mass vitamin serum 30 ml", 1, 3_270],
+      ["PR574", "Mud facial mask 200 ml", 1, 3_090],
+      ["MA046", "Facial mask sensitive skin 100 ml", 1, 1_890],
+      ["MA014", "Antiaging pearls eye contour 15 ml", 1, 2_690],
+      ["MA807", "Veggie comfort cream 30 ml", 1, 2_690],
+      ["MA162", "Mineral Veil cellular longevity 50 ml", 1, 2_900],
+      ["PR591", "Sinergia linfodrenante 30 ml", 1, 3_110],
+      ["MA153", "Minceur intensive body oil 100 ml", 1, 1_950],
+      ["PR612", "Minceur intensive wrap 1.000 ml", 1, 6_550],
+      ["MA208", "Minceur intensive cream 200 ml", 1, 2_800],
+      ["MA808", "Fruit concentrate peeling (10 × 2 ml)", 1, 3_260],
+    ],
+  },
 ];
 
 export interface ProductoVenta {
   nombre: string;
+  referencia?: string;
   grupo: GrupoProducto;
   proveedor: string;
   /** Coste real por unidad, sin IVA: media de las líneas de la compra con el descuento repartido. */
@@ -158,6 +271,7 @@ export const PRODUCTOS_VENTA: ProductoVenta[] = (() => {
       const costeCentimos = costeConDescuento(Math.round(p.importe / p.unidades), suma, compra.descuento);
       productos.set(nombre, {
         nombre,
+        ...(REFERENCIA_DE[nombre] ? { referencia: REFERENCIA_DE[nombre] } : {}),
         grupo,
         proveedor: compra.proveedor,
         costeCentimos,

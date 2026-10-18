@@ -20,7 +20,7 @@ try {
   console.log(`Administrador ${r.adminCreado ? "creado" : "ya existía"}.`);
   if (r.horarioCreado) console.log("Horario provisional creado: de lunes a viernes, de 9:00 a 14:00.");
   console.log(`Tratamientos nuevos: ${r.tratamientosNuevos}. Bonos nuevos: ${r.bonosNuevos}.`);
-  console.log(`Productos nuevos: ${r.productosNuevos}. Compras cargadas: ${r.comprasNuevas}.`);
+  console.log(`Productos nuevos: ${r.productosNuevos}. Compras cargadas: ${r.comprasNuevas}. Gastos cargados: ${r.gastosNuevos}.`);
   for (const aviso of r.avisos) console.warn(`Aviso: ${aviso}`);
 } finally {
   await cerrar();

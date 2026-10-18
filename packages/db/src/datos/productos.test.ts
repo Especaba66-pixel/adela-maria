@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPRAS_INICIALES, GRUPO_DE, MARGEN_VENTA, PRODUCTOS_VENTA } from "./productos";
+import { COMPRAS_INICIALES, GASTOS_INICIALES, GRUPO_DE, MARGEN_VENTA, PRODUCTOS_VENTA, totalGastoInicial } from "./productos";
 
 const arganour = COMPRAS_INICIALES.find((c) => c.numeroFactura === "INV-ES-21420")!;
 
@@ -9,7 +9,7 @@ describe("primera compra (Arganour, INV-ES-21420)", () => {
     expect(arganour.lineas.reduce((s, [, cantidad]) => s + cantidad, 0)).toBe(43);
     const suma = arganour.lineas.reduce((s, [, cantidad, coste]) => s + cantidad * coste, 0);
     expect(suma).toBe(34_248);
-    expect(arganour.totalFactura - (suma - arganour.descuento)).toBe(5_039);
+    expect(arganour.totalFactura! - (suma - arganour.descuento)).toBe(5_039);
   });
 
   it("todos sus productos tienen grupo en la web", () => {
@@ -17,10 +17,36 @@ describe("primera compra (Arganour, INV-ES-21420)", () => {
   });
 });
 
+describe("compra de Área Estética (SF 26000034)", () => {
+  const venta = COMPRAS_INICIALES.find((c) => c.numeroFactura === "SF 26000034")!;
+  const cabina = GASTOS_INICIALES.find((g) => g.numeroFactura === "SF 26000034")!;
+  const sumaVenta = venta.lineas.reduce((s, [, cantidad, coste]) => s + cantidad * coste, 0);
+  const sumaCabina = cabina.lineas.reduce((s, [, , , importe]) => s + importe, 0);
+
+  it("venta y cabina suman lo del documento: 1.281,40 € de base, 269,09 € de IVA, 1.550,49 € en total", () => {
+    expect(sumaVenta + sumaCabina).toBe(128_140);
+    const ivaVenta = Math.round(sumaVenta * 0.21);
+    const ivaCabina = totalGastoInicial(cabina) - sumaCabina;
+    expect(ivaVenta + ivaCabina).toBe(26_909);
+    expect(sumaVenta + ivaVenta + totalGastoInicial(cabina)).toBe(155_049);
+  });
+
+  it("para vender: 7 productos, 23 unidades (7 de regalo)", () => {
+    expect(new Set(venta.lineas.map(([n]) => n)).size).toBe(7);
+    expect(venta.lineas.reduce((s, [, cantidad]) => s + cantidad, 0)).toBe(23);
+    expect(venta.lineas.filter(([, , coste]) => coste === 0).reduce((s, [, cantidad]) => s + cantidad, 0)).toBe(7);
+  });
+
+  it("los regalos abaratan el coste: crema hidratante total, 3 por 49,60 €", () => {
+    const crema = PRODUCTOS_VENTA.find((p) => p.nombre === "Crema hidratante total 50 ml")!;
+    expect(crema).toMatchObject({ costeCentimos: 1_653, precioCentimos: 2_610, referencia: "MA030" });
+  });
+});
+
 describe("productos de venta", () => {
-  it("son 25, sin repetidos, con IVA del 21 %", () => {
-    expect(PRODUCTOS_VENTA).toHaveLength(25);
-    expect(new Set(PRODUCTOS_VENTA.map((p) => p.nombre)).size).toBe(25);
+  it("son 32, sin repetidos, con IVA del 21 %", () => {
+    expect(PRODUCTOS_VENTA).toHaveLength(32);
+    expect(new Set(PRODUCTOS_VENTA.map((p) => p.nombre)).size).toBe(32);
     for (const p of PRODUCTOS_VENTA) expect(p.ivaCentesimas).toBe(2_100);
   });
 

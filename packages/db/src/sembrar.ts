@@ -5,10 +5,10 @@ import { MODELOS_CONSENTIMIENTO_INICIALES, PLANTILLAS_INICIALES, normalizarTelef
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { registrarActividad } from "./actividad";
 import { CABINAS, CONTACTO, HORARIO_INICIAL } from "./datos/centro";
-import { COMPRAS_INICIALES, PRODUCTOS_VENTA, PROVEEDORES_INICIALES, STOCK_MINIMO_INICIAL, type CompraInicial, type ProductoVenta, type ProveedorInicial } from "./datos/productos";
+import { COMPRAS_INICIALES, GASTOS_INICIALES, PRODUCTOS_VENTA, PROVEEDORES_INICIALES, STOCK_MINIMO_INICIAL, totalGastoInicial, type CompraInicial, type GastoInicial, type ProductoVenta, type ProveedorInicial } from "./datos/productos";
 import { BONOS, CATEGORIAS, type TarifaBono, type TarifaCategoria } from "./datos/tarifas";
-import { registrarCompra } from "./stock";
-import { categorias, centro, compras, horarios, modelosConsentimiento, modelosConsentimientoTratamientos, plantillas, productos, profesionales, proveedores, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
+import { registrarCompra, registrarGasto } from "./stock";
+import { categorias, centro, compras, gastos, horarios, modelosConsentimiento, modelosConsentimientoTratamientos, plantillas, productos, profesionales, proveedores, tiposBono, tiposBonoTratamientos, tratamientos, usuarios } from "./esquema";
 import type { BaseDatos } from "./index";
 
 export const NOMBRE_CENTRO = "Adela María · Belleza holística";
@@ -28,6 +28,7 @@ export interface ResumenSiembra {
   horarioCreado: boolean;
   productosNuevos: number;
   comprasNuevas: number;
+  gastosNuevos: number;
   avisos: string[];
 }
 
@@ -38,14 +39,15 @@ export interface DatosIniciales {
   proveedores?: ProveedorInicial[];
   productos?: ProductoVenta[];
   compras?: CompraInicial[];
+  gastos?: GastoInicial[];
 }
 
 export async function sembrar(
   db: BaseDatos,
   admin: AdminInicial,
-  tarifas: DatosIniciales = { categorias: CATEGORIAS, bonos: BONOS, proveedores: PROVEEDORES_INICIALES, productos: PRODUCTOS_VENTA, compras: COMPRAS_INICIALES },
+  tarifas: DatosIniciales = { categorias: CATEGORIAS, bonos: BONOS, proveedores: PROVEEDORES_INICIALES, productos: PRODUCTOS_VENTA, compras: COMPRAS_INICIALES, gastos: GASTOS_INICIALES },
 ): Promise<ResumenSiembra> {
-  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, horarioCreado: false, productosNuevos: 0, comprasNuevas: 0, avisos: [] };
+  const resumen: ResumenSiembra = { centroCreado: false, adminCreado: false, tratamientosNuevos: 0, bonosNuevos: 0, horarioCreado: false, productosNuevos: 0, comprasNuevas: 0, gastosNuevos: 0, avisos: [] };
 
   await db.transaction(async (tx) => {
     let [c] = await tx.select().from(centro).limit(1);
@@ -142,6 +144,7 @@ export async function sembrar(
         .insert(productos)
         .values({
           nombre: p.nombre,
+          referencia: p.referencia ?? null,
           uso: "venta",
           precioCentimos: p.precioCentimos,
           ivaCentesimas: p.ivaCentesimas,
@@ -180,6 +183,29 @@ export async function sembrar(
     });
     if (!r.ok) throw new Error(`No se pudo cargar la compra ${c.numeroFactura}: ${r.error}`);
     resumen.comprasNuevas++;
+  }
+
+  // Gastos ya pagados (productos de cabina): una sola vez, por proveedor, nº de factura y concepto.
+  for (const g of tarifas.gastos ?? []) {
+    const [prov] = await db.select().from(proveedores).where(eq(proveedores.nombre, g.proveedor));
+    if (!prov) throw new Error(`Falta el proveedor «${g.proveedor}».`);
+    const [ya] = await db
+      .select({ id: gastos.id })
+      .from(gastos)
+      .where(and(eq(gastos.proveedorId, prov.id), eq(gastos.numeroFactura, g.numeroFactura), eq(gastos.concepto, g.concepto)));
+    if (ya) continue;
+    const [admin] = await db.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.rol, "administrador")).limit(1);
+    const r = await registrarGasto(db, admin!.id, {
+      fecha: g.fecha,
+      categoria: "compras",
+      concepto: g.concepto,
+      proveedorId: prov.id,
+      numeroFactura: g.numeroFactura,
+      total: totalGastoInicial(g),
+      ivaCentesimas: g.ivaCentesimas,
+    });
+    if (!r.ok) throw new Error(`No se pudo cargar el gasto ${g.numeroFactura}: ${r.error}`);
+    resumen.gastosNuevos++;
   }
 
   return resumen;

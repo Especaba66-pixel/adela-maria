@@ -105,11 +105,12 @@ export function construirPagina(d: DatosLanding): string {
     .join("");
 
   const grupos = [...new Set((d.productos ?? []).map((p) => p.grupo))];
+  const idGrupo = (g: string) => `prod-${g.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   const productos = grupos
     .map(
       (g) => `
-      <section class="categoria aparece" aria-labelledby="prod-${esc(g)}">
-        <h3 id="prod-${esc(g)}">${esc(g)}</h3>
+      <section class="categoria aparece" aria-labelledby="${idGrupo(g)}">
+        <h3 id="${idGrupo(g)}">${esc(g)}</h3>
         <ul class="lista">
           ${(d.productos ?? [])
             .filter((p) => p.grupo === g)

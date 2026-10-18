@@ -295,3 +295,9 @@ avisa de que no cuadra: suele ser una cifra mal copiada.
 
 **En la web**: sección «Productos» por grupos, con precio y botón «Lo quiero» que abre WhatsApp con el mensaje escrito.
 No enseña el stock (la web no está conectada al TPV).
+
+**Segunda compra: Área Estética, SF 26000034 (29 de junio de 2026, 1.550,49 €).** Lo marcado en rojo (7 productos, 23
+unidades, 7 de ellas de regalo) entra como producto de venta con el mismo 30 %; las unidades de regalo van a 0 € y
+abaratan el coste medio. El resto (28 productos de cabina, 918,30 € de base) va solo a gastos, sin stock, como decidió
+el centro. La parte de venta y la de cabina quedan como dos gastos con el mismo número y suman exactamente el documento.
+El documento es un **presupuesto**, no una factura: para deducir el IVA hace falta la factura del proveedor.

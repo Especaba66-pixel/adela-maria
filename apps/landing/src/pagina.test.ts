@@ -23,7 +23,7 @@ describe("landing", () => {
     const conProductos = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto });
     expect(conProductos).toContain('id="productos"');
     for (const p of PRODUCTOS_VENTA) expect(conProductos).toContain(p.nombre);
-    expect(conProductos).toContain('<h3 id="prod-Sérums">Sérums</h3>');
+    expect(conProductos).toContain('<h3 id="prod-serums-y-extractos">Sérums y extractos</h3>');
     expect(conProductos).toMatch(/D-Glow - Crema facial iluminadora<\/div>\s*<div class="detalle"><strong>12,80[\s\u00a0]€<\/strong>/);
     expect(conProductos).toContain('aria-label="Reservar por WhatsApp: Agua micelar"');
     // Sin productos, no hay sección vacía.
