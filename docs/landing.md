@@ -18,7 +18,9 @@ En el panel DNS del dominio:
 | A | @ | 185.199.111.153 |
 | CNAME | www | especaba66-pixel.github.io |
 
-Y en GitHub → Settings → Pages → Custom domain: `adelamariatorremejia.es` → Save → Enforce HTTPS. El servicio de
+**Antes de tocar GitHub**, comprueba en https://dnschecker.org (tipo A) que el dominio ya devuelve las cuatro
+direcciones 185.199.…: si se pone el dominio en GitHub antes, la dirección antigua redirige a un dominio que aún no
+funciona y la web deja de verse. Luego, en GitHub → Settings → Pages → Custom domain: `adelamariatorremejia.es` → Save → Enforce HTTPS. El servicio de
 reservas (apps/reservas/wrangler.jsonc, `ORIGEN_WEB`) acepta peticiones del dominio nuevo y del antiguo.
 
 ## Activarla (una sola vez, 1 minuto)
