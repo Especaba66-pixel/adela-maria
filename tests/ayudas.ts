@@ -20,6 +20,10 @@ export async function registrarTpv(page: Page) {
 
 /** Día AAAA-MM-DD en Madrid, sumando días a hoy. */
 export function diaMadrid(diasDesdeHoy: number): string {
-  const d = new Date(Date.now() + diasDesdeHoy * 86_400_000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(d);
+  // Días de calendario a partir de la fecha de hoy en Madrid (no bloques de 24 horas: con el cambio de hora de por
+  // medio, cerca de medianoche, sumar horas daría un día de más o de menos).
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+  const d = new Date(`${hoy}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + diasDesdeHoy);
+  return d.toISOString().slice(0, 10);
 }

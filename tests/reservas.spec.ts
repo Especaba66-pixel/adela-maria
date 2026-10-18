@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { execSync } from "node:child_process";
 import { ENTORNO_PRUEBAS } from "../playwright.config";
-import { alerta, registrarTpv } from "./ayudas";
+import { alerta, diaMadrid, registrarTpv } from "./ayudas";
 
 /**
  * Parte de las clientas: ven los tratamientos y reservan una hora libre sin registrarse ni claves.
@@ -23,7 +23,7 @@ test.beforeAll(() => {
 });
 
 const HIGIENE = "Verse limpia y purificada (higiene facial)";
-const enDias = (n: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(Date.now() + n * 86_400_000);
+const enDias = diaMadrid;
 
 async function pedirSinHora(page: Page, datos: { nombre: string; telefono: string }) {
   await page.goto("/reservar");
