@@ -38,7 +38,8 @@ jobs:
       - name: Generar la página
         run: pnpm --filter @adela/landing build
         env:
-          LANDING_URL: https://especaba66-pixel.github.io/adela-maria/
+          LANDING_URL: https://adelamariatorremejia.es/
+          DOMINIO: adelamariatorremejia.es
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

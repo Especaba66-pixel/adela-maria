@@ -3,8 +3,23 @@
 Una página sencilla con los tratamientos, los precios y los bonos. Las clientas piden cita por WhatsApp con el
 mensaje ya escrito. No tiene servidor ni base de datos, así que **no cuesta nada**.
 
-Dirección: **https://especaba66-pixel.github.io/adela-maria/** (más adelante se puede poner un dominio propio, por
-ejemplo `adelamaria.es`, que cuesta unos 10 € al año).
+Dirección: **https://adelamariatorremejia.es** (dominio propio, comprado el 18 de octubre de 2026 en DonDominio). La
+dirección antigua, https://especaba66-pixel.github.io/adela-maria/, lleva a la nueva.
+
+## Dominio propio
+
+En el panel DNS del dominio:
+
+| Tipo | Nombre | Valor |
+| --- | --- | --- |
+| A | @ | 185.199.108.153 |
+| A | @ | 185.199.109.153 |
+| A | @ | 185.199.110.153 |
+| A | @ | 185.199.111.153 |
+| CNAME | www | especaba66-pixel.github.io |
+
+Y en GitHub → Settings → Pages → Custom domain: `adelamariatorremejia.es` → Save → Enforce HTTPS. El servicio de
+reservas (apps/reservas/wrangler.jsonc, `ORIGEN_WEB`) acepta peticiones del dominio nuevo y del antiguo.
 
 ## Activarla (una sola vez, 1 minuto)
 
