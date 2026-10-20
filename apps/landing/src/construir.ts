@@ -38,7 +38,19 @@ const trabajos = TIPOS.map(([carpeta, titulo]) => {
 });
 writeFileSync(
   `${dist}/index.html`,
-  construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto: CONTACTO, trabajos, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
+  construirPagina({
+    categorias: CATEGORIAS,
+    bonos: BONOS,
+    productos: PRODUCTOS_VENTA,
+    // Fotos de cejas que abren la portada (enviadas por Espe el 20 de octubre de 2026).
+    portada: ["trabajos/microblading/05.jpg", "trabajos/microblading/06.jpg", "trabajos/microblading/07.jpg"],
+    destacado: {
+      archivo: "destacados/diseno-de-ceja.jpg",
+      alt: "La importancia del diseño de ceja",
+      ...medidasJpeg(`${publico}/destacados/diseno-de-ceja.jpg`),
+      tratamiento: "Diseño y depilación de cejas",
+    },
+    contacto: CONTACTO, trabajos, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
 );
 // Tipografías junto a la página.
 const require = createRequire(import.meta.url);

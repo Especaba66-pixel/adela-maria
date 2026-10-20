@@ -15,6 +15,10 @@ export interface DatosLanding {
   /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
   trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
+  /** Fotos que abren la portada, en este orden (rutas de `trabajos`); después van las demás. */
+  portada?: string[];
+  /** Imagen destacada bajo la portada, con el tratamiento al que invita a reservar. */
+  destacado?: { archivo: string; alt: string; ancho?: number; alto?: number; tratamiento: string };
   /** Servicio de reservas por internet (Cloudflare). Sin él, se pide cita por WhatsApp. */
   reservasApi?: string | null;
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
@@ -140,7 +144,16 @@ export function construirPagina(d: DatosLanding): string {
 
   // Fotos de los trabajos para la portada y la cinta (una de cada tipo primero, para que se vean todos).
   const conFotos = (d.trabajos ?? []).filter((t) => t.fotos.length);
-  const pase = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat().slice(0, 8);
+  const intercaladas = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat();
+  const primeras = (d.portada ?? []).flatMap((archivo) => intercaladas.filter((f) => f.archivo === archivo));
+  const pase = [...primeras, ...intercaladas.filter((f) => !primeras.includes(f))].slice(0, 10);
+
+  const destacado = d.destacado
+    ? `<section class="contenedor destacado aparece" aria-label="${esc(d.destacado.alt)}">
+    <img src="${esc(d.destacado.archivo)}" alt="${esc(d.destacado.alt)}"${d.destacado.ancho && d.destacado.alto ? ` width="${d.destacado.ancho}" height="${d.destacado.alto}"` : ""} decoding="async">
+    <div class="centrado">${botonCita(d.destacado.tratamiento, true).replace(/>(Reservar|Pedir cita)</, ">Reservar mi diseño de cejas<")}</div>
+  </section>`
+    : "";
 
   const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y pide tu cita por WhatsApp.";
 
@@ -188,6 +201,8 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <p class="entrada aparece">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
     </div>
   </section>
+
+  ${destacado}
 
   ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
 
@@ -404,6 +419,8 @@ a{color:var(--dorado-oscuro)}
 .pase img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity,transform}
 .portada.con-fotos::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(43,38,32,.25),rgba(43,38,32,.55))}
 .portada-texto{position:relative;z-index:1}
+.destacado{padding-top:2rem;text-align:center}
+.destacado img{display:block;width:100%;max-width:34rem;height:auto;margin:0 auto 1rem;border-radius:1rem}
 .con-fotos .sello{background:rgba(255,253,249,.9);border-radius:50%;padding:.5rem;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 .con-fotos h2{text-shadow:0 2px 18px rgba(0,0,0,.35)}
 .con-fotos .entrada{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45)}
