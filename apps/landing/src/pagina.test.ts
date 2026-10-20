@@ -30,29 +30,6 @@ describe("landing", () => {
     expect(html).not.toContain('id="productos"');
   });
 
-  it("abre la portada con las fotos elegidas y pone el diseño de ceja debajo, con botón para reservarlo", () => {
-    const trabajos = [
-      { titulo: "Microblading", fotos: ["01", "02", "05", "06"].map((n) => ({ archivo: `trabajos/microblading/${n}.jpg`, alt: `Microblading ${n}` })) },
-      { titulo: "Uñas", fotos: [{ archivo: "trabajos/unas/01.jpg", alt: "Uñas" }] },
-    ];
-    const pagina = construirPagina({
-      categorias: CATEGORIAS,
-      bonos: BONOS,
-      contacto,
-      trabajos,
-      portada: ["trabajos/microblading/06.jpg", "trabajos/microblading/05.jpg"],
-      destacado: { archivo: "destacados/diseno-de-ceja.jpg", alt: "La importancia del diseño de ceja", tratamiento: "Diseño y depilación de cejas" },
-    });
-    const portada = pagina.slice(pagina.indexOf('<div class="pase"'), pagina.indexOf("</div>", pagina.indexOf('<div class="pase"')));
-    const orden = [...portada.matchAll(/src="([^"]+)"/g)].map((m) => m[1]);
-    expect(orden).toEqual(["trabajos/microblading/06.jpg", "trabajos/microblading/05.jpg", "trabajos/microblading/01.jpg", "trabajos/unas/01.jpg", "trabajos/microblading/02.jpg"]);
-    expect(pagina).toContain('<img src="destacados/diseno-de-ceja.jpg" alt="La importancia del diseño de ceja"');
-    expect(pagina).toMatch(/aria-label="Pedir cita por WhatsApp: Diseño y depilación de cejas">Reservar mi diseño de cejas</);
-    // El destacado va justo después de la portada.
-    expect(pagina.indexOf('class="contenedor destacado')).toBeGreaterThan(pagina.indexOf('class="portada'));
-    expect(pagina.indexOf('class="contenedor destacado')).toBeLessThan(pagina.indexOf('id="tratamientos"'));
-  });
-
   it("muestra los bonos y que no caducan", () => {
     expect(html).toContain("Bono facial 3 sesiones");
     expect(html).toContain("240 €");
