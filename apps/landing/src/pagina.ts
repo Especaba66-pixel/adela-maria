@@ -202,9 +202,9 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     </div>
   </section>
 
-  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
-
   ${destacado}
+
+  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
 
 
 
