@@ -111,6 +111,17 @@ describe("landing", () => {
     expect(html).not.toContain('class="portada con-fotos"');
   });
 
+  it("con fotos propias de portada, el fondo lleva solo esas y los trabajos se quedan en su sección", () => {
+    const trabajos = [{ titulo: "Uñas", fotos: [{ archivo: "trabajos/unas/1.jpg", alt: "Uñas: trabajo 1" }] }];
+    const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, trabajos, portada: [{ archivo: "portada/01.jpg" }, { archivo: "portada/02.jpg" }] });
+    const pase = con.match(/<div class="pase".*?<\/div>/s)![0];
+    expect([...pase.matchAll(/src="([^"]+)"/g)].map((m) => m[1])).toEqual(["portada/01.jpg", "portada/02.jpg"]);
+    const cinta = con.match(/<div class="cinta-pista">.*?<\/div>/s)![0];
+    expect(cinta).toContain("trabajos/unas/1.jpg");
+    expect(cinta).not.toContain("portada/");
+    expect(con).toContain('src="trabajos/unas/1.jpg" alt="Uñas: trabajo 1"');
+  });
+
   it("no carga nada de terceros (ni tipografías de Google)", () => {
     expect(html).not.toMatch(/googleapis|gstatic|<script[^>]+src=/);
     expect(html).toContain("fuentes/inter-latin-400-normal.woff2");

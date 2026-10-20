@@ -36,9 +36,14 @@ const trabajos = TIPOS.map(([carpeta, titulo]) => {
       ...(/\.jpe?g$/i.test(f) ? medidasJpeg(`${ruta}/${f}`) : {}),
     })) };
 });
+// Fondo de la portada: publico/portada/*.jpg (imágenes de ambiente hechas con IA, no trabajos de Adela), en orden.
+const rutaPortada = `${publico}/portada`;
+const portada = existsSync(rutaPortada)
+  ? readdirSync(rutaPortada).filter((f) => /\.(jpe?g|webp|png)$/i.test(f)).sort().map((f) => ({ archivo: `portada/${f}` }))
+  : [];
 writeFileSync(
   `${dist}/index.html`,
-  construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto: CONTACTO, trabajos, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
+  construirPagina({ categorias: CATEGORIAS, bonos: BONOS, productos: PRODUCTOS_VENTA, contacto: CONTACTO, trabajos, portada, reservasApi: process.env.RESERVAS_URL || CONTACTO.reservas, url: process.env.LANDING_URL }),
 );
 // Tipografías junto a la página.
 const require = createRequire(import.meta.url);

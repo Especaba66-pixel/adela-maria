@@ -14,6 +14,8 @@ export interface DatosLanding {
   productos?: { nombre: string; grupo: string; precioCentimos: number }[];
   /** Fotos de trabajos por tipo («Microblading», «Uñas»…), ya copiadas junto a la página. */
   trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
+  /** Fotos de fondo de la portada (imágenes de ambiente, no trabajos). Sin ellas, la portada usa las de los trabajos. */
+  portada?: { archivo: string }[];
   contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
   /** Servicio de reservas por internet (Cloudflare). Sin él, se pide cita por WhatsApp. */
   reservasApi?: string | null;
@@ -138,9 +140,10 @@ export function construirPagina(d: DatosLanding): string {
     ? `<a class="boton boton-principal" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita por WhatsApp</a>`
     : `<p class="pronto">Muy pronto podrás pedir cita por WhatsApp desde aquí.</p>`;
 
-  // Fotos de los trabajos para la portada y la cinta (una de cada tipo primero, para que se vean todos).
+  // Fotos de los trabajos para la cinta (una de cada tipo primero, para que se vean todos); la portada lleva las suyas.
   const conFotos = (d.trabajos ?? []).filter((t) => t.fotos.length);
-  const pase = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat().slice(0, 8);
+  const cinta = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat().slice(0, 8);
+  const pase = d.portada?.length ? d.portada : cinta;
 
   const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y pide tu cita por WhatsApp.";
 
@@ -160,7 +163,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <link rel="apple-touch-icon" href="icono.png">
 <meta property="og:image" content="${esc(d.url ? `${d.url.replace(/\/$/, "")}/sello.png` : "sello.png")}">
 <link rel="preload" href="fuentes/cormorant-garamond-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<style>${ESTILOS}${ESTILOS_RESERVA}${estilosPase(pase.length)}</style>
+<style>${ESTILOS}${ESTILOS_RESERVA}${estilosPase(pase.length, cinta.length)}</style>
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -223,7 +226,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     d.trabajos?.some((t) => t.fotos.length)
       ? `<section id="trabajos" class="contenedor bloque" aria-labelledby="titulo-trabajos">
     <h2 id="titulo-trabajos" class="aparece">Nuestros trabajos</h2>
-    <div class="cinta" aria-hidden="true"><div class="cinta-pista">${[...pase, ...pase].map((f) => `<img src="${esc(f.archivo)}" alt="" loading="lazy" decoding="async">`).join("")}</div></div>
+    <div class="cinta" aria-hidden="true"><div class="cinta-pista">${[...cinta, ...cinta].map((f) => `<img src="${esc(f.archivo)}" alt="" loading="lazy" decoding="async">`).join("")}</div></div>
     ${d.trabajos
       .filter((t) => t.fotos.length)
       .map(
@@ -311,15 +314,15 @@ document.addEventListener("click", (e) => {
 /** Segundos que se ve cada foto de la portada. */
 const SEGUNDOS_FOTO = 6;
 
-/** Fundido entre las fotos de la portada con un zoom lento; la animación depende de cuántas fotos haya. */
-function estilosPase(n: number): string {
+/** Fundido entre las fotos de la portada con un zoom lento, y la cinta de trabajos; dependen de cuántas fotos haya. */
+function estilosPase(n: number, enCinta: number): string {
   if (n === 0) return "";
   const total = n * SEGUNDOS_FOTO;
   const entra = ((1.5 / total) * 100).toFixed(2);
   const sale = (((SEGUNDOS_FOTO + 1.5) / total) * 100).toFixed(2);
   return `.pase img{animation:pase ${total}s linear infinite}
 @keyframes pase{0%{opacity:0;transform:scale(1.02)}${entra}%{opacity:1}${(Number(sale) - Number(entra)).toFixed(2)}%{opacity:1}${sale}%{opacity:0;transform:scale(1.14)}100%{opacity:0;transform:scale(1.14)}}
-.cinta-pista{animation:cinta ${Math.max(30, n * 7)}s linear infinite}`;
+.cinta-pista{animation:cinta ${Math.max(30, enCinta * 7)}s linear infinite}`;
 }
 
 /** Lo que aparece al bajar: se marca cuando entra en pantalla (sin librerías). */
