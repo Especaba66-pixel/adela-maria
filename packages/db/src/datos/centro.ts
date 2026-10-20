@@ -7,10 +7,10 @@
 export const CABINAS = 3;
 
 /**
- * Horario provisional de Adela (dato de Espe, 12 de octubre de 2026): de lunes (1) a viernes (5), de 9:00 a 14:00.
- * Los sábados no se abre.
+ * Horario de Adela (dato de Espe, 20 de octubre de 2026): de martes (2) a viernes (5), de 9:00 a 14:00.
+ * Lunes, sábados y domingos, cerrado.
  */
-export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: number }[] = [1, 2, 3, 4, 5].map((diaSemana) => ({
+export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: number }[] = [2, 3, 4, 5].map((diaSemana) => ({
   diaSemana,
   inicioMin: 9 * 60,
   finMin: 14 * 60,
@@ -24,7 +24,7 @@ export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: nu
 export const CONTACTO: { whatsapp: string | null; direccion: string | null; horario: string; instagram: string | null; reservas: string | null } = {
   whatsapp: "624745734",
   direccion: "C/ Francisco Pizarro 13, 1.ª planta, 06210 Torremejía (Badajoz)",
-  horario: "De lunes a viernes, de 9:00 a 14:00",
+  horario: "De martes a viernes, de 9:00 a 14:00",
   /** Usuario de Instagram del centro (dato de Espe, 12 de octubre de 2026). */
   instagram: "adela_maria_bellezaholistica",
   /**
