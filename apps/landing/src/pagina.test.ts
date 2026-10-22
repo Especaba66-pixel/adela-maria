@@ -95,6 +95,10 @@ describe("landing", () => {
     expect(html).toContain('aria-label="Pedir cita por WhatsApp: Axilas"');
     expect(html).toContain("De lunes a viernes, de 9:00 a 14:00");
     expect(html).toContain("Calle Mayor 1");
+    // El teléfono, a la vista arriba y en el pie, para llamar con un toque.
+    expect(html).toContain('<a class="telefono" href="tel:+34600112233" aria-label="Llamar al 600 11 22 33">');
+    expect(html).toContain('Teléfono y WhatsApp: <a href="tel:+34600112233">600 11 22 33</a>');
+    expect(html).toContain('o llámanos al <a href="tel:+34600112233">600 11 22 33</a>');
   });
 
   it("sin WhatsApp no muestra botones rotos", () => {

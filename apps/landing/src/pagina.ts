@@ -4,7 +4,7 @@
  * Las clientas piden cita por WhatsApp con el mensaje ya escrito.
  */
 import type { TarifaBono, TarifaCategoria } from "@adela/db/datos";
-import { enlaceWhatsapp, formatearEuros, normalizarTelefono } from "@adela/dominio";
+import { enlaceWhatsapp, formatearEuros, formatearTelefono, normalizarTelefono } from "@adela/dominio";
 import { ESTILOS_RESERVA, SCRIPT_RESERVA, bloqueReserva } from "./reserva";
 
 export interface DatosLanding {
@@ -230,6 +230,8 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <a href="#inicio" class="marca" aria-label="Adela María · Belleza holística">
       <img src="logotipo.png" alt="Adela María · Belleza holística" width="155" height="48">
     </a>
+    <div class="cabecera-acciones">
+    ${telefono ? `<a class="telefono" href="tel:${telefono}" aria-label="Llamar al ${formatearTelefono(telefono)}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span class="telefono-numero">${formatearTelefono(telefono)}</span></a>` : ""}
     ${
       api
         ? `<a class="boton boton-principal boton-pequeno" href="#reservar">Reservar</a>`
@@ -237,6 +239,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
           ? `<a class="boton boton-principal boton-pequeno" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita</a>`
           : ""
     }
+    </div>
   </div>
 </header>
 
@@ -248,6 +251,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <h1>Cuidamos de ti</h1>
       <p class="entrada">Adela María, experta en el cuidado de tu imagen</p>
       ${api ? `<a class="boton boton-claro" href="#reservar">Reservar cita</a>` : ""}
+      ${telefono ? `<p class="portada-telefono">o llámanos al <a href="tel:${telefono}">${formatearTelefono(telefono)}</a></p>` : ""}
     </div>
   </section>
 
@@ -311,7 +315,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <p>${esc(d.contacto.horario)}</p>
     ${d.contacto.direccion ? `<p>${esc(d.contacto.direccion)}</p>` : ""}
     ${instagram ? `<p><a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Síguenos en Instagram: @${instagram}</a></p>` : ""}
-    ${telefono ? `<p><a href="tel:${telefono}">Llamar</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">WhatsApp</a></p>` : ""}
+    ${telefono ? `<p>Teléfono y WhatsApp: <a href="tel:${telefono}">${formatearTelefono(telefono)}</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">Escribir por WhatsApp</a></p>` : ""}
     <p class="legal">${
       api
         ? "Si reservas aquí, guardamos tu nombre y tu teléfono solo para gestionar tu cita y contactarte sobre ella; puedes pedir que los borremos cuando quieras. La página no usa cookies ni rastreo."
@@ -380,6 +384,11 @@ a{color:var(--dorado-oscuro)}
 .contenedor{max-width:46rem;margin:0 auto;padding:0 1rem}
 .cabecera{position:sticky;top:0;z-index:2;background:rgba(255,253,249,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--borde)}
 .cabecera-fila{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:4.25rem}
+.cabecera-acciones{display:flex;align-items:center;gap:.9rem}
+.telefono{display:inline-flex;align-items:center;gap:.35rem;font-weight:600;text-decoration:none;white-space:nowrap;color:var(--dorado-oscuro)}
+.telefono:hover{text-decoration:underline}
+@media (max-width:22rem){.cabecera-fila,.cabecera-acciones{gap:.5rem}.cabecera .marca img{height:38px}.cabecera .boton-pequeno{padding:0 .8rem}}
+@media (max-width:30rem){.telefono-numero{display:none}.telefono{width:2.75rem;height:2.75rem;justify-content:center;border:2px solid var(--dorado);border-radius:.75rem}}
 .marca{text-decoration:none;display:flex;flex-direction:column}
 .marca-nombre{font-size:1.6rem;color:var(--dorado-oscuro)}
 .marca-lema{font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dorado)}
@@ -438,6 +447,8 @@ a{color:var(--dorado-oscuro)}
 .con-fotos .entrada{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45);font-size:clamp(1.05rem,3.6vw,1.35rem);margin-bottom:1.25rem}
 .boton-claro{background:rgba(255,253,249,.92);color:var(--dorado-oscuro);min-height:3.25rem;padding:0 1.8rem;font-size:1.05rem;box-shadow:0 8px 30px rgba(0,0,0,.2)}
 .boton-claro:hover{background:#fff}
+.portada-telefono{margin:.9rem 0 0;color:#fff;font-size:1.05rem;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+.portada-telefono a{color:#fff;font-weight:600;white-space:nowrap}
 /* Menú de servicios: a la izquierda en pantallas grandes, debajo de la portada en el móvil */
 .servicios{padding:1.5rem 1rem 1rem}
 .servicios h2{font-size:2rem;color:var(--dorado-oscuro)}
