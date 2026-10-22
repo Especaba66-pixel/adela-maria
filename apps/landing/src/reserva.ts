@@ -1,5 +1,5 @@
 /**
- * Calendario de reservas de la landing: lo primero que se ve. Habla con el servicio de reservas de Cloudflare
+ * Calendario de reservas de la landing: justo debajo de la portada. Habla con el servicio de reservas de Cloudflare
  * (apps/reservas), que funciona aunque el TPV esté apagado. Sin librerías ni nada de terceros: HTML, CSS y un
  * poco de JavaScript.
  */
@@ -12,7 +12,7 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
   if (!api) {
     return `<section id="reservar" class="reserva" aria-labelledby="titulo-reservar">
   <div class="contenedor">
-    <h1 id="titulo-reservar">Reserva tu cita</h1>
+    <h2 id="titulo-reservar">Reserva tu cita</h2>
     <p class="entrada">Muy pronto podrás elegir aquí tu tratamiento, el día y la hora.</p>
     ${alternativa}
   </div>
@@ -20,7 +20,7 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
   }
   return `<section id="reservar" class="reserva" aria-labelledby="titulo-reservar">
   <div class="contenedor">
-    <h1 id="titulo-reservar">Reserva tu cita</h1>
+    <h2 id="titulo-reservar">Reserva tu cita</h2>
     <p class="entrada">Elige tratamiento, día y hora. Te confirmamos la cita por WhatsApp.</p>
     <div class="calendario" id="calendario" data-api="${esc(api)}">
       <label class="paso">
@@ -56,7 +56,7 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
 
 export const ESTILOS_RESERVA = `
 .reserva{padding:1.25rem 0 2.5rem;background:linear-gradient(var(--fondo),var(--crema))}
-.reserva h1{font-size:clamp(2.2rem,8vw,3.2rem);text-align:center}
+.reserva h2{font-size:clamp(2.2rem,8vw,3.2rem);text-align:center}
 .reserva .entrada{text-align:center;margin:.5rem auto 1.5rem}
 .calendario{max-width:44rem;margin:0 auto;background:var(--superficie);border:1px solid var(--borde);border-radius:1.25rem;padding:1.25rem;display:grid;gap:1.25rem;box-shadow:0 10px 30px rgba(122,92,46,.08)}
 .paso{display:grid;gap:.6rem}

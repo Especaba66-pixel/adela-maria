@@ -52,13 +52,18 @@ test("el TPV manda su agenda al servicio de internet", async () => {
   expect(servicios.find((s: { nombre: string }) => s.nombre === "Ingles").id).toMatch(/^[0-9a-f-]{36}$/);
 });
 
-test("arriba las fotos con el logo y, en la misma pantalla, el calendario: la clienta elige tratamiento, día y hora y reserva", async () => {
+test("arriba el lema con las fotos y, en la misma pantalla, los servicios: la clienta abre uno, ve el precio y reserva", async () => {
   await clienta.goto(RESERVAS.landing);
   await expect(clienta.locator(".portada.con-fotos")).toBeInViewport();
-  await expect(clienta.getByRole("heading", { level: 1 })).toHaveText("Reserva tu cita");
-  // Sin bajar: en la primera vista del móvil ya se elige el tratamiento.
+  await expect(clienta.getByRole("heading", { level: 1 })).toHaveText("Cuidamos de ti");
+  // Sin bajar: en la primera vista del móvil ya están los servicios.
+  const menu = clienta.getByRole("navigation", { name: "Nuestros servicios" });
+  await expect(menu.getByText("Depilación", { exact: true })).toBeInViewport();
+  await menu.getByText("Depilación", { exact: true }).click();
+  await expect(menu.locator("#cat-depilacion")).toContainText(/Ingles\s*15 min · 5\s€/);
+  await menu.getByRole("link", { name: "Reservar: Ingles" }).click();
   await expect(clienta.getByRole("combobox", { name: /Tratamiento/ })).toBeInViewport();
-  await clienta.getByRole("combobox", { name: /Tratamiento/ }).selectOption({ label: "Ingles · 5 €" });
+  await expect(clienta.getByRole("combobox", { name: /Tratamiento/ }).locator("option:checked")).toHaveText("Ingles · 5 €");
   const dia = clienta.getByRole("group", { name: "Día" }).getByRole("button").and(clienta.locator(":not([disabled])")).nth(2);
   await dia.click();
   const hora = clienta.getByRole("group", { name: "Hora" }).getByRole("button").first();

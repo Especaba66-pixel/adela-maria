@@ -67,12 +67,27 @@ export function construirPagina(d: DatosLanding): string {
       : "";
   };
 
+  const idDe = (prefijo: string, t: string) => `${prefijo}-${t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  /** Una opción del menú de servicios: se abre para ver lo que incluye. */
+  const opcion = (id: string, titulo: string, resumen: string, cuerpo: string) => `
+      <details class="opcion" id="${id}">
+        <summary><span class="opcion-nombre">${esc(titulo)}</span><span class="opcion-resumen">${esc(resumen)}</span></summary>
+        <div class="opcion-cuerpo">${cuerpo}
+        </div>
+      </details>`;
+  const desde = (precios: (number | undefined)[]) => {
+    const conPrecio = precios.filter((x): x is number => x !== undefined);
+    return conPrecio.length ? `desde ${precioTexto(Math.min(...conPrecio))}` : "precio a consultar";
+  };
+
   const categorias = d.categorias
     .filter((c) => c.tratamientos.length > 0)
-    .map(
-      (c) => `
-      <section class="categoria aparece" aria-labelledby="cat-${esc(c.nombre)}">
-        <h3 id="cat-${esc(c.nombre)}">${esc(c.nombre)}</h3>
+    .map((c) =>
+      opcion(
+        idDe("cat", c.nombre),
+        c.nombre,
+        desde(c.tratamientos.map((t) => t.precioCentimos)),
+        `
         ${PREGUNTA[c.nombre] ? `<p class="pregunta">${esc(PREGUNTA[c.nombre]!)}</p>` : ""}
         <ul class="lista">
           ${c.tratamientos
@@ -87,8 +102,8 @@ export function construirPagina(d: DatosLanding): string {
           </li>`,
             )
             .join("")}
-        </ul>
-      </section>`,
+        </ul>`,
+      ),
     )
     .join("");
 
@@ -107,11 +122,11 @@ export function construirPagina(d: DatosLanding): string {
     .join("");
 
   const grupos = [...new Set((d.productos ?? []).map((p) => p.grupo))];
-  const idGrupo = (g: string) => `prod-${g.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const idGrupo = (g: string) => idDe("prod", g);
   const productos = grupos
     .map(
       (g) => `
-      <section class="categoria aparece" aria-labelledby="${idGrupo(g)}">
+      <section class="grupo" aria-labelledby="${idGrupo(g)}">
         <h3 id="${idGrupo(g)}">${esc(g)}</h3>
         <ul class="lista">
           ${(d.productos ?? [])
@@ -144,6 +159,49 @@ export function construirPagina(d: DatosLanding): string {
   const conFotos = (d.trabajos ?? []).filter((t) => t.fotos.length);
   const cinta = Array.from({ length: Math.max(0, ...conFotos.map((t) => t.fotos.length)) }, (_, i) => conFotos.flatMap((t) => (t.fotos[i] ? [t.fotos[i]!] : []))).flat().slice(0, 8);
   const pase = d.portada?.length ? d.portada : cinta;
+
+  const servicios = `<nav id="tratamientos" class="servicios" aria-labelledby="titulo-servicios">
+    <h2 id="titulo-servicios">Nuestros servicios</h2>
+    <p class="servicios-ayuda">Toca una opción para ver sus tratamientos y precios.</p>
+    ${categorias}
+    ${
+      d.bonos.length
+        ? opcion(
+            "bonos",
+            "Bonos faciales",
+            desde(d.bonos.map((b) => b.precioCentimos)),
+            `
+        <p class="pregunta">Adaptados a las necesidades de tu piel. <strong>No caducan.</strong></p>
+        <ul class="lista">${bonos}
+        </ul>`,
+          )
+        : ""
+    }
+    ${
+      productos
+        ? opcion(
+            "productos",
+            "Productos",
+            desde((d.productos ?? []).map((p) => p.precioCentimos)),
+            `
+        <p class="pregunta">Cosmética facial y aceites para seguir cuidándote en casa. Están a la venta en el centro: pregúntanos cuál va mejor con tu piel.</p>
+        ${productos}`,
+          )
+        : ""
+    }
+    ${opcion(
+      "regalo",
+      "Tarjeta regalo",
+      "tú eliges el importe",
+      `
+        <p class="pregunta">Regala un momento de cuidado: elige el importe y te preparamos la tarjeta, válida para cualquier tratamiento. <strong>No caduca.</strong></p>
+        ${
+          telefono
+            ? `<div class="centrado"><a class="boton boton-secundario" href="${esc(enlaceWhatsapp(telefono, "Hola, me gustaría una tarjeta regalo de "))}" target="_blank" rel="noopener">Pedir una tarjeta regalo</a></div>`
+            : ""
+        }`,
+    )}
+  </nav>`;
 
   const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y pide tu cita por WhatsApp.";
 
@@ -182,45 +240,22 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   </div>
 </header>
 
-<main id="inicio">
+<main id="inicio" class="disposicion">
   <section class="portada${pase.length ? " con-fotos" : ""}">
     ${pase.length ? `<div class="pase" aria-hidden="true">${pase.map((f, i) => `<img src="${esc(f.archivo)}" alt="" style="animation-delay:${i * SEGUNDOS_FOTO}s"${i ? ' loading="lazy"' : ""} decoding="async">`).join("")}</div>` : ""}
     <div class="contenedor portada-texto">
-      <img class="sello aparece" src="sello.png" alt="" width="240" height="240" loading="lazy">
-      <h2 class="aparece">Tu momento de cuidado</h2>
-      <p class="entrada aparece">Tratamientos faciales, depilación, microblading, maquillaje y uñas, pensados para ti.</p>
+      <img class="sello" src="sello.png" alt="" width="240" height="240">
+      <h1>Cuidamos de ti</h1>
+      <p class="entrada">Adela María, experta en el cuidado de tu imagen</p>
+      ${api ? `<a class="boton boton-claro" href="#reservar">Reservar cita</a>` : ""}
     </div>
   </section>
 
+  <aside class="lateral">
+  ${servicios}
+  </aside>
+
   ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
-
-
-
-  <section id="tratamientos" class="contenedor bloque" aria-labelledby="titulo-tratamientos">
-    <h2 id="titulo-tratamientos" class="aparece">Tratamientos</h2>
-    ${categorias}
-  </section>
-
-  ${
-    d.bonos.length
-      ? `<section id="bonos" class="contenedor bloque" aria-labelledby="titulo-bonos">
-    <h2 id="titulo-bonos" class="aparece">Bonos faciales</h2>
-    <p class="nota-centrada">Adaptados a las necesidades de tu piel. <strong>No caducan.</strong></p>
-    <ul class="lista">${bonos}
-    </ul>
-  </section>`
-      : ""
-  }
-
-  ${
-    productos
-      ? `<section id="productos" class="contenedor bloque" aria-labelledby="titulo-productos">
-    <h2 id="titulo-productos" class="aparece">Productos</h2>
-    <p class="nota-centrada">Cosmética facial y aceites para seguir cuidándote en casa. Están a la venta en el centro: pregúntanos cuál va mejor con tu piel.</p>
-    ${productos}
-  </section>`
-      : ""
-  }
 
   ${
     d.trabajos?.some((t) => t.fotos.length)
@@ -249,28 +284,19 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     </ol>
   </section>
 
-  <section id="regalo" class="contenedor bloque" aria-labelledby="titulo-regalo">
-    <h2 id="titulo-regalo" class="aparece">Tarjeta regalo</h2>
-    <p class="nota-centrada">Regala un momento de cuidado: elige el importe y te preparamos la tarjeta, válida para cualquier tratamiento. <strong>No caduca.</strong></p>
-    ${
-      telefono
-        ? `<div class="centrado"><a class="boton boton-secundario" href="${esc(enlaceWhatsapp(telefono, "Hola, me gustaría una tarjeta regalo de "))}" target="_blank" rel="noopener">Pedir una tarjeta regalo</a></div>`
-        : ""
-    }
-  </section>
-
   <section id="cita" class="contenedor bloque" aria-labelledby="titulo-cita">
     <h2 id="titulo-cita" class="aparece">Cómo pedir cita</h2>
     ${
       api
         ? `<ol class="pasos">
-      <li><span>1</span>Arriba, elige tratamiento, día y hora: se ven las horas libres al momento.</li>
-      <li><span>2</span>Deja tu nombre y tu teléfono y pulsa «Reservar».</li>
-      <li><span>3</span>Te confirmamos la cita por WhatsApp.</li>
+      <li><span>1</span>En «Nuestros servicios», abre una opción y pulsa «Reservar» en tu tratamiento.</li>
+      <li><span>2</span>Elige día y hora: se ven las horas libres al momento.</li>
+      <li><span>3</span>Deja tu nombre y tu teléfono y pulsa «Reservar».</li>
+      <li><span>4</span>Te confirmamos la cita por WhatsApp.</li>
     </ol>
     <div class="centrado"><a class="boton boton-principal" href="#reservar">Reservar mi cita</a></div>`
         : `<ol class="pasos">
-      <li><span>1</span>Elige tu tratamiento.</li>
+      <li><span>1</span>Elige tu tratamiento en «Nuestros servicios».</li>
       <li><span>2</span>Pulsa «Pedir cita» y envíanos el mensaje por WhatsApp.</li>
       <li><span>3</span>Te respondemos con la hora y la dejamos confirmada.</li>
     </ol>
@@ -365,7 +391,7 @@ a{color:var(--dorado-oscuro)}
 .preparacion li{background:var(--superficie);border:1px solid var(--borde);border-radius:12px;padding:1rem 1.25rem}
 .preparacion strong{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;color:var(--dorado-oscuro)}
 .sello{display:block;width:min(240px,60vw);height:auto;margin:0 auto 1.5rem}
-.portada h2{font-size:clamp(2.6rem,9vw,4rem)}
+.portada h1{font-size:clamp(2.6rem,9vw,4.4rem)}
 .entrada{color:var(--suave);font-size:1.15rem;max-width:32rem;margin:1rem auto 2rem}
 .boton{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.4rem;border-radius:.75rem;font-weight:600;text-decoration:none;white-space:nowrap}
 .boton-principal{background:var(--dorado-oscuro);color:#fff;min-height:3.5rem;padding:0 2rem;font-size:1.1rem}
@@ -401,15 +427,43 @@ a{color:var(--dorado-oscuro)}
 .portada{position:relative;overflow:hidden}
 .portada.con-fotos{min-height:clamp(15rem,40svh,26rem);padding:1.5rem 0;display:flex;align-items:center;justify-content:center;color:#fff}
 .con-fotos .sello{width:min(150px,34vw);margin-bottom:.75rem}
-.con-fotos h2{font-size:clamp(2rem,7.5vw,3.4rem)}
+.con-fotos h1{font-size:clamp(2.4rem,9vw,4.4rem)}
 .con-fotos .entrada{font-size:1rem;margin:.5rem auto 0}
 .pase{position:absolute;inset:0}
 .pase img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity,transform}
 .portada.con-fotos::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(43,38,32,.25),rgba(43,38,32,.55))}
 .portada-texto{position:relative;z-index:1}
 .con-fotos .sello{background:rgba(255,253,249,.9);border-radius:50%;padding:.5rem;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-.con-fotos h2{text-shadow:0 2px 18px rgba(0,0,0,.35)}
-.con-fotos .entrada{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45)}
+.con-fotos h1{text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.con-fotos .entrada{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45);font-size:clamp(1.05rem,3.6vw,1.35rem);margin-bottom:1.25rem}
+.boton-claro{background:rgba(255,253,249,.92);color:var(--dorado-oscuro);min-height:3.25rem;padding:0 1.8rem;font-size:1.05rem;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.boton-claro:hover{background:#fff}
+/* Menú de servicios: a la izquierda en pantallas grandes, debajo de la portada en el móvil */
+.servicios{padding:1.5rem 1rem 1rem}
+.servicios h2{font-size:2rem;color:var(--dorado-oscuro)}
+.servicios-ayuda{margin:.1rem 0 1rem;color:var(--suave);font-size:.95rem}
+.opcion{background:var(--superficie);border:1px solid var(--borde);border-radius:1rem;margin-bottom:.6rem;overflow:hidden}
+.opcion summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.75rem;min-height:3.5rem;padding:.6rem 1rem}
+.opcion summary::-webkit-details-marker{display:none}
+.opcion summary::after{content:"";flex:none;width:.6rem;height:.6rem;border-right:2px solid var(--dorado);border-bottom:2px solid var(--dorado);transform:rotate(45deg);margin-left:.25rem;transition:transform .25s ease}
+.opcion[open] summary::after{transform:rotate(-135deg)}
+.opcion summary:hover,.opcion[open] summary{background:var(--crema)}
+.opcion summary:focus-visible{outline:3px solid var(--dorado);outline-offset:-3px}
+.opcion-nombre{font:600 1.35rem/1.2 "Cormorant Garamond",Georgia,serif;color:var(--tinta)}
+.opcion-resumen{margin-left:auto;color:var(--suave);font-size:.85rem;white-space:nowrap}
+.opcion-cuerpo{padding:.25rem .75rem .9rem}
+.opcion-cuerpo .pregunta{margin:.5rem .25rem .75rem}
+.opcion-cuerpo .lista{border-radius:.75rem}
+.opcion-cuerpo .lista li{padding:.75rem .85rem}
+.grupo h3{font-size:1.2rem;color:var(--dorado-oscuro);margin:1rem .25rem .5rem}
+@media (min-width:60rem){
+  .cabecera-fila{max-width:none;padding:0 1.5rem 0 1rem}
+  .disposicion{display:grid;grid-template-columns:22rem minmax(0,1fr);align-items:start}
+  .disposicion>*{grid-column:2}
+  .lateral{grid-column:1;grid-row:1/span 30;position:sticky;top:4.25rem;max-height:calc(100vh - 4.25rem);overflow-y:auto;border-right:1px solid var(--borde);background:var(--fondo)}
+  .portada.con-fotos{min-height:clamp(22rem,62vh,38rem)}
+  .opcion-cuerpo .lista .boton{min-height:2.5rem;padding:0 .8rem;font-size:.9rem}
+}
 .cinta{overflow:hidden;margin:0 -1rem 2rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .cinta-pista{display:flex;gap:.75rem;width:max-content}
 .cinta-pista img{height:14rem;width:auto;border-radius:12px;display:block}

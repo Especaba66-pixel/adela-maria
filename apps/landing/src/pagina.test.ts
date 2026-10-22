@@ -59,12 +59,19 @@ describe("landing", () => {
     expect(html).toContain("El día D");
   });
 
-  it("con el servicio de reservas, el calendario va justo después de la portada; sin él, se explica cómo pedir cita", () => {
+  it("arriba el lema; el menú de servicios con sus precios y, después, el calendario; sin él, se explica cómo pedir cita", () => {
     const con = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto, reservasApi: "https://reservas.ejemplo.workers.dev" });
     const main = con.slice(con.indexOf("<main"));
-    expect(main.indexOf('id="reservar"')).toBeLessThan(main.indexOf('id="tratamientos"'));
-    // Arriba la portada con las fotos y el logo; justo debajo, el calendario.
-    expect(main.indexOf('class="portada')).toBeLessThan(main.indexOf('id="reservar"'));
+    expect(main).toContain("<h1>Cuidamos de ti</h1>");
+    expect(main).toContain("Adela María, experta en el cuidado de tu imagen");
+    // La portada, el menú de servicios (a la izquierda en pantallas grandes) y el calendario, en ese orden.
+    expect(main.indexOf('class="portada')).toBeLessThan(main.indexOf('id="tratamientos"'));
+    expect(main.indexOf('id="tratamientos"')).toBeLessThan(main.indexOf('id="reservar"'));
+    // Cada opción se abre para ver sus tratamientos, con el precio desde el que empieza.
+    expect(main).toMatch(/<details class="opcion" id="cat-depilacion">\s*<summary><span class="opcion-nombre">Depilación<\/span><span class="opcion-resumen">desde 3[\s\u00a0]€<\/span>/);
+    expect(main).toContain('<span class="opcion-nombre">Microblading, maquillaje y uñas</span><span class="opcion-resumen">precio a consultar</span>');
+    expect(main).toContain('<details class="opcion" id="bonos">');
+    expect(main).toContain('<details class="opcion" id="regalo">');
     expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');
     expect(con).toContain('data-reservar="Axilas"');
     expect(con).toContain("Si reservas aquí, guardamos tu nombre y tu teléfono");
