@@ -277,6 +277,19 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       : ""
   }
 
+  <section id="quien-soy" class="contenedor bloque" aria-labelledby="titulo-quien-soy">
+    <h2 id="titulo-quien-soy" class="aparece">Quién soy</h2>
+    <div class="quien aparece">
+      <img src="adela-maria.jpg" alt="Adela María, sonriente, con camisa blanca de lino" width="720" height="720" loading="lazy" decoding="async">
+      <div class="quien-texto">
+        <p>Soy <strong>Adela María</strong> y soy de Torremejía. Llevo <strong>más de 20 años</strong> dedicada a la estética, y la sigo viviendo con la misma pasión que el primer día.</p>
+        <p>Creo en una belleza que respeta lo natural: cuidar tu piel y tu imagen sin cambiar quién eres, para que te veas y te sientas tú, en tu mejor versión.</p>
+        <p>Soy mamá de una niña y amante de los animales. Con esa misma ilusión he creado este centro en mi pueblo: un espacio cercano y tranquilo para cuidar la belleza natural de cada persona.</p>
+        <p class="quien-firma">Adela María</p>
+      </div>
+    </div>
+  </section>
+
   <section id="maquillaje" class="contenedor bloque" aria-labelledby="titulo-maquillaje">
     <h2 id="titulo-maquillaje" class="aparece">Prepara tu piel para un maquillaje perfecto</h2>
     <ol class="preparacion aparece">
@@ -411,6 +424,11 @@ a{color:var(--dorado-oscuro)}
 .boton:focus-visible{outline:3px solid var(--dorado);outline-offset:2px}
 .pronto{color:var(--suave);font-style:italic}
 .bloque{padding:3rem 1rem 1rem}
+.quien{display:grid;gap:1.5rem 2.5rem;align-items:center;max-width:56rem;margin:0 auto}
+.quien img{width:100%;max-width:22rem;height:auto;aspect-ratio:1;object-fit:cover;border-radius:50%;margin:0 auto;display:block;box-shadow:0 0 0 6px var(--crema),0 0 0 7px var(--borde)}
+.quien-texto p{margin:0 0 1rem}
+.quien-firma{font:italic 600 1.9rem "Cormorant Garamond",Georgia,serif;color:var(--dorado-oscuro)}
+@media (min-width:48rem){.quien{grid-template-columns:20rem 1fr}}
 .bloque h2{font-size:2.4rem;text-align:center;margin-bottom:1.5rem}
 .categoria{margin-bottom:2.5rem}
 .categoria h3{font-size:1.9rem;color:var(--dorado-oscuro)}

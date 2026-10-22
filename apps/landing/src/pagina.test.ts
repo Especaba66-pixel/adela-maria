@@ -54,6 +54,13 @@ describe("landing", () => {
     expect(con).not.toContain(">Maquillaje</h3>");
   });
 
+  it("«Quién soy» presenta a Adela con su foto", () => {
+    expect(html).toContain('<h2 id="titulo-quien-soy" class="aparece">Quién soy</h2>');
+    expect(html).toMatch(/<img src="adela-maria\.jpg" alt="Adela María[^"]+" width="720" height="720"/);
+    expect(html).toContain("de Torremejía");
+    expect(html).toContain("más de 20 años");
+  });
+
   it("consejos para preparar la piel antes del maquillaje", () => {
     expect(html).toContain("Prepara tu piel para un maquillaje perfecto");
     expect(html).toContain("El día D");
