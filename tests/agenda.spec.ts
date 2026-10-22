@@ -34,14 +34,17 @@ async function elegirClienta(nombre: string) {
   await expect(pagina.getByTestId("clienta-elegida")).toHaveText(nombre);
 }
 
-test("el horario provisional ya viene puesto: de martes a viernes, de 9 a 14", async () => {
+test("el horario de Adela ya viene puesto: lunes descanso, miércoles partido", async () => {
   await expect(pagina.getByText(/Falta el horario/)).toHaveCount(0);
   await pagina.goto("/gestion/mas/configuracion/horario");
   const form = pagina.getByRole("form", { name: "Horario de Adela" });
   await expect(form.getByLabel("Lunes tramo 1 desde")).toHaveValue("");
-  await expect(form.getByLabel("Martes tramo 1 desde")).toHaveValue("09:00");
-  await expect(form.getByLabel("Viernes tramo 1 hasta")).toHaveValue("14:00");
+  await expect(form.getByLabel("Martes tramo 1 desde")).toHaveValue("09:15");
+  await expect(form.getByLabel("Martes tramo 1 hasta")).toHaveValue("13:45");
   await expect(form.getByLabel("Martes tramo 2 desde")).toHaveValue("");
+  await expect(form.getByLabel("Miércoles tramo 2 desde")).toHaveValue("15:30");
+  await expect(form.getByLabel("Miércoles tramo 2 hasta")).toHaveValue("18:30");
+  await expect(form.getByLabel("Viernes tramo 1 hasta")).toHaveValue("19:00");
   await expect(form.getByLabel("Sábado tramo 1 desde")).toHaveValue("");
 });
 

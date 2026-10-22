@@ -73,9 +73,9 @@ describe("datos iniciales", () => {
     expect(prof?.nombre).toBe("Adela");
     const [c] = await db.select().from(centro);
     expect(c?.cabinas).toBe(3);
-    // Horario provisional: de martes a viernes, de 9 a 14.
+    // Horario de Adela: martes a viernes, con el miércoles partido.
     const h = await db.select().from(horarios).where(eq(horarios.profesionalId, prof!.id));
-    expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([2, 3, 4, 5].map((d) => [d, 540, 840]));
+    expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([[2, 555, 825], [3, 555, 795], [3, 930, 1110], [4, 660, 1110], [5, 660, 1140]]);
 
     // La administración que instala con «adela» pasa a entrar con su correo.
     const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adelamaria_16@hotmail.com"));

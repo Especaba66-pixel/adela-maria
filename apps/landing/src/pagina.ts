@@ -16,7 +16,7 @@ export interface DatosLanding {
   trabajos?: { titulo: string; fotos: { archivo: string; alt: string; ancho?: number; alto?: number }[] }[];
   /** Fotos de fondo de la portada (imágenes de ambiente, no trabajos). Sin ellas, la portada usa las de los trabajos. */
   portada?: { archivo: string }[];
-  contacto: { whatsapp: string | null; direccion: string | null; horario: string; instagram?: string | null };
+  contacto: { whatsapp: string | null; direccion: string | null; horario: string[]; instagram?: string | null };
   /** Servicio de reservas por internet (Cloudflare). Sin él, se pide cita por WhatsApp. */
   reservasApi?: string | null;
   /** Dirección pública de la página, para las etiquetas de redes sociales. */
@@ -312,7 +312,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
 <footer class="pie">
   <div class="contenedor">
     <div class="marca-nombre">Adela María · Belleza holística</div>
-    <p>${esc(d.contacto.horario)}</p>
+    <ul class="horario" aria-label="Horario">${d.contacto.horario.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
     ${d.contacto.direccion ? `<p>${esc(d.contacto.direccion)}</p>` : ""}
     ${instagram ? `<p><a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Síguenos en Instagram: @${instagram}</a></p>` : ""}
     ${telefono ? `<p>Teléfono y WhatsApp: <a href="tel:${telefono}">${formatearTelefono(telefono)}</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">Escribir por WhatsApp</a></p>` : ""}
@@ -431,6 +431,8 @@ a{color:var(--dorado-oscuro)}
 .centrado{text-align:center}
 .pie{margin-top:3rem;background:var(--crema);border-top:1px solid var(--borde);padding:2rem 0 2.5rem;color:var(--suave)}
 .pie p{margin:.35rem 0}
+.horario{list-style:none;margin:.5rem 0 1rem;padding:0}
+.horario li{margin:.15rem 0}
 .legal{font-size:.85rem;margin-top:1rem!important}
 /* Movimiento */
 .portada{position:relative;overflow:hidden}

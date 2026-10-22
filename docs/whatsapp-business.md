@@ -26,7 +26,14 @@ Te los pide al terminar (o en **Ajustes → Herramientas para la empresa → Per
 - **Foto:** el sello del logo
 - **Descripción:** Centro de belleza holística en Torremejía. Tratamientos faciales, depilación, microblading, maquillaje y uñas.
 - **Dirección:** C/ Francisco Pizarro 13, 1.ª planta, 06210 Torremejía (Badajoz)
-- **Horario:** martes a viernes, de 9:00 a 14:00
+- **Horario** (elige «Horario personalizado»):
+  - Lunes: cerrado
+  - Martes: de 9:15 a 13:45
+  - Miércoles: de 9:15 a 13:15 y de 15:30 a 18:30
+  - Jueves: de 11:00 a 18:30
+  - Viernes: de 11:00 a 19:00
+  - Sábado: solo con cita (pon de 9:00 a 14:00 o márcalo como cerrado, como prefieras)
+  - Domingo: cerrado
 - **Sitio web:** https://adelamariatorremejia.es
 - **Instagram:** @adela_maria_bellezaholistica
 
@@ -40,7 +47,7 @@ En **Ajustes → Herramientas para la empresa**:
 
 **Mensaje de ausencia** (actívalo, elige «Fuera del horario comercial» y copia):
 
-> ¡Hola! Ahora estamos fuera del horario (martes a viernes, de 9:00 a 14:00). Puedes reservar tu cita cuando quieras en https://adelamariatorremejia.es y te responderemos en cuanto abramos.
+> ¡Hola! Ahora estamos fuera del horario. Puedes reservar tu cita cuando quieras en https://adelamariatorremejia.es y te responderemos en cuanto abramos.
 
 **Respuestas rápidas** (pulsa **+**; luego, en un chat, escribe «/» y elige):
 
@@ -48,7 +55,7 @@ En **Ajustes → Herramientas para la empresa**:
 | --- | --- |
 | /reservar | Puedes reservar aquí, eligiendo día y hora: https://adelamariatorremejia.es |
 | /direccion | Estamos en C/ Francisco Pizarro 13, 1.ª planta, Torremejía (Badajoz). |
-| /horario | Abrimos de martes a viernes, de 9:00 a 14:00. |
+| /horario | Martes, de 9:15 a 13:45 · Miércoles, de 9:15 a 13:15 y de 15:30 a 18:30 · Jueves, de 11:00 a 18:30 · Viernes, de 11:00 a 19:00 · Sábado, con cita previa hasta las 14:00. Lunes, descanso. |
 
 ## 5. Seguridad (importante)
 

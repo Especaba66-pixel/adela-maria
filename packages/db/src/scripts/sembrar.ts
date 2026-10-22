@@ -18,7 +18,7 @@ try {
   });
   console.log(`Centro ${r.centroCreado ? "creado" : "ya existía"}.`);
   console.log(`Administrador ${r.adminCreado ? "creado" : "ya existía"}.`);
-  if (r.horarioCreado) console.log("Horario provisional creado: de martes a viernes, de 9:00 a 14:00.");
+  if (r.horarioCreado) console.log("Horario creado: martes 9:15–13:45, miércoles 9:15–13:15 y 15:30–18:30, jueves 11:00–18:30, viernes 11:00–19:00.");
   console.log(`Tratamientos nuevos: ${r.tratamientosNuevos}. Bonos nuevos: ${r.bonosNuevos}.`);
   console.log(`Productos nuevos: ${r.productosNuevos}. Compras cargadas: ${r.comprasNuevas}. Gastos cargados: ${r.gastosNuevos}.`);
   for (const aviso of r.avisos) console.warn(`Aviso: ${aviso}`);

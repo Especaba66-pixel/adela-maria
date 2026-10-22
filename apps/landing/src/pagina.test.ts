@@ -2,7 +2,7 @@ import { BONOS, CATEGORIAS, PRODUCTOS_VENTA } from "@adela/db/datos";
 import { describe, expect, it } from "vitest";
 import { construirPagina, duracionTexto } from "./pagina";
 
-const contacto = { whatsapp: "600 11 22 33", direccion: "Calle Mayor 1", horario: "De lunes a viernes, de 9:00 a 14:00", instagram: "adela_maria_bellezaholistica" };
+const contacto = { whatsapp: "600 11 22 33", direccion: "Calle Mayor 1", horario: ["Lunes: descanso", "Martes: de 9:15 a 13:45"], instagram: "adela_maria_bellezaholistica" };
 
 describe("landing", () => {
   const html = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto });
@@ -93,7 +93,7 @@ describe("landing", () => {
       `href="https://wa.me/34600112233?text=${encodeURIComponent("Hola, me gustaría pedir cita para «Axilas». ")}"`,
     );
     expect(html).toContain('aria-label="Pedir cita por WhatsApp: Axilas"');
-    expect(html).toContain("De lunes a viernes, de 9:00 a 14:00");
+    expect(html).toContain('<ul class="horario" aria-label="Horario"><li>Lunes: descanso</li><li>Martes: de 9:15 a 13:45</li></ul>');
     expect(html).toContain("Calle Mayor 1");
     // El teléfono, a la vista arriba y en el pie, para llamar con un toque.
     expect(html).toContain('<a class="telefono" href="tel:+34600112233" aria-label="Llamar al 600 11 22 33">');
