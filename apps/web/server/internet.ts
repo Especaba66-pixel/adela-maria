@@ -16,6 +16,7 @@ import { TEXTO_PRIVACIDAD, horaATexto, normalizarTelefono, partesMadrid } from "
 import { and, asc, eq, gt, inArray, isNotNull, isNull, lt, ne } from "drizzle-orm";
 import { cabinas, crearCitas, profesionalesActivos, profesionalesQueHacen } from "./agenda";
 import { db } from "./db";
+import { avisar } from "./notificaciones";
 import { apiWhatsapp, envioAutomatico, procesarEventos } from "./whatsapp";
 
 /**
@@ -72,8 +73,9 @@ export function sincronizar(): Promise<ResultadoSincronizacion> {
       const { reservas } = (await llamar("/api/sync/reservas")) as { reservas: ReservaOnline[] };
       const importadas: string[] = [];
       for (const reserva of reservas) {
-        await importarReserva(reserva);
+        const resultado = await importarReserva(reserva);
         importadas.push(reserva.id);
+        if (resultado !== "repetida") await avisar(avisoDeReserva(reserva, resultado), "reservas.gestionar");
       }
       await llamar("/api/sync", { method: "POST", body: JSON.stringify({ ...(await estadoAgenda()), importadas }) });
       r = { ok: true, cuando: new Date(), importadas: importadas.length };
@@ -173,6 +175,17 @@ export async function importarReserva(r: ReservaOnline): Promise<"cita" | "petic
 }
 
 class HoraOcupada extends Error {}
+
+const DIA = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Madrid" });
+
+/** Aviso al móvil de una reserva hecha en la web: lo que ha pedido, para cuándo y si cabía en la agenda. */
+export function avisoDeReserva(r: ReservaOnline, resultado: "cita" | "peticion") {
+  const cuando = `${DIA.format(new Date(r.inicio))} a las ${horaATexto(partesMadrid(new Date(r.inicio)).minutos)}`;
+  const quien = r.nombre?.trim() || "Una clienta";
+  return resultado === "cita"
+    ? { titulo: "Nueva reserva por internet", texto: `${quien}: ${r.servicioNombre}, ${cuando}. Está en la agenda por confirmar.`, url: "/gestion/agenda" }
+    : { titulo: "Reserva por internet sin hueco", texto: `${quien} pidió ${r.servicioNombre} el ${cuando}, pero esa hora ya no estaba libre. Hay que llamarla.`, url: "/gestion" };
+}
 
 /** Una petición necesita un tratamiento; si el de internet ya no existe, se apunta cualquiera (la nota dice cuál pidió). */
 async function algunTratamiento(tx: Tx) {

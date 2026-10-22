@@ -97,6 +97,28 @@ export const dispositivos = pgTable("dispositivos", {
   revocadoEn: fecha(),
 });
 
+/** Claves del remitente de las notificaciones al móvil (VAPID). Una sola fila; se crean solas la primera vez. */
+export const clavesPush = pgTable("claves_push", {
+  id: integer().primaryKey().default(1),
+  publica: text().notNull(),
+  privada: text().notNull(),
+  creadoEn: creadoEn(),
+}, (t) => [check("claves_push_una_sola", sql`${t.id} = 1`)]);
+
+/** Móviles (u ordenadores) que reciben notificaciones. Si se quita el equipo de confianza, deja de recibirlas. */
+export const suscripcionesPush = pgTable("suscripciones_push", {
+  id: uuid().primaryKey().defaultRandom(),
+  usuarioId: uuid()
+    .notNull()
+    .references(() => usuarios.id),
+  dispositivoId: uuid().references(() => dispositivos.id),
+  endpoint: text().notNull().unique(),
+  p256dh: text().notNull(),
+  auth: text().notNull(),
+  creadaEn: creadoEn(),
+  ultimoEnvio: fecha(),
+});
+
 export const sesiones = pgTable(
   "sesiones",
   {

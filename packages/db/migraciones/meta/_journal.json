@@ -106,6 +106,13 @@
       "when": 1792322002881,
       "tag": "0014_rol_invitada",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792658057117,
+      "tag": "0015_notificaciones_push",
+      "breakpoints": true
     }
   ]
 }

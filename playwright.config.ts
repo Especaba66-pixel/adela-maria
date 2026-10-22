@@ -25,6 +25,8 @@ export const ENTORNO_PRUEBAS = {
   WHATSAPP_TOKEN: "token-de-pruebas",
   WHATSAPP_NUMERO_ID: "123456",
   WHATSAPP_API_URL: `${META.url}/v23.0`,
+  // Los avisos al móvil van al servicio imitado (http en local).
+  PUSH_PERMITIR_LOCAL: "1",
 };
 
 export default defineConfig({

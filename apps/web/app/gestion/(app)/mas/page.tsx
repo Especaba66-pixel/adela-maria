@@ -1,6 +1,7 @@
 import { puede } from "@adela/dominio";
 import { Tarjeta } from "@adela/ui";
 import Link from "next/link";
+import { AvisosMovil } from "@/components/AvisosMovil";
 import { MAS } from "@/components/menu";
 import { requerirSesion } from "@/server/auth";
 
@@ -25,6 +26,7 @@ export default async function Mas() {
           </Link>
         ))}
       </div>
+      <AvisosMovil />
     </div>
   );
 }

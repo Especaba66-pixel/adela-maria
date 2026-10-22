@@ -37,6 +37,23 @@ aparatos).
    - Android (Chrome): menú ⋮ → **Añadir a pantalla de inicio** (o **Instalar app**).
    - iPhone (Safari): botón compartir → **Añadir a pantalla de inicio**.
 
+### 3. Avisos en el móvil (notificaciones)
+
+Para que suene el móvil cuando una clienta escribe por WhatsApp o reserva por internet:
+
+1. Abre la app **desde el icono de la pantalla de inicio** (en iPhone es obligatorio: iOS 16.4 o posterior).
+2. **Más** → abajo, **Avisos en este móvil** → **Activar avisos en este móvil** → **Permitir**.
+3. Llega un aviso de prueba. Al tocar un aviso se abre la ficha de la clienta o la agenda.
+
+Qué avisa: mensajes de clientas que no son una simple confirmación (cambiar la cita, preguntas, números sin ficha)
+y las reservas por internet (también si no había hueco). Las confirmaciones y las bajas no avisan: se resuelven solas.
+Llega a quien tenga permiso para atenderlo (administración y recepción). Se desactiva en el mismo sitio; al quitar
+el móvil en **Equipos** deja de recibirlos.
+
+Los avisos los manda el TPV (tarda como mucho lo que tarde en sincronizar, 1 minuto) a través del servicio de
+notificaciones de Google o Apple, así que llegan aunque el móvil no tenga Tailscale activo en ese momento. Solo
+llevan el nombre de la clienta y el texto, cifrados de punta a punta.
+
 ### Cosas a saber
 
 - **El TPV tiene que estar encendido** y con internet para entrar desde fuera (la app y los datos están en él).

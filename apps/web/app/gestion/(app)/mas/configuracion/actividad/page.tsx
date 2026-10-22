@@ -15,6 +15,8 @@ const ACCIONES: Record<string, string> = {
   "usuario.editar": "Modificó un usuario",
   "dispositivo.registrar": "Registró un equipo de confianza",
   "dispositivo.revocar": "Retiró un equipo de confianza",
+  "avisos.activar": "Activó los avisos en un móvil",
+  "avisos.desactivar": "Desactivó los avisos en un móvil",
   "centro.editar": "Cambió los datos del centro",
   "reserva.solicitar": "Una clienta pidió cita",
   "reserva.confirmar": "Confirmó una petición de cita",

@@ -12,11 +12,13 @@ import {
   sumarDias,
   ventanaAbierta,
   type EventoWhatsapp,
+  formatearTelefono,
 } from "@adela/dominio";
 import { and, desc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
 import { cambiarEstadoCita, citasDelDia } from "./agenda";
 import { db } from "./db";
 import { enviarPlantilla, plantillaMeta } from "./mensajes";
+import { avisar } from "./notificaciones";
 
 /**
  * WhatsApp automático (API oficial de Meta). El TPV envía; los estados y las respuestas llegan a Cloudflare (siempre
@@ -129,7 +131,12 @@ async function recibirMensaje(e: Extract<EventoWhatsapp, { tipo: "mensaje" }>) {
     .values({ clienteId: c?.id ?? null, telefono: e.telefono, direccion: "entrante", texto: e.texto, canal: "whatsapp_api", waId: e.waId, boton: e.boton, responde: e.responde, cuando: e.cuando })
     .onConflictDoNothing()
     .returning();
-  if (!m || !c) return; // repetido, o un número sin ficha (lo verá una persona)
+  if (!m) return; // repetido: ya se trató
+  if (!c) {
+    // Un número sin ficha: lo verá una persona.
+    await avisar({ titulo: "Mensaje de un número sin ficha", texto: `${e.telefono.startsWith("+34") ? formatearTelefono(e.telefono) : e.telefono}: ${e.texto}`, url: "/gestion" }, "clientas.gestionar");
+    return;
+  }
 
   const intencion = entenderRespuesta(e.texto, e.boton);
   const nombre = c.nombre.trim().split(/\s+/)[0] ?? c.nombre;
@@ -139,7 +146,11 @@ async function recibirMensaje(e: Extract<EventoWhatsapp, { tipo: "mensaje" }>) {
 
   if (intencion === "confirmar") {
     const cita = await citaQueResponde(c.id, e.responde);
-    if (!cita) return; // no se sabe qué confirma: lo lee una persona
+    if (!cita) {
+      // No se sabe qué confirma: lo lee una persona.
+      await avisar({ titulo: `Mensaje de ${c.nombre}`, texto: e.texto, url: `/gestion/clientas/${c.id}` }, "clientas.gestionar");
+      return;
+    }
     if (cita.estado === "pendiente") await cambiarEstadoCita(cita.id, "confirmada", null);
     await db().update(citas).set({ confirmadaPorClientaEn: e.cuando }).where(eq(citas.id, cita.id));
     await registrarActividad(db(), { usuarioId: null, accion: "cita.confirmada_por_clienta", entidad: "citas", entidadId: cita.id, despues: { canal: "whatsapp" } });
@@ -155,8 +166,10 @@ async function recibirMensaje(e: Extract<EventoWhatsapp, { tipo: "mensaje" }>) {
     });
     await resuelto();
     await responderTexto(null, c.id, `Hecho, ${nombre}: ya no te enviaremos mensajes automáticos. Si cambias de idea, dínoslo.`);
+  } else {
+    // «Cambiar» y lo demás quedan como aviso para el centro, y llegan al móvil.
+    await avisar({ titulo: `Mensaje de ${c.nombre}`, texto: e.texto, url: `/gestion/clientas/${c.id}` }, "clientas.gestionar");
   }
-  // «Cambiar» y lo demás quedan como aviso para el centro.
 }
 
 /** La cita a la que responde: la del mensaje citado o, si no, la del último aviso de cita que se le envió. */

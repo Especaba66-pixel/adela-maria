@@ -314,3 +314,18 @@ todo y registrar equipos con su correo, pero no cuenta como administración del 
 no puede crear administradoras ni cambiar ni desactivar a la administración. La administración le quita el acceso
 cuando quiera (Usuarios → Editar → Desactivado) y sus sesiones se cierran al momento. La cuenta la crea la
 administración desde la app: así la contraseña no queda escrita en ningún archivo.
+
+## Avisos al móvil (22 de octubre de 2026)
+
+- **Web Push estándar** (la app instalada en la pantalla de inicio), sin app nativa ni servicios de terceros: Android
+  (Chrome) e iPhone (iOS 16.4+, app añadida a la pantalla de inicio).
+- **Sin dependencias nuevas**: el cifrado del contenido (RFC 8291, aes128gcm) y la firma VAPID (RFC 8292, ES256) están
+  en `@adela/dominio/push` con `node:crypto`; la prueba reproduce el vector oficial del RFC 8291.
+- Las claves VAPID se crean solas la primera vez y se guardan en la base (`claves_push`, una fila); no hay que
+  configurar nada en el `.env`. Van en las copias de seguridad, así un TPV restaurado sigue avisando.
+- Cada móvil se guarda en `suscripciones_push` con su usuaria y su equipo. Se avisa solo a quien tiene el permiso del
+  asunto (`clientas.gestionar` para mensajes, `reservas.gestionar` para reservas) y está activa con el equipo sin
+  revocar. Si el servicio responde 404/410, la suscripción se borra.
+- El aviso **nunca rompe** la sincronización: si falla, el asunto sigue en el Inicio como siempre.
+- Solo se aceptan direcciones `https` de suscripción (en pruebas, `PUSH_PERMITIR_LOCAL=1` permite el servicio
+  imitado en `127.0.0.1`), y el enlace del aviso solo puede llevar dentro de `/gestion`.

@@ -1,6 +1,7 @@
-import { createHmac } from "node:crypto";
+import { execSync } from "node:child_process";
+import { createDecipheriv, createECDH, createHmac, hkdfSync, randomBytes } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { META, RESERVAS } from "../playwright.config";
+import { ENTORNO_PRUEBAS, META, RESERVAS } from "../playwright.config";
 import { diaMadrid, registrarTpv } from "./ayudas";
 
 /**
@@ -194,4 +195,50 @@ test("envío a un grupo: solo a quien acepta promociones", async () => {
   await expect(pagina.getByRole("region", { name: "Envíos anteriores" })).toContainText("Felicitación de cumpleaños · Cumplen años este mes");
   await pagina.goto("/gestion/mas/whatsapp");
   await expect(pagina.getByTestId("envios-mes")).toContainText(/\d+ de utilidad, \d+ de marketing/);
+});
+
+/** Un «móvil» de pruebas: sus claves de avisos y cómo abriría lo que le llega (RFC 8291). */
+const movil = createECDH("prime256v1");
+movil.generateKeys();
+const secretoMovil = randomBytes(16);
+const b64u = (b: Buffer) => b.toString("base64url");
+function abrirAviso(cuerpoB64: string): { titulo: string; texto: string; url: string } {
+  const c = Buffer.from(cuerpoB64, "base64");
+  const sal = c.subarray(0, 16);
+  const deServidor = c.subarray(21, 21 + c[20]!);
+  const cifrado = c.subarray(21 + c[20]!);
+  const info = Buffer.concat([Buffer.from("WebPush: info\0"), movil.getPublicKey(), deServidor]);
+  const ikm = Buffer.from(hkdfSync("sha256", movil.computeSecret(deServidor), secretoMovil, info, 32));
+  const clave = Buffer.from(hkdfSync("sha256", ikm, sal, Buffer.from("Content-Encoding: aes128gcm\0"), 16));
+  const nonce = Buffer.from(hkdfSync("sha256", ikm, sal, Buffer.from("Content-Encoding: nonce\0"), 12));
+  const d = createDecipheriv("aes-128-gcm", clave, nonce);
+  d.setAuthTag(cifrado.subarray(-16));
+  const claro = Buffer.concat([d.update(cifrado.subarray(0, -16)), d.final()]);
+  return JSON.parse(claro.subarray(0, claro.lastIndexOf(2)).toString("utf8"));
+}
+type AvisoRecibido = { url: string; cabeceras: Record<string, string>; cuerpo: string };
+const avisosRecibidos = async (): Promise<AvisoRecibido[]> => (await fetch(`${META.url}/__push`)).json();
+const sql = (q: string) => execSync(`psql "${ENTORNO_PRUEBAS.DATABASE_URL}" -qtA -c "${q}"`).toString().trim();
+
+test("los mensajes de clientas llegan como aviso al móvil de Adela", async () => {
+  await pagina.goto("/gestion/mas");
+  await expect(pagina.getByRole("region", { name: "Avisos en este móvil" })).toBeVisible();
+  // El navegador de pruebas no tiene servicio de avisos: se da de alta el móvil como lo haría el botón.
+  const admin = sql("select id from usuarios where rol = 'administrador' order by creado_en limit 1");
+  sql(
+    `insert into suscripciones_push (usuario_id, endpoint, p256dh, auth) values ` +
+      `('${admin}', '${META.url}/push/adela', '${b64u(movil.getPublicKey())}', '${b64u(secretoMovil)}'), ` +
+      `('${admin}', '${META.url}/push/caducada', '${b64u(movil.getPublicKey())}', '${b64u(secretoMovil)}')`,
+  );
+  const antes = (await avisosRecibidos()).length;
+  await escribe("34611000111", { type: "text", text: { body: "Hola, ¿tenéis hueco el sábado?" } });
+  await sincronizar();
+  const nuevos = (await avisosRecibidos()).slice(antes);
+  expect(nuevos).toHaveLength(1);
+  expect(nuevos[0]!.url).toBe("/push/adela");
+  expect(nuevos[0]!.cabeceras["content-encoding"]).toBe("aes128gcm");
+  expect(nuevos[0]!.cabeceras.authorization).toMatch(/^vapid t=[\w-]+\.[\w-]+\.[\w-]+, k=[\w-]{87}$/);
+  expect(abrirAviso(nuevos[0]!.cuerpo)).toEqual({ titulo: "Mensaje de un número sin ficha", texto: "611 00 01 11: Hola, ¿tenéis hueco el sábado?", url: "/gestion" });
+  // La suscripción que el servicio ya no acepta (410) se borra sola.
+  expect(sql(`select count(*) from suscripciones_push where endpoint like '%caducada'`)).toBe("0");
 });
