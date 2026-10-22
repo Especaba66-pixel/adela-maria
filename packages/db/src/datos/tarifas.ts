@@ -106,7 +106,7 @@ export const BONOS: TarifaBono[] = [
   { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales" },
   { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales" },
   {
-    // Precio tal como viene en la hoja de Adela (22 de octubre de 2026): 40 € las 7 sesiones (la suelta, 10 €).
+    // 40 € las 7 sesiones, aunque la suelta vale 10 €: confirmado por Espe el 22 de octubre de 2026.
     nombre: "Bono presoterapia 7 sesiones",
     sesiones: 7,
     precioCentimos: 4_000,
