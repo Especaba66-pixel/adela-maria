@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPRAS_INICIALES, GASTOS_INICIALES, GRUPO_DE, MARGEN_VENTA, PRODUCTOS_VENTA, totalGastoInicial } from "./productos";
+import { COMPRAS_INICIALES, GASTOS_INICIALES, GRUPO_DE, PRECIO_ADELA, PRODUCTOS_VENTA, totalGastoInicial } from "./productos";
 
 const arganour = COMPRAS_INICIALES.find((c) => c.numeroFactura === "INV-ES-21420")!;
 
@@ -39,7 +39,7 @@ describe("compra de Área Estética (SF 26000034)", () => {
 
   it("los regalos abaratan el coste: crema hidratante total, 3 por 49,60 €", () => {
     const crema = PRODUCTOS_VENTA.find((p) => p.nombre === "Crema hidratante total 50 ml")!;
-    expect(crema).toMatchObject({ costeCentimos: 1_653, precioCentimos: 2_610, referencia: "MA030" });
+    expect(crema).toMatchObject({ costeCentimos: 1_653, precioCentimos: 4_990, referencia: "MA030" });
   });
 });
 
@@ -50,18 +50,17 @@ describe("productos de venta", () => {
     for (const p of PRODUCTOS_VENTA) expect(p.ivaCentesimas).toBe(2_100);
   });
 
-  it("el margen es del 30 % sobre el coste real como mínimo", () => {
-    expect(MARGEN_VENTA).toBe(3_000);
+  it("todos llevan el precio de Adela, y ninguno se vende por debajo de lo que cuesta", () => {
+    expect(Object.keys(PRECIO_ADELA).sort()).toEqual(PRODUCTOS_VENTA.map((p) => p.nombre).sort());
     for (const p of PRODUCTOS_VENTA) {
-      const sinIva = p.precioCentimos / 1.21;
-      expect(sinIva / p.costeCentimos, p.nombre).toBeGreaterThanOrEqual(1.3);
-      expect(sinIva / p.costeCentimos, p.nombre).toBeLessThan(1.34);
+      expect(p.precioCentimos, p.nombre).toBe(PRECIO_ADELA[p.nombre]);
+      expect(p.precioCentimos / 1.21, p.nombre).toBeGreaterThan(p.costeCentimos * 1.3);
     }
   });
 
   it("el coste real ya descuenta el 30 % del pedido (ejemplo: D-Glow, 3 unidades a 11,25, 11,20 y 12,34 €)", () => {
     const dglow = PRODUCTOS_VENTA.find((p) => p.nombre.startsWith("D-Glow"))!;
     expect(dglow.costeCentimos).toBe(812);
-    expect(dglow.precioCentimos).toBe(1_280);
+    expect(dglow.precioCentimos).toBe(1_600);
   });
 });

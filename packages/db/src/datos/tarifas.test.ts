@@ -9,6 +9,17 @@ describe("tarifas del centro", () => {
     expect(categoria("Depilación").tratamientos).toHaveLength(11);
   });
 
+  it("todo tiene precio y duración salvo las uñas (por decidir)", () => {
+    const sinPrecio = CATEGORIAS.flatMap((c) => c.tratamientos).filter((t) => t.precioCentimos === undefined || t.duracionMinutos === undefined);
+    expect(sinPrecio.map((t) => t.nombre)).toEqual(["Uñas"]);
+  });
+
+  it("el bono de presoterapia solo cubre la presoterapia", () => {
+    const b = BONOS.find((x) => x.nombre === "Bono presoterapia 7 sesiones")!;
+    const cubiertos = categoria(b.categoria).tratamientos.filter((t) => !b.excepto?.includes(t.nombre)).map((t) => t.nombre);
+    expect(cubiertos).toEqual(["Presoterapia (1 sesión)"]);
+  });
+
   it("las duraciones van en tramos de 5 minutos y los precios en céntimos enteros", () => {
     for (const c of CATEGORIAS) {
       for (const t of c.tratamientos) {

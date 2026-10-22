@@ -32,8 +32,8 @@ test("la administradora registra este equipo como TPV y entra", async () => {
   await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(/^(Buenos días|Buenas tardes|Buenas noches), Adela$/);
   await expect(alerta(pagina).filter({ hasText: "copia de seguridad" })).toBeVisible();
   await expect(pagina.getByTestId("tarjeta-Reservas por confirmar")).toHaveText("0");
-  // Microblading, maquillaje y uñas aún no tienen precio ni duración: el inicio lo recuerda.
-  await expect(pagina.getByText(/Falta el precio o la duración/)).toContainText("Microblading");
+  // Las uñas aún no tienen precio ni duración: el inicio lo recuerda.
+  await expect(pagina.getByText(/Falta el precio o la duración/)).toHaveText("Falta el precio o la duración de: Uñas.");
 });
 
 test("el menú tiene las 7 entradas fijas, con botones de al menos 64 px de alto", async () => {

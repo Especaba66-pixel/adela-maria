@@ -114,7 +114,7 @@ export function construirPagina(d: DatosLanding): string {
             <div class="bono-sesiones">${b.sesiones}</div>
             <div>
               <div class="nombre">${esc(b.nombre)}</div>
-              <div class="detalle">Para cualquier tratamiento facial · adaptados a tu piel</div>
+              <div class="detalle">${esc(b.descripcion ?? "Para cualquier tratamiento facial · adaptados a tu piel")}</div>
             </div>
             <div class="bono-precio">${precioTexto(b.precioCentimos)}</div>
           </li>`,
@@ -168,10 +168,10 @@ export function construirPagina(d: DatosLanding): string {
       d.bonos.length
         ? opcion(
             "bonos",
-            "Bonos faciales",
+            "Bonos",
             desde(d.bonos.map((b) => b.precioCentimos)),
             `
-        <p class="pregunta">Adaptados a las necesidades de tu piel. <strong>No caducan.</strong></p>
+        <p class="pregunta">Los bonos faciales se adaptan a las necesidades de tu piel. <strong>No caducan.</strong></p>
         <ul class="lista">${bonos}
         </ul>`,
           )

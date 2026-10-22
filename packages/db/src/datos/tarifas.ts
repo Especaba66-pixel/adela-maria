@@ -1,6 +1,6 @@
 /**
  * Tarifas del centro, copiadas de las hojas de tarifas (fotos de «Faciales» y «Depilación» enviadas el 8 de octubre
- * de 2026). Para cambiarlas: editar aquí y ejecutar `pnpm db:seed`, que añade lo nuevo y no duplica lo que ya existe.
+ * de 2026; pestañas y cejas, masajes, spa, corporal, maquillaje y microblading, el 22 de octubre de 2026). Para cambiarlas: editar aquí y ejecutar `pnpm db:seed`, que añade lo nuevo y no duplica lo que ya existe.
  */
 
 export interface TarifaTratamiento {
@@ -27,6 +27,8 @@ export interface TarifaBono {
   categoria: string;
   /** Tratamientos de esa categoría que el bono NO cubre. */
   excepto?: string[];
+  /** Qué cubre, como se explica en la web. Sin indicar: cualquier facial. */
+  descripcion?: string;
 }
 
 export const CATEGORIAS: TarifaCategoria[] = [
@@ -61,12 +63,36 @@ export const CATEGORIAS: TarifaCategoria[] = [
     ],
   },
   {
+    nombre: "Pestañas y cejas",
+    tratamientos: [
+      { nombre: "Lifting de pestañas", duracionMinutos: 45, precioCentimos: 2_900 },
+      { nombre: "Laminado de cejas", duracionMinutos: 45, precioCentimos: 2_900 },
+    ],
+  },
+  {
+    nombre: "Masajes y spa",
+    tratamientos: [
+      { nombre: "Masaje cuello y cervicales (suelta tensión)", duracionMinutos: 20, precioCentimos: 1_800 },
+      { nombre: "Masaje craneal y facial", duracionMinutos: 20, precioCentimos: 1_800 },
+      { nombre: "Tratamiento spa para pies", duracionMinutos: 30, precioCentimos: 2_000 },
+      { nombre: "Tratamiento spa para manos", duracionMinutos: 30, precioCentimos: 2_000 },
+    ],
+  },
+  {
+    nombre: "Corporal",
+    tratamientos: [
+      { nombre: "Peeling + hidratación corporal", duracionMinutos: 45, precioCentimos: 3_500 },
+      { nombre: "Presoterapia (1 sesión)", duracionMinutos: 35, precioCentimos: 1_000 },
+      { nombre: "Ritual piernas ligeras + glow facial express", duracionMinutos: 35, precioCentimos: 3_000 },
+    ],
+  },
+  {
     // Van solos (dato de Espe, 13 de octubre de 2026): no admiten otra cita a la vez.
-    // PENDIENTE: precio y duración de cada uno; hasta tenerlos, no se reservan por internet.
+    // PENDIENTE: precio y duración de las uñas; hasta tenerlos, no se reservan por internet.
     nombre: "Microblading, maquillaje y uñas",
     tratamientos: [
-      { nombre: "Microblading", exclusivo: true },
-      { nombre: "Maquillaje", exclusivo: true },
+      { nombre: "Microblading", duracionMinutos: 210, precioCentimos: 25_000, exclusivo: true },
+      { nombre: "Maquillaje", duracionMinutos: 60, precioCentimos: 3_000, exclusivo: true },
       { nombre: "Uñas", exclusivo: true },
     ],
   },
@@ -79,4 +105,13 @@ export const CATEGORIAS: TarifaCategoria[] = [
 export const BONOS: TarifaBono[] = [
   { nombre: "Bono facial 3 sesiones", sesiones: 3, precioCentimos: 12_000, categoria: "Faciales" },
   { nombre: "Bono facial 6 sesiones", sesiones: 6, precioCentimos: 24_000, categoria: "Faciales" },
+  {
+    // Precio tal como viene en la hoja de Adela (22 de octubre de 2026): 40 € las 7 sesiones (la suelta, 10 €).
+    nombre: "Bono presoterapia 7 sesiones",
+    sesiones: 7,
+    precioCentimos: 4_000,
+    categoria: "Corporal",
+    excepto: ["Peeling + hidratación corporal", "Ritual piernas ligeras + glow facial express"],
+    descripcion: "Sesiones de presoterapia de 35 minutos",
+  },
 ];

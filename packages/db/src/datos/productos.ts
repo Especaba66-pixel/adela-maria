@@ -4,8 +4,8 @@
  * - Área Estética, documento SF 26000034 del 29 de junio de 2026: lo marcado en rojo es para vender; el resto es
  *   para cabina y va solo a gastos (`GASTOS_INICIALES`), sin control de stock.
  *
- * El precio de venta no se escribe a mano: sale del coste real (precio de la factura con el 30 % de descuento del
- * pedido repartido) más el margen del centro y el IVA. Si cambia el margen, se cambia `MARGEN_VENTA` y nada más.
+ * El precio de venta es el que pone Adela (`PRECIO_ADELA`). Un producto sin precio suyo sale del coste real (precio
+ * de la factura con el descuento del pedido repartido) más el margen del centro (`MARGEN_VENTA`) y el IVA.
  * Para añadir productos o compras: editar aquí y ejecutar `pnpm db:seed`, que añade lo nuevo sin duplicar.
  */
 import { costeConDescuento, precioConMargen } from "@adela/dominio/stock";
@@ -19,6 +19,48 @@ export const IVA_PRODUCTOS = 2_100;
  * de «reponer» desde el primer día. El mínimo de cada producto se pone en la app cuando el centro decida reponerlo.
  */
 export const STOCK_MINIMO_INICIAL = 0;
+
+/**
+ * Precio de venta al público de cada producto, IVA incluido, puesto por Adela (escrito a mano en las facturas y en su
+ * lista; fotos enviadas por Espe el 22 de octubre de 2026). Cuando en la factura apuntó dos precios para el mismo
+ * producto (una línea por unidad), va el más alto: en la tienda cada producto tiene un solo precio.
+ */
+export const PRECIO_ADELA: Record<string, number> = {
+  // Arganour
+  "Aceite de masaje relajante": 750,
+  "Balance - Sérum con Revinage (efecto retinol)": 860, // apuntó 8,60 y 7,75 €
+  "Femme - Gel íntimo": 1_390,
+  "Agua micelar": 810,
+  "Crema antiedad de día": 1_020,
+  "Crema antiedad de noche": 1_020,
+  "AHA - Peeling facial con caviar de lima australiano": 975, // 9,75 y 9,70 €
+  "D-Glow - Crema facial iluminadora": 1_600, // 14,65, 14,60 y 16,00 €
+  "Porcelain - Sérum antimanchas": 1_660,
+  "Elixir - Contorno de ojos": 1_270, // 12,70, 12,65 y 12,60 €
+  "Purity - Sérum con vitamina C": 975, // 9,75 y 9,70 €
+  "Gel limpiador facial": 680,
+  "Aceite limpiador facial": 875,
+  "Velvet - Sérum minimizador de poros": 1_460,
+  "Aceite esencial de árbol de té 100 % puro": 640, // 5,85 y 6,40 €
+  "Equilibrium - Crema antiacné": 1_460,
+  "BHA - Peeling facial con ácido salicílico": 970,
+  "Tónico facial": 640,
+  "Aceite de semillas de higo chumbo 100 % puro": 1_950, // 19,50 y 17,70 €
+  "Aceite de argán 100 % puro": 1_095,
+  "Aceite esencial de lavanda 100 % puro": 660,
+  "Aceite esencial de limón 100 % puro": 475,
+  "Aceite de ricino 100 % puro": 540,
+  "Boticream - Crema reparadora": 1_070,
+  "Aceite de almendras dulces 100 % puro": 750,
+  // Área Estética
+  "Extracto de olivo 15 ml": 2_670,
+  "Sérum hidratante de jojoba 30 ml": 5_300,
+  "Crema hidratante total 50 ml": 4_990,
+  "Crema antiarrugas de aguacate 100 ml": 6_690,
+  "Crema regeneradora antiarrugas 100 ml": 8_100,
+  "Extracto de aloe vera 15 ml": 2_790,
+  "Extracto de soja orgánica 15 ml": 2_790,
+};
 
 export const GRUPOS_PRODUCTO = ["Sérums y extractos", "Cremas y contorno de ojos", "Limpieza y exfoliación", "Aceites", "Cuerpo"] as const;
 export type GrupoProducto = (typeof GRUPOS_PRODUCTO)[number];
@@ -275,7 +317,7 @@ export const PRODUCTOS_VENTA: ProductoVenta[] = (() => {
         grupo,
         proveedor: compra.proveedor,
         costeCentimos,
-        precioCentimos: precioConMargen(costeCentimos, MARGEN_VENTA, IVA_PRODUCTOS),
+        precioCentimos: PRECIO_ADELA[nombre] ?? precioConMargen(costeCentimos, MARGEN_VENTA, IVA_PRODUCTOS),
         ivaCentesimas: IVA_PRODUCTOS,
       });
     }

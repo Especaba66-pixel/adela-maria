@@ -107,7 +107,7 @@ describe("datos iniciales", () => {
     expect(lista).toHaveLength(32);
     expect(lista.reduce((s, p) => s + p.stock, 0)).toBe(43 + 23);
     const dglow = lista.find((p) => p.nombre.startsWith("D-Glow"))!;
-    expect(dglow).toMatchObject({ uso: "venta", stock: 3, precioCentimos: 1280, ivaCentesimas: 2100, costeCentimos: 812, proveedor: "Arganour S.L.U.", stockMinimo: 0, bajo: false });
+    expect(dglow).toMatchObject({ uso: "venta", stock: 3, precioCentimos: 1600, ivaCentesimas: 2100, costeCentimos: 812, proveedor: "Arganour S.L.U.", stockMinimo: 0, bajo: false });
     expect(lista.find((p) => p.nombre === "Extracto de olivo 15 ml")).toMatchObject({ stock: 4, referencia: "MA040", costeCentimos: 1005, proveedor: "Área Estética S.L." });
 
     const [arganour] = await db.select().from(gastos).where(eq(gastos.numeroFactura, "INV-ES-21420"));

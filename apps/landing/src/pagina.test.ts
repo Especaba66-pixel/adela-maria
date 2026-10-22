@@ -24,7 +24,7 @@ describe("landing", () => {
     expect(conProductos).toContain('id="productos"');
     for (const p of PRODUCTOS_VENTA) expect(conProductos).toContain(p.nombre);
     expect(conProductos).toContain('<h3 id="prod-serums-y-extractos">Sérums y extractos</h3>');
-    expect(conProductos).toMatch(/D-Glow - Crema facial iluminadora<\/div>\s*<div class="detalle"><strong>12,80[\s\u00a0]€<\/strong>/);
+    expect(conProductos).toMatch(/D-Glow - Crema facial iluminadora<\/div>\s*<div class="detalle"><strong>16[\s\u00a0]€<\/strong>/);
     expect(conProductos).toContain('aria-label="Reservar por WhatsApp: Agua micelar"');
     // Sin productos, no hay sección vacía.
     expect(html).not.toContain('id="productos"');
@@ -69,7 +69,9 @@ describe("landing", () => {
     expect(main.indexOf('id="tratamientos"')).toBeLessThan(main.indexOf('id="reservar"'));
     // Cada opción se abre para ver sus tratamientos, con el precio desde el que empieza.
     expect(main).toMatch(/<details class="opcion" id="cat-depilacion">\s*<summary><span class="opcion-nombre">Depilación<\/span><span class="opcion-resumen">desde 3[\s\u00a0]€<\/span>/);
-    expect(main).toContain('<span class="opcion-nombre">Microblading, maquillaje y uñas</span><span class="opcion-resumen">precio a consultar</span>');
+    expect(main).toMatch(/<span class="opcion-nombre">Microblading, maquillaje y uñas<\/span><span class="opcion-resumen">desde 30[\s\u00a0]€<\/span>/);
+    // Lo que aún no tiene precio, a consultar.
+    expect(main).toMatch(/<div class="nombre">Uñas<\/div>\s*<div class="detalle"><strong>Consultar<\/strong>/);
     expect(main).toContain('<details class="opcion" id="bonos">');
     expect(main).toContain('<details class="opcion" id="regalo">');
     expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');
