@@ -164,7 +164,7 @@ async function reservar(req: Request, env: Env): Promise<Response> {
     return json({ error: "Has hecho muchas reservas seguidas. Si necesitas más, escríbenos por WhatsApp." }, 429);
   }
   if ((porTelefono!.results[0] as { n: number }).n >= MAX_PENDIENTES_POR_TELEFONO) {
-    return json({ error: "Ya tienes varias citas por confirmar. Te contestaremos enseguida; si es urgente, llámanos." }, 429);
+    return json({ error: "Ya tienes varias citas por confirmar. Te contestaremos enseguida; si es urgente, escríbenos por WhatsApp." }, 429);
   }
 
   const { inicio, fin } = intervalo(fecha, minutos, s.duracion);

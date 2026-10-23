@@ -209,6 +209,8 @@ test("la administración pone el teléfono y la dirección, y la web de clientas
   await pagina.goto("/");
   const pie = pagina.getByRole("contentinfo");
   await expect(pie).toContainText("Calle Mayor 1, Alicante");
-  await expect(pie.getByRole("link", { name: "Llamar al 600 99 88 77" })).toHaveAttribute("href", "tel:+34600998877");
+  // Todo por WhatsApp: no hay enlace para llamar.
+  await expect(pie.locator('a[href^="tel:"]')).toHaveCount(0);
+  await expect(pie).toContainText("600 99 88 77 (solo mensajes)");
   await expect(pie.getByRole("link", { name: "Escríbenos por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/34600998877\?/);
 });

@@ -102,10 +102,13 @@ describe("landing", () => {
     expect(html).toContain('aria-label="Pedir cita por WhatsApp: Axilas"');
     expect(html).toContain('<ul class="horario" aria-label="Horario"><li>Lunes: descanso</li><li>Martes: de 9:15 a 13:45</li></ul>');
     expect(html).toContain("Calle Mayor 1");
-    // El teléfono, a la vista arriba y en el pie, para llamar con un toque.
-    expect(html).toContain('<a class="telefono" href="tel:+34600112233" aria-label="Llamar al 600 11 22 33">');
-    expect(html).toContain('Teléfono y WhatsApp: <a href="tel:+34600112233">600 11 22 33</a>');
-    expect(html).toContain('o llámanos al <a href="tel:+34600112233">600 11 22 33</a>');
+    // Todo por WhatsApp: el número se ve arriba, bajo el lema y en el pie, pero nunca para llamar.
+    const dudas = `https://wa.me/34600112233?text=${encodeURIComponent("Hola, tengo una duda: ")}`;
+    expect(html).not.toContain("tel:");
+    expect(html).not.toMatch(/llám|Llamar/);
+    expect(html).toContain(`<a class="telefono" href="${dudas}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp al 600 11 22 33">`);
+    expect(html).toContain(`¿Dudas? Escríbenos por WhatsApp al <a href="${dudas}"`);
+    expect(html).toContain(`Citas y dudas, por WhatsApp: <a href="${dudas}" target="_blank" rel="noopener">600 11 22 33</a> (solo mensajes)`);
   });
 
   it("sin WhatsApp no muestra botones rotos", () => {

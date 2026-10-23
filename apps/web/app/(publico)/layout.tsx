@@ -31,20 +31,17 @@ export default async function LayoutPublico({ children }: { children: ReactNode 
           <div className="font-titulo text-xl text-dorado-oscuro">Adela María · Belleza holística</div>
           {c?.direccion && <div>{c.direccion}</div>}
           {c?.telefono && (
+            // Todo se atiende por WhatsApp: no se ofrece llamar.
             <div className="flex flex-wrap gap-x-6 gap-y-1">
-              <a href={`tel:${c.telefono}`} className="inline-flex min-h-toque items-center underline">
-                Llamar al {formatearTelefono(c.telefono)}
+              <a
+                href={enlaceWhatsapp(c.telefono, "Hola, tengo una duda: ")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-toque items-center underline"
+              >
+                Escríbenos por WhatsApp
               </a>
-              {/^\+34[67]/.test(c.telefono) && (
-                <a
-                  href={enlaceWhatsapp(c.telefono, "Hola, quería información sobre vuestros tratamientos.")}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-toque items-center underline"
-                >
-                  Escríbenos por WhatsApp
-                </a>
-              )}
+              <span className="inline-flex min-h-toque items-center">{formatearTelefono(c.telefono)} (solo mensajes)</span>
             </div>
           )}
         </div>

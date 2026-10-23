@@ -57,7 +57,7 @@ export default async function Reservar({ searchParams }: { searchParams: Promise
         <p className="text-lg text-tinta-suave">Sin registrarte ni crear claves. Elige y te confirmamos por WhatsApp.</p>
       </div>
 
-      {lista.length === 0 && <p className="text-tinta-suave">Muy pronto podrás pedir cita desde aquí. Mientras tanto, llámanos.</p>}
+      {lista.length === 0 && <p className="text-tinta-suave">Muy pronto podrás pedir cita desde aquí. Mientras tanto, escríbenos por WhatsApp.</p>}
 
       {lista.length > 0 && (
         <Paso n={1} titulo="¿Qué te apetece?">

@@ -56,6 +56,9 @@ export function construirPagina(d: DatosLanding): string {
         )
       : null;
 
+  /** Todo se atiende por WhatsApp (no se reciben llamadas): dudas, citas y tarjetas regalo. */
+  const enlaceDudas = telefono ? esc(enlaceWhatsapp(telefono, "Hola, tengo una duda: ")) : "";
+
   const api = d.reservasApi && /^https?:\/\/[^\s"'<>]+$/.test(d.reservasApi) ? d.reservasApi : null;
   const botonCita = (tratamiento: string, reservable = false) => {
     if (api && reservable) {
@@ -231,7 +234,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <img src="logotipo.png" alt="Adela María · Belleza holística" width="155" height="48">
     </a>
     <div class="cabecera-acciones">
-    ${telefono ? `<a class="telefono" href="tel:${telefono}" aria-label="Llamar al ${formatearTelefono(telefono)}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span class="telefono-numero">${formatearTelefono(telefono)}</span></a>` : ""}
+    ${telefono ? `<a class="telefono" href="${enlaceDudas}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp al ${formatearTelefono(telefono)}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.6a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg><span class="telefono-numero">${formatearTelefono(telefono)}</span></a>` : ""}
     ${
       api
         ? `<a class="boton boton-principal boton-pequeno" href="#reservar">Reservar</a>`
@@ -251,7 +254,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <h1>Cuidamos de ti</h1>
       <p class="entrada">Adela María, experta en el cuidado de tu imagen</p>
       ${api ? `<a class="boton boton-claro" href="#reservar">Reservar cita</a>` : ""}
-      ${telefono ? `<p class="portada-telefono">o llámanos al <a href="tel:${telefono}">${formatearTelefono(telefono)}</a></p>` : ""}
+      ${telefono ? `<p class="portada-telefono">¿Dudas? Escríbenos por WhatsApp al <a href="${enlaceDudas}" target="_blank" rel="noopener">${formatearTelefono(telefono)}</a></p>` : ""}
     </div>
   </section>
 
@@ -328,7 +331,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
     <ul class="horario" aria-label="Horario">${d.contacto.horario.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
     ${d.contacto.direccion ? `<p>${esc(d.contacto.direccion)}</p>` : ""}
     ${instagram ? `<p><a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Síguenos en Instagram: @${instagram}</a></p>` : ""}
-    ${telefono ? `<p>Teléfono y WhatsApp: <a href="tel:${telefono}">${formatearTelefono(telefono)}</a> · <a href="${enlaceCita()}" target="_blank" rel="noopener">Escribir por WhatsApp</a></p>` : ""}
+    ${telefono ? `<p>Citas y dudas, por WhatsApp: <a href="${enlaceDudas}" target="_blank" rel="noopener">${formatearTelefono(telefono)}</a> (solo mensajes)</p>` : ""}
     <p class="legal">${
       api
         ? "Si reservas aquí, guardamos tu nombre y tu teléfono solo para gestionar tu cita y contactarte sobre ella; puedes pedir que los borremos cuando quieras. La página no usa cookies ni rastreo."
