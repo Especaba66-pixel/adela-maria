@@ -1,64 +1,175 @@
-# WhatsApp automático: alta en Meta paso a paso
+# WhatsApp automático de Adela María: guía completa
 
-Hasta que esto esté hecho, la app funciona igual que en la fase 5: el botón verde abre WhatsApp con el mensaje escrito.
-Cuando esté hecho, los mensajes aprobados se envían desde la app, los recordatorios salen solos y las respuestas de
-las clientas llegan a la app.
+Con esto activado, la app del TPV:
 
-## Antes de empezar: el número
+- manda sola el **recordatorio** el día antes de cada cita, con botones «Confirmar» y «Cambiar cita»;
+- si la clienta pulsa **Confirmar**, la cita queda confirmada en la agenda sin que Adela haga nada;
+- manda la **confirmación** de las reservas de la web, el **«¿qué tal?»** después del tratamiento, el aviso de **bono
+  por acabar**, el **«te echamos de menos»** y la **felicitación de cumpleaños**;
+- recoge las **respuestas** de las clientas en su ficha y avisa en el Inicio de las que hay que leer;
+- si una clienta responde **BAJA**, deja de escribirle.
 
-Un número dado de alta en la API **deja de funcionar en la app de WhatsApp del móvil** (salvo la modalidad
-«coexistencia» de WhatsApp Business, que Meta no ofrece en todos los casos). Lo más sencillo es usar **un número aparte**
-(una línea móvil barata o un fijo que reciba SMS o llamadas) solo para los envíos automáticos. Las clientas pueden
-responder a ese número y su respuesta sale en la app.
+Mientras no esté activado, todo sigue funcionando con el botón verde, que abre WhatsApp con el mensaje escrito.
 
-## 1. Cuenta de empresa en Meta
+## Cómo lo vamos a hacer
 
-1. Entra en <https://business.facebook.com> con tu Facebook y crea la cuenta de empresa «Adela María · Belleza
-   holística» (nombre, dirección y web del centro).
-2. En <https://developers.facebook.com> → **Mis apps** → **Crear app** → tipo **Empresa** → añade el producto
-   **WhatsApp**. Elige la cuenta de empresa del paso 1.
-3. En **WhatsApp → Configuración de la API** → **Añadir número de teléfono**: escribe el número del centro para los
-   envíos y verifícalo con el código que llega por SMS o llamada.
-4. Apunta el **Identificador del número de teléfono** (Phone number ID, una tira de cifras). Es `WHATSAPP_NUMERO_ID`.
-5. Añade una **forma de pago** en la cuenta de WhatsApp (Meta cobra cada mensaje de utilidad o marketing).
+Espe y Adela no pueden estar juntas, así que se hace en tres tandas:
 
-## 2. Token permanente
+| Tanda | Quién | Desde dónde | Cuándo |
+| --- | --- | --- | --- |
+| **A. Preparar Meta** | Espe sola | iPad, Mac u ordenador | Ya (unos 40 minutos) |
+| **B. Conectar el TPV** | Adela 5 minutos, con Espe al teléfono | El TPV del centro | Cuando llegue el TPV |
+| **C. El número y el encendido** | Espe, con Adela al teléfono 10 minutos | El Mac de Espe, manejando el TPV | Después de B |
 
-1. En **Configuración del negocio → Usuarios del sistema** → **Añadir** → nombre «adela-tpv», rol **Administrador**.
-2. **Asignar activos**: la app (control total) y la cuenta de WhatsApp (control total).
-3. **Generar token** → elige la app → permisos `whatsapp_business_messaging` y `whatsapp_business_management` →
-   caducidad **Nunca**. Copia el token: es `WHATSAPP_TOKEN`. **No lo pegues en el chat ni en ningún mensaje**: solo en
-   el archivo `.env` del TPV.
+Lo que hace falta tener a mano:
 
-## 3. Avisos de Meta (webhook)
+- El **Facebook de Adela** (usuario y contraseña).
+- Una **tarjeta** para la forma de pago de Meta (cobra unos céntimos por recordatorio).
+- Acceso al **GitHub** del proyecto (el tuyo, Especaba66-pixel).
+- Para la tanda C: el **TPV encendido** y **Adela con el móvil del centro** (624 74 57 34) al teléfono.
 
-Meta avisa de si un mensaje llegó, se leyó o falló, y de lo que contestan las clientas. Esos avisos llegan al servicio
-de Cloudflare de las reservas, que está siempre encendido.
+> **Las claves de Meta (clave secreta de la app y token) no se pegan nunca en un chat, un correo ni un WhatsApp.** La
+> clave secreta va solo a GitHub (paso A5) y el token solo al TPV (paso C3).
 
-1. En la app de Meta → **Configuración → Básica** → copia la **Clave secreta de la app**.
-2. Inventa un **token de verificación** (una palabra larga cualquiera, por ejemplo `adela-whatsapp-2026-xyz`).
-3. En GitHub → el repositorio → **Settings → Secrets and variables → Actions → New repository secret**, crea:
-   - `WHATSAPP_SECRETO_APP` = la clave secreta de la app.
-   - `WHATSAPP_TOKEN_VERIFICACION` = el token del paso 2.
-4. En GitHub → **Actions** → «Servicio de reservas» → **Run workflow** (para publicarlo con esos secretos).
-5. En Meta → **WhatsApp → Configuración → Webhook** → **Editar**:
-   - URL: `https://adela-reservas.especaba66.workers.dev/api/whatsapp`
-   - Token de verificación: el del paso 2.
-   - Pulsa **Verificar y guardar** y después **Suscribirse** al campo **messages**.
+---
 
-## 4. En el TPV
+## A. Preparar Meta (Espe sola, ya)
 
-En el archivo `.env` de la app del TPV añade las dos líneas y reinicia la app:
+En el iPad: usa **Safari** (no la app de Facebook) y, en cada web, toca **«aA» → «Solicitar sitio web de
+escritorio»**. Si alguna pantalla no carga o falta un botón, para y sigue desde un ordenador.
+
+### A1. Cuenta de empresa
+
+1. Entra en **business.facebook.com** con el Facebook de Adela.
+2. **Crear cuenta**: nombre **«Adela María · Belleza holística»**, el nombre de Adela y su correo
+   (adelamaria_16@hotmail.com). Si ya existe, entra en ella.
+3. Si pide **verificar el teléfono de Adela** (no el del centro): manda el código y que Adela te lo dicte.
+4. En **Configuración del negocio → Información del negocio** rellena dirección (C/ Francisco Pizarro 13, 1.ª planta,
+   06210 Torremejía) y web (https://adelamariatorremejia.es).
+
+Si dice «inténtalo más tarde», es porque la cuenta de Facebook es nueva: vuelve a probar al día siguiente.
+
+### A2. La app de WhatsApp
+
+1. Entra en **developers.facebook.com** con el mismo Facebook → **Empezar** (si es la primera vez, acepta y verifica
+   el correo) → **Mis apps → Crear app**.
+2. Nombre **«Adela TPV»**, correo de Adela. Caso de uso: **«Conectar con clientes a través de WhatsApp»** (o tipo
+   **Empresa** y después añadir el producto **WhatsApp**).
+3. Elige la cuenta de empresa del paso A1.
+4. Meta crea una **cuenta de WhatsApp** y un **número de prueba**. Todavía **no añadas el 624 74 57 34**: eso es la
+   tanda C.
+
+### A3. Forma de pago
+
+En **business.facebook.com → Configuración del negocio → Cuentas → Cuentas de WhatsApp** → la cuenta → **Configuración
+de pago** → añade la tarjeta. Sin ella no salen los recordatorios.
+
+### A4. Las 6 plantillas
+
+En **WhatsApp Manager** (business.facebook.com → **WhatsApp Manager → Plantillas de mensajes**) → **Crear plantilla**,
+idioma **Español**, y copia exactamente las de la tabla del final de esta guía. Meta suele aprobarlas en minutos u
+horas; si rechaza alguna, mándame el motivo.
+
+### A5. Los avisos de Meta (webhook)
+
+Meta avisa de si el mensaje llegó y se leyó, y de lo que contestan las clientas. Esos avisos llegan al servicio de
+reservas de Cloudflare (siempre encendido) y el TPV se los trae cada minuto.
+
+1. En **developers.facebook.com → Adela TPV → Configuración de la app → Básica** → **Clave secreta de la app** →
+   **Mostrar** → cópiala.
+2. En **github.com/Especaba66-pixel/adela-maria → Settings → Secrets and variables → Actions → New repository
+   secret**:
+   - Nombre `WHATSAPP_SECRETO_APP`, valor: la clave secreta del paso 1.
+   - Nombre `WHATSAPP_TOKEN_VERIFICACION`, valor: una palabra larga que te inventes (por ejemplo
+     `adela-meta-2026-` seguido de 10 letras al azar). Apúntala, la necesitas en el paso 4.
+3. En GitHub → **Actions → «Reservas por internet» → Run workflow → Run workflow**. Espera al tic verde (1 minuto).
+4. En **developers.facebook.com → Adela TPV → WhatsApp → Configuración → Webhook → Editar**:
+   - URL de devolución de llamada: `https://adela-reservas.especaba66.workers.dev/api/whatsapp`
+   - Token de verificación: la palabra del paso 2.
+   - **Verificar y guardar**. Después, en **Campos del webhook**, **Suscribirse** a **messages**.
+
+Si al verificar da error, revisa que la palabra sea idéntica en GitHub y en Meta, y que el paso 3 terminara en verde.
+
+**Con esto la tanda A está hecha.** Avísame y lo compruebo.
+
+---
+
+## B. Conectar el TPV (cuando llegue)
+
+Lo que Adela hace en el TPV, contigo al teléfono (está explicado también en `instalacion-tpv.md`):
+
+1. Abre Chrome y entra en **remotedesktop.google.com/support** → **Obtener asistencia** → instala → **Generar
+   código** y te lo dicta.
+2. Tú, en tu Mac, en la misma web → **Dar asistencia** → escribes el código. Adela pulsa **Compartir**.
+3. Ya conectada, deja el **acceso fijo** (remotedesktop.google.com/access → «Configurar acceso remoto», nombre «TPV
+   Adela», PIN) e instalamos la app del centro.
+
+Desde ahí ya no hace falta Adela para manejar el TPV.
+
+---
+
+## C. El número y el encendido (Espe desde el Mac, con Adela al teléfono)
+
+Conéctate al TPV (remotedesktop.google.com/access → «TPV Adela»). Todo lo que sigue se hace **en el navegador del
+TPV**, así el código QR sale en la pantalla del centro, al lado de Adela.
+
+### C1. Añadir el 624 74 57 34 manteniendo WhatsApp Business
+
+En **developers.facebook.com → Adela TPV → WhatsApp → Configuración de la API → Añadir número de teléfono** (o
+**WhatsApp Manager → Números de teléfono → Añadir**):
+
+- **Si aparece «Conectar la app WhatsApp Business» / «Usar un número de WhatsApp Business existente»**
+  (coexistencia): elígela. Sale un **código QR en la pantalla del TPV**. Adela, en el móvil del centro, abre
+  **WhatsApp Business** y lo escanea donde le indique Meta (normalmente un aviso que le llega en la propia app, o
+  **Ajustes → Dispositivos vinculados**). Así el número **sigue funcionando en su móvil** y además en la app del
+  TPV. Puede pedir compartir el historial de chats: se puede aceptar.
+- **Si no aparece esa opción, no sigas con el 624 74 57 34**: al darlo de alta así dejaría de funcionar en WhatsApp
+  Business del móvil. Plan B: una tarjeta prepago a nombre de Adela solo para los mensajes automáticos; se añade
+  igual y el código de verificación llega por SMS a ese número (lo puede dictar quien tenga la tarjeta). Las clientas
+  pueden contestar a ese número y su respuesta sale en la app.
+
+Cuando esté añadido, apunta el **Identificador del número de teléfono** (Phone number ID): una tira de cifras.
+
+### C2. Token permanente (se crea y se guarda en el TPV)
+
+1. **business.facebook.com → Configuración del negocio → Usuarios → Usuarios del sistema → Añadir**: nombre
+   «adela-tpv», rol **Administrador**.
+2. **Asignar activos**: la app «Adela TPV» (control total) y la cuenta de WhatsApp (control total).
+3. **Generar token** → app «Adela TPV» → caducidad **Nunca** → permisos `whatsapp_business_messaging` y
+   `whatsapp_business_management` → **Generar** → **Copiar**.
+
+### C3. Ponerlo en la app del TPV
+
+Sin salir del TPV, abre el **Bloc de notas** con el archivo `C:\AdelaMaria\.env` y añade al final (pegando el token
+que acabas de copiar):
 
 ```
-WHATSAPP_TOKEN=el token del punto 2
-WHATSAPP_NUMERO_ID=el identificador del punto 1
+WHATSAPP_TOKEN=el token copiado
+WHATSAPP_NUMERO_ID=el identificador del paso C1
 ```
 
-Las reservas por internet (`RESERVAS_URL` y `RESERVAS_CLAVE`) tienen que estar puestas: por ahí llegan los avisos de
-Meta. En **Más → WhatsApp** debe salir «Conectado con WhatsApp de Meta».
+Guarda y reinicia la app (o el TPV). En **Más → WhatsApp** debe salir **«Conectado con WhatsApp de Meta»**.
 
-## 5. Plantillas para aprobar en Meta
+### C4. Datos de cada plantilla en la app
+
+En **Más → WhatsApp**, en cada mensaje → **Datos de Meta**: escribe el nombre que tiene en Meta, la categoría, las
+variables en el mismo orden de la tabla y marca los botones si los tiene. Si Meta cambió algo del texto al aprobarla,
+cambia también el texto de la app para que coincida.
+
+### C5. Encender el envío automático
+
+**Más → WhatsApp → Envío automático**: marca **Recordatorios** y **Qué tal**, y la franja **de 10:00 a 19:00** (los
+mensajes solo salen dentro de esa franja y con el TPV encendido).
+
+### C6. Probar
+
+1. Crea en la app una clienta de prueba con **tu móvil** y una cita para mañana.
+2. En su ficha, envía el **recordatorio**: te tiene que llegar con los botones.
+3. Pulsa **Confirmar**: en un minuto la cita sale confirmada en la agenda con «✓ confirmó por WhatsApp».
+4. Responde **BAJA**: la ficha queda sin permisos y te llega la confirmación.
+5. Borra la clienta de prueba.
+
+## Las 6 plantillas (texto exacto)
 
 En Meta → **WhatsApp → Plantillas de mensajes** → **Crear plantilla**, idioma **Español**. Copia el texto tal cual (las
 variables se escriben `{{1}}`, `{{2}}`…). Meta suele aprobarlas en minutos u horas.
@@ -75,11 +186,6 @@ variables se escriben `{{1}}`, `{{2}}`…). Meta suele aprobarlas en minutos u h
 Cuando Meta apruebe cada una: en la app, **Más → WhatsApp** → el mensaje → **Datos de Meta** → escribe el nombre, la
 categoría, las variables en el mismo orden y marca los botones si los tiene. Cambia también el texto de la app para que
 coincida (es el que se guarda en la ficha). Meta decide la categoría final.
-
-## 6. Encender el envío automático
-
-**Más → WhatsApp → Envío automático**: marca **Recordatorios** (y, si quieres, **Qué tal**) y la franja horaria. Con
-el TPV encendido dentro de esa franja, cada recordatorio sale una sola vez el día anterior.
 
 ## Qué hace la app con las respuestas
 
