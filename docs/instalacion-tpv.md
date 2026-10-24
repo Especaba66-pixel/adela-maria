@@ -6,6 +6,18 @@ que pagar alojamiento y sigue funcionando aunque se caiga internet. La web para 
 
 Lo que hace falta: el TPV con **Windows 10 u 11**, conexión a internet durante la instalación y una hora.
 
+## 0. Acceso remoto y que no se apague (si se instala a distancia)
+
+1. En el TPV, en **Chrome**: **remotedesktop.google.com/support** → «Obtener asistencia» → instalar → **Generar
+   código**. Quien instala, desde su ordenador, entra en la misma web → «Dar asistencia» → escribe el código; en el TPV
+   se pulsa **Compartir**.
+2. Ya conectados, en el TPV: **remotedesktop.google.com/access** → «Configurar acceso remoto» → nombre «TPV Adela» y
+   un PIN. Desde entonces se entra sin ayuda (el TPV tiene que estar encendido).
+3. Que no se suspenda: en PowerShell como administrador,
+   `powercfg /change standby-timeout-ac 0` y `powercfg /change hibernate-timeout-ac 0`.
+4. La app arranca al **iniciar sesión** en Windows: si el TPV tiene contraseña de Windows, al encenderlo hay que
+   entrar en la sesión (o configurar el inicio de sesión automático).
+
 ## 1. Descargar el proyecto
 
 1. En el TPV, abre **PowerShell como administrador**: botón de Inicio → escribe «PowerShell» → clic derecho →
@@ -29,11 +41,17 @@ cd C:\AdelaMaria
 powershell -ExecutionPolicy Bypass -File infra\windows\instalar.ps1
 ```
 
-Te pedirá tres cosas (apúntalas en un sitio seguro):
+Te pedirá estas cosas (apúntalas en un sitio seguro):
 
 - Una **contraseña para la base de datos**.
 - Tu **contraseña de administración** de la app (mínimo 10 caracteres).
 - Tu **PIN** (de 4 a 6 números).
+- La **dirección del servicio de reservas**: `https://adela-reservas.especaba66.workers.dev`
+- La **clave de sincronización de las reservas**: la misma que el secreto `RESERVAS_CLAVE` de GitHub. Para hacer una
+  nueva sin que pase por ningún chat, antes de lanzar el instalador escribe en PowerShell
+  `-join ((48..57)+(65..90)+(97..122) | Get-Random -Count 40 | % {[char]$_}) | Set-Clipboard`: queda copiada.
+  Pégala en GitHub (**Settings → Secrets and variables → Actions → RESERVAS_CLAVE → ✏️ → Update**), vuelve a publicar
+  el servicio (**Actions → «Reservas por internet» → Run workflow**) y pégala también cuando la pida el instalador.
 
 Tarda unos minutos. Al terminar verás en el escritorio el acceso **«Adela María»**.
 
@@ -84,11 +102,12 @@ powershell -ExecutionPolicy Bypass -File infra\windows\actualizar.ps1
 
 Hace una copia de seguridad antes, descarga la versión aprobada y reinicia la app.
 
-## Limitaciones de tenerla en el TPV
+## Lo que hace falta además
 
-- Solo se usa **desde el TPV** (no desde tu móvil fuera del centro).
-- Las clientas piden cita por **WhatsApp** desde la landing, no eligiendo hora en la web.
-- Los **envíos automáticos de WhatsApp** (fase 6) necesitan un servidor en internet. Lo veremos al llegar ahí.
+- **Reservas por internet**: con la dirección y la clave del paso 2, en **Reservas web** sale «Reservas por internet
+  al día» y las reservas de la web llegan solas cada minuto.
+- **Desde el móvil**: ver [movil.md](movil.md) (Tailscale).
+- **WhatsApp automático**: ver [whatsapp.md](whatsapp.md), tandas B y C.
 
-Si más adelante quieres todo eso, la app se puede pasar a internet (ver [puesta-en-marcha.md](puesta-en-marcha.md))
-sin perder nada: se copia la base de datos.
+La app depende de que el TPV esté encendido. Si más adelante se quiere en un servidor de internet, se puede pasar sin
+perder nada (ver [puesta-en-marcha.md](puesta-en-marcha.md)): se copia la base de datos.
