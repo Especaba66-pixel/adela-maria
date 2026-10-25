@@ -1,4 +1,4 @@
-<#
+﻿<#
   Copia de seguridad diaria (la lanza Windows cada día) y prueba de restauración.
   Guarda la copia en la carpeta de copias (por defecto, Documentos\Copias Adela María) y conserva 30 días.
   Si esa carpeta está dentro de Google Drive para ordenador u OneDrive, la copia sale además del TPV.
@@ -10,7 +10,8 @@ $Raiz = (Resolve-Path "$PSScriptRoot\..\..").Path
 # Programas de PostgreSQL: los de la instalación de Windows o, si no están, los del PATH.
 function Pg($programa) {
   $ruta = "C:\Program Files\PostgreSQL\16\bin\$programa.exe"
-  if (Test-Path $ruta) { return $ruta } else { return $programa }
+  $portatil = Join-Path $env:LOCALAPPDATA "AdelaMaria\herramientas\pgsql\bin\$programa.exe"
+  if (Test-Path $ruta) { return $ruta } elseif (Test-Path $portatil) { return $portatil } else { return $programa }
 }
 $Env = @{}
 $ArchivoEnv = if ($env:ADELA_ENV) { $env:ADELA_ENV } else { "$Raiz\.env" }

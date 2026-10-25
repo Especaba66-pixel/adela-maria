@@ -12,3 +12,4 @@ next-env.d.ts
 # Cloudflare (local)
 .wrangler/
 .dev.vars
+infra/windows/actualizando

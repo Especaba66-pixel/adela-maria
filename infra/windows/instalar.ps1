@@ -1,4 +1,4 @@
-<#
+﻿<#
   Instala la app de gestión de Adela María en el ordenador del TPV (Windows 10 u 11).
   Ejecutar UNA vez, en PowerShell como administrador, desde la carpeta del proyecto:
       powershell -ExecutionPolicy Bypass -File infra\windows\instalar.ps1
@@ -59,7 +59,7 @@ SESION_MINUTOS_INACTIVIDAD=15
 PORT=3000
 RESERVAS_URL=$ReservasUrl
 RESERVAS_CLAVE=$ReservasClave
-"@ | Set-Content -Encoding UTF8 "$Raiz\.env"
+"@ | ForEach-Object { [IO.File]::WriteAllText("$Raiz\.env", $_, (New-Object Text.UTF8Encoding $false)) }
 }
 
 # 4. App
