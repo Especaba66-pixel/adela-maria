@@ -55,6 +55,24 @@ Te pedirá estas cosas (apúntalas en un sitio seguro):
 
 Tarda unos minutos. Al terminar verás en el escritorio el acceso **«Adela María»**.
 
+### Si algo falla (lo que pasó en la instalación de Adela)
+
+- **«No se puede cargar el archivo pnpm.ps1… la ejecución de scripts está deshabilitada»**: usa `pnpm.cmd` en vez de
+  `pnpm`, o antes `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (contesta **S**).
+- **«Could not find a production build»**: la preparación no terminó. En `C:\AdelaMaria`: `pnpm.cmd build`,
+  `pnpm.cmd db:migrate` y `pnpm.cmd db:seed`. Si `build` falla, el motivo sale encima de «ERR_PNPM…»; para leerlo
+  entero: `pnpm.cmd build > error.txt 2>&1` y `notepad error.txt`.
+- **No se acuerda de la contraseña de PostgreSQL**: `winget uninstall PostgreSQL.PostgreSQL.16`, borrar
+  `C:\Program Files\PostgreSQL` y `C:\AdelaMaria\.env`, y volver a lanzar el instalador.
+- **La app se arranca sola en segundo plano** (tarea «Adela María - App»; lo que escribe va a
+  `infra\windows\app.log`). Para que lea cambios del `.env`, en PowerShell como administrador:
+  `Stop-ScheduledTask -TaskName "Adela María - App"`, `Stop-Process -Name node -Force` y
+  `Start-ScheduledTask -TaskName "Adela María - App"`. Lanzarla a mano a la vez falla (el puerto ya está ocupado).
+- **«Reservas por internet: no se ha podido conectar»**: el motivo está en `app.log` («respondió 401» = la clave del
+  `.env` no es la de GitHub). Las líneas `RESERVAS_URL=` y `RESERVAS_CLAVE=` van al final del `.env`.
+- **Copiar y pegar entre el ordenador y el TPV** no siempre funciona con el escritorio remoto: abre esta guía en el
+  navegador del propio TPV y copia los comandos desde ahí.
+
 ## 3. Primer uso
 
 1. Abre **«Adela María»** en el escritorio. Se abre en pantalla completa.
