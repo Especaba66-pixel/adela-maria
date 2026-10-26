@@ -10,6 +10,13 @@ $Raiz = (Resolve-Path "$PSScriptRoot\..\..").Path
 Set-Location $Raiz
 
 function Paso($texto) { Write-Host "`n==> $texto" -ForegroundColor Yellow }
+# Los programas externos (pnpm, git…) no paran el script al fallar: se comprueba cada uno.
+function Comprobar($texto) {
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "`nERROR: $texto. Haz una foto de esta pantalla y vuelve a lanzar el instalador." -ForegroundColor Red
+    exit 1
+  }
+}
 
 function Instalar-SiFalta($comando, $paquete) {
   if (-not (Get-Command $comando -ErrorAction SilentlyContinue)) {
@@ -65,10 +72,10 @@ RESERVAS_CLAVE=$ReservasClave
 # 4. App
 Paso "Preparando la app (tarda unos minutos)"
 corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-pnpm db:migrate
-pnpm db:seed
+pnpm install --frozen-lockfile; Comprobar "Falló la instalación de las piezas de la app"
+pnpm build; Comprobar "Falló la preparación de la app"
+pnpm db:migrate; Comprobar "Falló la preparación de la base de datos"
+pnpm db:seed; Comprobar "Falló la carga de los datos iniciales"
 
 # 5. Arranque automático y copia diaria
 Paso "Programando el arranque automático y la copia de seguridad"

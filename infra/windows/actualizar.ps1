@@ -4,6 +4,8 @@
   Antes de actualizar hace una copia de seguridad.
 #>
 $ErrorActionPreference = "Stop"
+# Los programas externos (git, pnpm) no paran el script al fallar: se comprueba cada uno.
+function Comprobar($texto) { if ($LASTEXITCODE -ne 0) { throw "$texto. La app sigue con la versión anterior en la copia de hoy." } }
 $Raiz = (Resolve-Path "$PSScriptRoot\..\..").Path
 Set-Location $Raiz
 # Mientras se actualiza, el arranque automático (instalación sin administrador) no relanza la app.
@@ -14,11 +16,11 @@ Stop-ScheduledTask -TaskName "Adela María - App" -ErrorAction SilentlyContinue
 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
 git fetch origin main
 git checkout main
-git pull --ff-only origin main
-pnpm install --frozen-lockfile
-pnpm build
-pnpm db:migrate
-pnpm db:seed
+git pull --ff-only origin main; Comprobar "No se pudo descargar la versión nueva"
+pnpm install --frozen-lockfile; Comprobar "Falló la instalación de las piezas de la app"
+pnpm build; Comprobar "Falló la preparación de la app"
+pnpm db:migrate; Comprobar "Falló la preparación de la base de datos"
+pnpm db:seed; Comprobar "Falló la carga de los datos iniciales"
 } finally {
   Remove-Item "$PSScriptRoot\actualizando" -Force -ErrorAction SilentlyContinue
 }
