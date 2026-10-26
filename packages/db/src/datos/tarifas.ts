@@ -50,7 +50,7 @@ export const CATEGORIAS: TarifaCategoria[] = [
     nombre: "Depilación",
     tratamientos: [
       { nombre: "Labio, mentón o patilla", duracionMinutos: 5, precioCentimos: 300 },
-      { nombre: "Diseño y depilación de cejas", duracionMinutos: 10, precioCentimos: 500 },
+      { nombre: "Diseño y depilación de cejas", duracionMinutos: 10, precioCentimos: 400 }, // 4 € desde el 26 de octubre de 2026
       { nombre: "Ceja y labio", duracionMinutos: 15, precioCentimos: 700 },
       { nombre: "Medias piernas", duracionMinutos: 10, precioCentimos: 700 },
       { nombre: "Piernas enteras", duracionMinutos: 20, precioCentimos: 1_300 },
