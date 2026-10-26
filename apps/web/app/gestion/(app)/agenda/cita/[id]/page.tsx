@@ -7,7 +7,7 @@ import { diaLargo, fechaHora } from "@/lib/fechas";
 import { detalleCita, profesionalDeUsuario, profesionalesActivos } from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
 import { consentimientosQueFaltan } from "@/server/fichas";
-import { BotonCancelarSerie, BotonesEstado, FormularioMover } from "./Acciones";
+import { BotonCancelarSerie, BotonesEstado, FormularioMover } from "./Botones";
 
 export default async function Cita({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ creada?: string; canceladas?: string }> }) {
   const { usuario } = await requerirSesion();

@@ -41,6 +41,10 @@ jobs:
       - name: Bases de datos
         run: psql postgres://postgres@localhost:5432/postgres -f infra/crear-bases.sql
       - run: pnpm install --frozen-lockfile
+      - name: Nombres de archivo que no chocan en Windows (sin distinguir mayúsculas)
+        run: |
+          repes=$(git ls-files | sed -E 's/\.(tsx?|m?js)$//' | tr '[:upper:]' '[:lower:]' | sort | uniq -d)
+          if [ -n "$repes" ]; then echo "Estos archivos chocan en el TPV (Windows):"; echo "$repes"; exit 1; fi
       - run: pnpm typecheck
       - name: Pruebas de reglas y de base de datos
         run: pnpm test
