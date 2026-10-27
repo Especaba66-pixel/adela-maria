@@ -81,8 +81,12 @@ pnpm db:seed; Comprobar "Falló la carga de los datos iniciales"
 Paso "Programando el arranque automático y la copia de seguridad"
 $Usuario = "$env:USERDOMAIN\$env:USERNAME"
 $Arrancar = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Raiz\infra\windows\arrancar.ps1`"" -WorkingDirectory $Raiz
-Register-ScheduledTask -TaskName "Adela María - App" -Action $Arrancar -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $Usuario) `
-  -Settings (New-ScheduledTaskSettingsSet -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit 0) -Force | Out-Null
+# Al iniciar sesión y, además, cada 5 minutos: si la tarea ya está en marcha no hace nada (no se duplica); si se ha
+# parado por lo que sea, la vuelve a lanzar.
+$Vigilar = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
+Register-ScheduledTask -TaskName "Adela María - App" -Action $Arrancar -Trigger @((New-ScheduledTaskTrigger -AtLogOn -User $Usuario), $Vigilar) `
+  -Settings (New-ScheduledTaskSettingsSet -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit 0 `
+    -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -DontStopOnIdleEnd) -Force | Out-Null
 $Copia = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Raiz\infra\windows\copia.ps1`"" -WorkingDirectory $Raiz
 Register-ScheduledTask -TaskName "Adela María - Copia diaria" -Action $Copia -Trigger (New-ScheduledTaskTrigger -Daily -At "14:30") `
   -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable) -Force | Out-Null

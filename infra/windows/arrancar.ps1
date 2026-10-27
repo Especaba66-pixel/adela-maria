@@ -10,7 +10,7 @@ foreach ($Ruta in @("C:\Program Files\nodejs", (Join-Path $env:APPDATA "npm"))) 
 while ($true) {
   $Ocupado = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
   if ((Test-Path "$Raiz\infra\windows\actualizando") -or $Ocupado) { Start-Sleep -Seconds 20; continue }
-  "$(Get-Date -Format s) Arrancando la app" | Out-File -Append -Encoding UTF8 "$Raiz\infra\windows\app.log"
+  "$(Get-Date -Format s) Arrancando la app" | Out-File -Append -Encoding Unicode "$Raiz\infra\windows\app.log"
   pnpm --filter @adela/web start *>> "$Raiz\infra\windows\app.log"
   Start-Sleep -Seconds 5
 }
