@@ -66,6 +66,25 @@ test("la impresora simulada imprime una prueba", async () => {
   await expect(pagina.getByText(/^Simulado: /)).toBeVisible();
 });
 
+test("el cajón puede ir por USB (puerto COM): se comprueba el puerto y, fuera de Windows, avisa", async () => {
+  await pagina.goto("/gestion/mas/configuracion/impresora");
+  await pagina.getByLabel("Cajón del dinero").selectOption("com");
+  await pagina.getByLabel(/Puerto del cajón/).fill("USB3");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(alerta(pagina)).toHaveText(/por ejemplo, COM3/);
+  await pagina.getByLabel(/Puerto del cajón/).fill("com3");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Impresora guardada.")).toBeVisible();
+  await pagina.reload();
+  await expect(pagina.getByLabel(/Puerto del cajón/)).toHaveValue("COM3");
+  await pagina.getByRole("button", { name: "Abrir cajón" }).click();
+  await expect(pagina.getByText(/solo funciona en el TPV \(Windows\)/)).toBeVisible();
+  // Se deja como estaba: el cajón enchufado a la impresora (simulada).
+  await pagina.getByLabel("Cajón del dinero").selectOption("impresora");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Impresora guardada.")).toBeVisible();
+});
+
 test("con la caja cerrada no se cobra; se abre con un fondo de 50 €", async () => {
   await pagina.goto("/gestion/tpv");
   await anadir("Axilas");

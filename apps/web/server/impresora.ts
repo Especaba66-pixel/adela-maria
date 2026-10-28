@@ -6,7 +6,8 @@ import "server-only";
  *   - simulador: guarda cada ticket como archivo de texto (para probar sin impresora).
  *   - red: impresora con cable de red o wifi, ESC/POS por el puerto 9100.
  *   - windows: impresora instalada en Windows (USB), enviando los datos en bruto con «copy /b».
- * El cajón va conectado a la impresora y se abre con un comando ESC/POS.
+ * El cajón va conectado a la impresora y se abre con un comando ESC/POS, o bien directamente al TPV por USB: entonces
+ * Windows lo ve como un puerto COM («USB Serial Port (COM3)») y se abre mandándole ese mismo comando.
  */
 import { centro } from "@adela/db";
 import { ABRIR_CAJON, bytesTicket } from "@adela/dominio";
@@ -26,6 +27,19 @@ export interface ConfigImpresora {
   nombre?: string;
   /** Caracteres por línea: 48 (papel de 80 mm) o 32 (58 mm). */
   ancho?: 32 | 48;
+  /** Puerto COM del cajón cuando va enchufado al TPV por USB (por ejemplo «COM3»). Sin él, el cajón va a la impresora. */
+  cajonCom?: string;
+}
+
+export const PUERTO_COM = /^COM\d{1,3}$/i;
+
+/** Abre el cajón conectado por USB (puerto COM): le manda el comando de apertura a 9600 baudios. */
+async function abrirCajonCom(puerto: string): Promise<void> {
+  if (!PUERTO_COM.test(puerto)) throw new Error("Puerto del cajón no válido.");
+  if (process.platform !== "win32") throw new Error("El cajón por puerto COM solo funciona en el TPV (Windows).");
+  const bytes = Array.from(ABRIR_CAJON).join(",");
+  const orden = `$p = New-Object System.IO.Ports.SerialPort '${puerto.toUpperCase()}', 9600; $p.Open(); $p.Write([byte[]](${bytes}), 0, ${ABRIR_CAJON.length}); Start-Sleep -Milliseconds 200; $p.Close()`;
+  await promisify(execFile)("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", orden], { windowsHide: true, timeout: 10_000 });
 }
 
 export const CARPETA_SIMULADOR = process.env.IMPRESORA_SIMULADA ?? join(tmpdir(), "adela-tickets");
@@ -82,10 +96,29 @@ export async function enviar(datos: Uint8Array, textoParaSimulador: string, conf
 }
 
 export async function imprimirTicket(lineas: string[], abrirCajon: boolean): Promise<ResultadoImpresion> {
-  const texto = lineas.join("\n") + (abrirCajon ? "\n[Abrir cajón]" : "");
-  return enviar(bytesTicket(lineas, { abrirCajon }), texto);
+  const c = await configImpresora();
+  if (!c.cajonCom) {
+    const texto = lineas.join("\n") + (abrirCajon ? "\n[Abrir cajón]" : "");
+    return enviar(bytesTicket(lineas, { abrirCajon }), texto, c);
+  }
+  // Cajón por USB: el ticket va a la impresora (si hay) y el cajón se abre aparte.
+  const ticket = await enviar(bytesTicket(lineas, { abrirCajon: false }), lineas.join("\n"), c);
+  if (!abrirCajon) return ticket;
+  const caja = await abrirCajonDe(c);
+  if (!caja.ok) return ticket.ok ? caja : { ok: false, error: `${ticket.error} ${caja.error}` };
+  return ticket;
+}
+
+async function abrirCajonDe(c: ConfigImpresora): Promise<ResultadoImpresion> {
+  if (!c.cajonCom) return enviar(Uint8Array.from(ABRIR_CAJON), "[Abrir cajón]", c);
+  try {
+    await abrirCajonCom(c.cajonCom);
+    return { ok: true, detalle: "Cajón abierto." };
+  } catch (e) {
+    return { ok: false, error: `No se pudo abrir el cajón: ${(e as Error).message}` };
+  }
 }
 
 export async function abrirCajon(): Promise<ResultadoImpresion> {
-  return enviar(Uint8Array.from(ABRIR_CAJON), "[Abrir cajón]");
+  return abrirCajonDe(await configImpresora());
 }

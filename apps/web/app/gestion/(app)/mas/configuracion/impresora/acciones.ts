@@ -4,7 +4,7 @@ import { lineasTicket } from "@adela/dominio";
 import { revalidatePath } from "next/cache";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
-import { abrirCajon, configImpresora, imprimirTicket, type ConfigImpresora } from "@/server/impresora";
+import { PUERTO_COM, abrirCajon, configImpresora, imprimirTicket, type ConfigImpresora } from "@/server/impresora";
 
 type Estado = { ok?: string; error?: string };
 
@@ -24,6 +24,11 @@ export async function guardar(_: Estado, f: FormData): Promise<Estado> {
     const nombre = String(f.get("nombre") ?? "").trim();
     if (!/^[\w .()-]{1,64}$/.test(nombre)) return { error: "Escribe el nombre con el que está compartida la impresora en Windows." };
     config.nombre = nombre;
+  }
+  if (f.get("cajon") === "com") {
+    const puerto = String(f.get("cajonCom") ?? "").trim().toUpperCase();
+    if (!PUERTO_COM.test(puerto)) return { error: "Escribe el puerto del cajón tal como sale en el Administrador de dispositivos (por ejemplo, COM3)." };
+    config.cajonCom = puerto;
   }
   await db().update(centro).set({ impresora: config });
   await registrarActividad(db(), { usuarioId: usuario.id, accion: "impresora.configurar", entidad: "centro", despues: config });

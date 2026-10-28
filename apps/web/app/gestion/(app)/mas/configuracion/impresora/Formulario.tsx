@@ -18,6 +18,7 @@ export function FormularioImpresora({ config }: { config: ConfigImpresora }) {
   const [estadoPrueba, accionPrueba, probando] = useActionState(prueba, {});
   const [estadoCajon, accionCajon, abriendo] = useActionState(cajon, {});
   const [tipo, setTipo] = useState(config.tipo);
+  const [tipoCajon, setTipoCajon] = useState(config.cajonCom ? "com" : "impresora");
   return (
     <div className="space-y-6">
       <form onSubmit={sinReinicio(accion)} className="space-y-4">
@@ -56,6 +57,19 @@ export function FormularioImpresora({ config }: { config: ConfigImpresora }) {
             <option value="32">58 mm</option>
           </select>
         </label>
+        <label className="block font-medium">
+          Cajón del dinero
+          <select name="cajon" value={tipoCajon} onChange={(e) => setTipoCajon(e.target.value)} className={campo}>
+            <option value="impresora">Enchufado a la impresora (cable de teléfono)</option>
+            <option value="com">Por USB al TPV (puerto COM)</option>
+          </select>
+        </label>
+        {tipoCajon === "com" && (
+          <label className="block font-medium">
+            Puerto del cajón (Administrador de dispositivos → Puertos (COM y LPT))
+            <input name="cajonCom" defaultValue={config.cajonCom} placeholder="COM3" className={campo} />
+          </label>
+        )}
         <Boton type="submit" disabled={pendiente}>
           Guardar
         </Boton>
