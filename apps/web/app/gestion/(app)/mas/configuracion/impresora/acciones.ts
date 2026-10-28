@@ -22,7 +22,7 @@ export async function guardar(_: Estado, f: FormData): Promise<Estado> {
   }
   if (tipo === "windows") {
     const nombre = String(f.get("nombre") ?? "").trim();
-    if (!/^[\w .()-]{1,64}$/.test(nombre)) return { error: "Escribe el nombre con el que está compartida la impresora en Windows." };
+    if (!/^[\w .()-]{1,64}$/.test(nombre)) return { error: "Escribe el nombre de la impresora tal como sale en «Impresoras y escáneres» de Windows." };
     config.nombre = nombre;
   }
   if (f.get("cajon") === "com") {

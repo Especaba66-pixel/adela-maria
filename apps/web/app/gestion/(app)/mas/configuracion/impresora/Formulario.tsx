@@ -34,7 +34,7 @@ export function FormularioImpresora({ config }: { config: ConfigImpresora }) {
         </label>
         {tipo === "windows" && (
           <label className="block font-medium">
-            Nombre de la impresora compartida en Windows
+            Nombre de la impresora en Windows (como sale en «Impresoras y escáneres»)
             <input name="nombre" defaultValue={config.nombre} placeholder="TICKETS" className={campo} />
           </label>
         )}

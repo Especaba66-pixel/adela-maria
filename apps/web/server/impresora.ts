@@ -5,7 +5,7 @@ import "server-only";
  *   - ninguna: no imprime (el ticket se ve en pantalla y se puede enviar por WhatsApp).
  *   - simulador: guarda cada ticket como archivo de texto (para probar sin impresora).
  *   - red: impresora con cable de red o wifi, ESC/POS por el puerto 9100.
- *   - windows: impresora instalada en Windows (USB), enviando los datos en bruto con «copy /b».
+ *   - windows: impresora instalada en Windows (USB), por su nombre (o el de compartirla), enviando los datos en bruto.
  * El cajón va conectado a la impresora y se abre con un comando ESC/POS, o bien directamente al TPV por USB: entonces
  * Windows lo ve como un puerto COM («USB Serial Port (COM3)») y se abre mandándole ese mismo comando.
  */
@@ -59,11 +59,55 @@ function enviarPorRed(host: string, puerto: number, datos: Uint8Array): Promise<
   });
 }
 
+/**
+ * Envía los bytes en bruto a una impresora instalada en Windows, por su nombre (la API de impresión de Windows,
+ * «winspool»), sin necesidad de compartirla. Si no funciona así, prueba por el recurso compartido (\\localhost\nombre).
+ */
 async function enviarAWindows(nombre: string, datos: Uint8Array): Promise<void> {
   if (!/^[\w .()-]{1,64}$/.test(nombre)) throw new Error("Nombre de impresora no válido.");
   const archivo = join(tmpdir(), `ticket-${Date.now()}.bin`);
   await writeFile(archivo, datos);
-  await promisify(execFile)("cmd", ["/c", "copy", "/b", archivo, `\\\\localhost\\${nombre}`], { windowsHide: true, timeout: 10_000 });
+  const script = `
+$ErrorActionPreference = "Stop"
+Add-Type -TypeDefinition @"
+using System; using System.Runtime.InteropServices;
+public static class Crudo {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] public class Doc { public string Nombre; public string Archivo; public string Tipo; }
+  [DllImport("winspool.drv", CharSet = CharSet.Unicode, SetLastError = true)] public static extern bool OpenPrinter(string n, out IntPtr h, IntPtr d);
+  [DllImport("winspool.drv", SetLastError = true)] public static extern bool ClosePrinter(IntPtr h);
+  [DllImport("winspool.drv", CharSet = CharSet.Unicode, SetLastError = true)] public static extern int StartDocPrinter(IntPtr h, int nivel, [In] Doc d);
+  [DllImport("winspool.drv", SetLastError = true)] public static extern bool EndDocPrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] public static extern bool StartPagePrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] public static extern bool EndPagePrinter(IntPtr h);
+  [DllImport("winspool.drv", SetLastError = true)] public static extern bool WritePrinter(IntPtr h, byte[] b, int n, out int escritos);
+  public static void Enviar(string impresora, byte[] bytes) {
+    IntPtr h; if (!OpenPrinter(impresora, out h, IntPtr.Zero)) throw new Exception("No encuentro la impresora «" + impresora + "» en Windows.");
+    try {
+      if (StartDocPrinter(h, 1, new Doc { Nombre = "Ticket", Tipo = "RAW" }) == 0) throw new Exception("La impresora no acepta el ticket.");
+      StartPagePrinter(h); int n; WritePrinter(h, bytes, bytes.Length, out n); EndPagePrinter(h); EndDocPrinter(h);
+      if (n != bytes.Length) throw new Exception("La impresora no ha recibido el ticket entero.");
+    } finally { ClosePrinter(h); }
+  }
+}
+"@
+$nombre = $env:ADELA_IMPRESORA
+$impresora = Get-Printer | Where-Object { $_.Name -eq $nombre -or $_.ShareName -eq $nombre } | Select-Object -First 1
+[Crudo]::Enviar($(if ($impresora) { $impresora.Name } else { $nombre }), [IO.File]::ReadAllBytes($env:ADELA_TICKET))
+`;
+  try {
+    await promisify(execFile)("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+      windowsHide: true,
+      timeout: 20_000,
+      env: { ...process.env, ADELA_IMPRESORA: nombre, ADELA_TICKET: archivo },
+    });
+  } catch (directo) {
+    try {
+      await promisify(execFile)("cmd", ["/c", "copy", "/b", archivo, `\\\\localhost\\${nombre}`], { windowsHide: true, timeout: 10_000 });
+    } catch {
+      const motivo = String((directo as { stderr?: string }).stderr ?? (directo as Error).message).split("\n").find((l) => l.includes("impresora")) ?? "";
+      throw new Error(motivo.trim() || `No encuentro la impresora «${nombre}» en Windows.`);
+    }
+  }
 }
 
 export type ResultadoImpresion = { ok: true; detalle: string } | { ok: false; error: string };

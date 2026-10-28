@@ -87,12 +87,14 @@ Tarda unos minutos. Al terminar verás en el escritorio el acceso **«Adela Mar�
 
 ## 4. Impresora de tickets y cajón
 
-1. Instala la impresora con el programa del fabricante (como cualquier impresora).
-2. **Compártela**: Configuración de Windows → Impresoras → tu impresora → Propiedades de impresora → pestaña
-   **Compartir** → marca «Compartir esta impresora» y ponle de nombre **TICKETS**.
-3. En la app: **Más → Configuración → Impresora y cajón** → «Por USB, instalada en Windows», nombre **TICKETS**,
-   papel de 80 mm (o 58 mm si es la pequeña) → Guardar → **Imprimir prueba**.
-4. El cajón se enchufa a la impresora (cable tipo teléfono). Prueba con **Abrir cajón**.
+1. Instala la impresora con el programa del fabricante (como cualquier impresora). La de Adela es una **Approx
+   appPOS80AM** (80 mm, ESC/POS): si Windows no la reconoce, el programa está en approx.es.
+2. Mira su nombre en **Configuración → Bluetooth y dispositivos → Impresoras y escáneres** (por ejemplo «POS-80»).
+3. En la app: **Más → Configuración → Impresora y cajón** → «Por USB, instalada en Windows», ese **nombre**,
+   papel de 80 mm (o 58 mm si es la pequeña) → Guardar → **Imprimir prueba**. No hace falta compartirla.
+4. El cajón se enchufa a la impresora (cable tipo teléfono) o al TPV por USB. Si va por USB, mira su puerto en
+   **Administrador de dispositivos → Puertos (COM y LPT)** («USB Serial Port (COM3)») y en la app elige «Cajón: Por
+   USB al TPV (puerto COM)» con ese puerto. Prueba con **Abrir cajón**.
 
 Si tu impresora va por cable de red o wifi, elige esa opción y escribe su dirección IP (sale en el ticket de
 configuración que imprime al encenderla manteniendo pulsado el botón de avance de papel).
