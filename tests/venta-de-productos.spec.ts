@@ -94,6 +94,9 @@ test("los gastos del trimestre, con su IVA, y la descarga para la gestoría", as
   await pagina.getByText("Anotar un gasto").click();
   const form = pagina.getByRole("form", { name: "Nuevo gasto" });
   await form.getByLabel("Concepto").fill("Luz de octubre");
+  // Por defecto sale «Material del centro» (lo más habitual); la luz va a suministros.
+  await expect(form.getByLabel("Tipo de gasto")).toHaveValue("material");
+  await form.getByLabel("Tipo de gasto").selectOption("suministros");
   await form.getByLabel(/Total pagado/).fill("121");
   await form.getByRole("button", { name: "Anotar gasto" }).click();
   await expect(pagina.getByText("Gasto «Luz de octubre» anotado.")).toBeVisible();

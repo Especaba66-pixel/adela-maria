@@ -108,7 +108,7 @@ export const NOMBRE_CATEGORIA_GASTO: Record<CategoriaGasto, string> = {
   compras: "Compras de producto",
   alquiler: "Alquiler",
   suministros: "Luz, agua, teléfono e internet",
-  material: "Material y pequeño equipo",
+  material: "Material del centro (papel camilla, vaselina, algodón, guantes…)",
   formacion: "Formación",
   publicidad: "Publicidad",
   seguros: "Seguros",

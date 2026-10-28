@@ -15,11 +15,11 @@ export function FormularioGasto({ hoy, proveedores }: { hoy: string; proveedores
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           Concepto
-          <input name="concepto" required placeholder="Luz de octubre" className={campo} />
+          <input name="concepto" required placeholder="Papel camilla y vaselina" className={campo} />
         </label>
         <label className="block">
           Tipo de gasto
-          <select name="categoria" defaultValue="suministros" className={campo}>
+          <select name="categoria" defaultValue="material" className={campo}>
             {CATEGORIAS_GASTO.filter((c) => c !== "compras").map((c) => (
               <option key={c} value={c}>
                 {NOMBRE_CATEGORIA_GASTO[c]}
