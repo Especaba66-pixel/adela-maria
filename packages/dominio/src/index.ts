@@ -16,3 +16,4 @@ export * from "./whatsapp";
 export * from "./fichas";
 export * from "./informes";
 export * from "./push";
+export * from "./busqueda";

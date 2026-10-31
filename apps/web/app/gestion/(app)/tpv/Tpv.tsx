@@ -3,6 +3,7 @@ import {
   METODOS_CAJA,
   NOMBRE_METODO,
   asignarBonos,
+  buscar,
   calcularLinea,
   cambio,
   formatearEuros,
@@ -14,7 +15,7 @@ import {
   type MetodoPago,
 } from "@adela/dominio";
 import { Aviso, Boton, Tarjeta, clases } from "@adela/ui";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TecladoImporte } from "@/components/TecladoImporte";
 import { bonosUsables, buscarClienta, cobrar, consultarTarjeta, venderTarjeta } from "./acciones";
 
@@ -59,6 +60,14 @@ interface Clienta {
 }
 
 const DESCUENTOS = [0, 500, 1000, 1500, 2000, 5000, 10000];
+/** Una opción del buscador: tratamiento, producto o bono. */
+interface Opcion {
+  clave: string;
+  nombre: string;
+  detalle: string;
+  activa: boolean;
+  elegir: () => void;
+}
 const hoy = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
 /** Los bonos que se compran en esta cuenta cuentan como bonos de la clienta (después de los que ya tiene). */
 const NUEVO = "nuevo:";
@@ -276,6 +285,39 @@ export function Tpv({
   }
 
   const categorias = [...new Set(catalogo.map((c) => c.categoria))];
+
+  // Buscador: Adela escribe «diseño de cejas» y elige de la lista, sin buscar botón por botón.
+  const [busqueda, setBusqueda] = useState("");
+  const campoBusqueda = useRef<HTMLInputElement>(null);
+  const opciones: Opcion[] = [
+    ...catalogo.map((c) => ({
+      clave: `t:${c.id}`,
+      nombre: c.nombre,
+      detalle: c.precioCentimos === null ? "sin precio" : c.ivaCentesimas === null ? "sin IVA" : `${formatearEuros(c.precioCentimos)} · ${c.categoria}`,
+      activa: c.precioCentimos !== null && c.ivaCentesimas !== null,
+      elegir: () => anadir(c.id),
+    })),
+    ...productosVenta.map((p) => ({
+      clave: `p:${p.id}`,
+      nombre: p.nombre,
+      detalle: p.precioCentimos === null || p.ivaCentesimas === null ? "sin precio" : `${formatearEuros(p.precioCentimos)} · producto · ${p.stock > 0 ? `quedan ${p.stock}` : "sin stock"}`,
+      activa: p.precioCentimos !== null && p.ivaCentesimas !== null,
+      elegir: () => anadirProducto(p.id),
+    })),
+    ...bonosVenta.map((b) => ({
+      clave: `b:${b.id}`,
+      nombre: b.nombre,
+      detalle: b.ivaCentesimas === null ? "sin IVA" : `${formatearEuros(b.precioCentimos)} · bono`,
+      activa: b.ivaCentesimas !== null,
+      elegir: () => anadirBono(b.id),
+    })),
+  ];
+  const resultados = busqueda.trim() ? buscar(opciones, busqueda, (o) => o.nombre) : [];
+  function elegirOpcion(o: Opcion) {
+    o.elegir();
+    setBusqueda("");
+    campoBusqueda.current?.focus();
+  }
   const necesitaCaja = total > 0;
   const textoCobrar = cobrando
     ? "Cobrando…"
@@ -308,6 +350,48 @@ export function Tpv({
 
       {/* Catálogo */}
       <section aria-label="Tratamientos" className="space-y-3">
+        <div className="relative">
+          <input
+            ref={campoBusqueda}
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const primera = resultados.find((o) => o.activa);
+                if (primera) {
+                  e.preventDefault();
+                  elegirOpcion(primera);
+                }
+              } else if (e.key === "Escape") setBusqueda("");
+            }}
+            aria-label="Buscar tratamiento, producto o bono"
+            placeholder="Buscar: diseño de cejas, axilas, aceite…"
+            autoComplete="off"
+            className="block w-full min-h-toque rounded-xl border-2 border-dorado bg-superficie px-4 text-lg"
+          />
+          {busqueda.trim() && (
+            <ul aria-label="Resultados de la búsqueda" className="absolute inset-x-0 top-full z-20 mt-1 max-h-96 overflow-auto rounded-xl border-2 border-dorado bg-superficie shadow-lg">
+              {resultados.length === 0 ? (
+                <li className="px-4 py-3 text-tinta-suave">No hay nada con «{busqueda.trim()}».</li>
+              ) : (
+                resultados.map((o) => (
+                  <li key={o.clave} className="border-t border-borde first:border-t-0">
+                    <button
+                      type="button"
+                      disabled={!o.activa}
+                      onClick={() => elegirOpcion(o)}
+                      className="flex w-full min-h-toque items-center justify-between gap-3 px-4 py-2 text-left hover:bg-crema disabled:opacity-50"
+                    >
+                      <span className="font-medium">{o.nombre}</span>
+                      <span className="shrink-0 text-sm text-tinta-suave">{o.detalle}</span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
         {categorias.map((cat) => (
           <div key={cat} className="space-y-2">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-tinta-suave">{cat}</h3>

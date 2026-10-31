@@ -96,6 +96,29 @@ test("con la caja cerrada no se cobra; se abre con un fondo de 50 €", async ()
   await expect(pagina.getByTestId("efectivo-esperado")).toHaveText("50,00 €");
 });
 
+test("el buscador encuentra el tratamiento sin tildes y lo añade a la cuenta con Intro o con un toque", async () => {
+  await pagina.goto("/gestion/tpv");
+  const buscador = pagina.getByRole("searchbox", { name: "Buscar tratamiento, producto o bono" });
+  await buscador.fill("diseno ceja");
+  const resultados = pagina.getByRole("list", { name: "Resultados de la búsqueda" });
+  await expect(resultados.getByRole("button")).toHaveCount(1);
+  await expect(resultados).toContainText("Diseño y depilación de cejas");
+  await buscador.press("Enter");
+  await expect(buscador).toHaveValue("");
+  await expect(pagina.getByTestId("total")).toHaveText("4,00 €");
+  // Varias opciones: se elige con un toque.
+  await buscador.fill("ceja");
+  await expect(resultados.getByRole("button")).toHaveCount(3);
+  // Primero lo que empieza por lo escrito.
+  await expect(resultados.getByRole("button").first()).toContainText("Ceja y labio");
+  await resultados.getByRole("button", { name: /^Laminado de cejas/ }).click();
+  await expect(pagina.getByTestId("total")).toHaveText("33,00 €");
+  await buscador.fill("nada de esto");
+  await expect(resultados).toContainText("No hay nada con «nada de esto».");
+  await buscador.press("Escape");
+  await pagina.getByRole("button", { name: "Vaciar" }).click();
+});
+
 test("cobra una cita de hoy en efectivo, con cambio, y la cita queda realizada", async () => {
   await pagina.goto(`/gestion/agenda/nueva?fecha=${hoy}`);
   await pagina.getByRole("button", { name: "+ Clienta nueva" }).click();
