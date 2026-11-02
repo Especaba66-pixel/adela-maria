@@ -47,6 +47,10 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
         <button class="boton boton-principal" type="submit">Reservar</button>
       </form>
       <p class="aviso" id="r-aviso" role="alert" hidden></p>
+      <div class="sin-conexion" id="r-sin-conexion" hidden>
+        <p id="r-sin-conexion-texto"></p>
+        ${alternativa}
+      </div>
       <div class="hecho" id="r-hecho" role="status" hidden></div>
     </div>
     <noscript><p class="entrada">Para reservar aquí hace falta activar JavaScript.</p>${alternativa}</noscript>
@@ -79,6 +83,8 @@ export const ESTILOS_RESERVA = `
 .acepto input{width:1.4rem;height:1.4rem;flex:none;margin-top:.15rem;accent-color:var(--dorado-oscuro)}
 .trampa{position:absolute!important;left:-9999px}
 .aviso{margin:0;padding:.75rem 1rem;border-radius:.75rem;background:#fef3f2;color:#b42318}
+.sin-conexion{padding:1rem;border-radius:1rem;background:var(--crema);text-align:center}
+.sin-conexion p{margin:0 0 .75rem}
 .hecho{padding:1.25rem;border-radius:1rem;background:#ecfdf3;color:#205c3a;text-align:center}
 .hecho strong{display:block;font:600 1.6rem "Cormorant Garamond",serif}
 `;
@@ -103,6 +109,16 @@ export const SCRIPT_RESERVA = `(() => {
   const boton = (clase, html, alPulsar) => { const b = document.createElement("button"); b.type = "button"; b.className = clase; b.setAttribute("aria-pressed", "false"); b.innerHTML = html; b.addEventListener("click", alPulsar); return b; };
   const marcar = (cont, b) => { for (const x of cont.children) x.setAttribute("aria-pressed", String(x === b)); };
 
+  // Navegadores de dentro de Instagram o Facebook: a veces no dejan hablar con el servicio de reservas.
+  const enApp = /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent);
+  function sinConexion() {
+    selServicio.innerHTML = '<option value="">No disponible ahora</option>';
+    $("r-sin-conexion-texto").textContent = enApp
+      ? "Desde Instagram a veces no se puede reservar aquí. Toca los tres puntos (⋯) de arriba y elige «Abrir en el navegador», o pide tu cita por WhatsApp:"
+      : "Ahora mismo no se puede cargar el calendario. Prueba en un momento o pide tu cita por WhatsApp:";
+    $("r-sin-conexion").hidden = false;
+  }
+
   async function pedir(ruta, opciones) {
     const r = await fetch(api + ruta, opciones);
     const cuerpo = await r.json().catch(() => ({}));
@@ -112,7 +128,8 @@ export const SCRIPT_RESERVA = `(() => {
 
   async function cargarServicios() {
     try {
-      servicios = (await pedir("/api/servicios")).servicios;
+      // Un reintento: una conexión floja del móvil no debe dejar a nadie sin reservar.
+      servicios = (await pedir("/api/servicios").catch(() => new Promise((ok) => setTimeout(ok, 1500)).then(() => pedir("/api/servicios")))).servicios;
       selServicio.innerHTML = '<option value="">Elige un tratamiento</option>';
       const grupos = new Map();
       for (const s of servicios) {
@@ -120,8 +137,7 @@ export const SCRIPT_RESERVA = `(() => {
         const o = document.createElement("option"); o.value = s.id; o.textContent = s.nombre + euros(s.precio); grupos.get(s.categoria).append(o);
       }
     } catch (e) {
-      selServicio.innerHTML = '<option value="">No disponible ahora</option>';
-      mostrarAviso("Ahora mismo no se puede reservar aquí. " + (document.querySelector(".reserva-alternativa") ? "Puedes pedir cita por WhatsApp." : "Prueba más tarde."));
+      sinConexion();
     }
   }
 
