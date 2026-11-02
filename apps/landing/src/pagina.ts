@@ -262,7 +262,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
   ${servicios}
   </aside>
 
-  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`)}
+  ${bloqueReserva(api, `<div class="centrado reserva-alternativa">${ctaPrincipal}</div>`, instagram)}
 
   ${
     d.trabajos?.some((t) => t.fotos.length)

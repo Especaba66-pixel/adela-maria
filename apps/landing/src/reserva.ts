@@ -7,8 +7,11 @@ import { TEXTO_PRIVACIDAD } from "@adela/dominio";
 
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Bloque HTML del calendario. Sin `api`, explica cómo pedir cita mientras tanto. */
-export function bloqueReserva(api: string | null, alternativa: string): string {
+/**
+ * Bloque HTML del calendario. Sin `api`, explica cómo pedir cita mientras tanto. `instagram` (usuario) sirve de
+ * contacto si el calendario no carga (por ejemplo, dentro de la app de Instagram).
+ */
+export function bloqueReserva(api: string | null, alternativa: string, instagram: string | null = null): string {
   if (!api) {
     return `<section id="reservar" class="reserva" aria-labelledby="titulo-reservar">
   <div class="contenedor">
@@ -49,7 +52,10 @@ export function bloqueReserva(api: string | null, alternativa: string): string {
       <p class="aviso" id="r-aviso" role="alert" hidden></p>
       <div class="sin-conexion" id="r-sin-conexion" hidden>
         <p id="r-sin-conexion-texto"></p>
-        ${alternativa}
+        <div class="sin-conexion-botones">
+          <button type="button" class="boton boton-principal" id="r-copiar">Copiar enlace</button>
+          ${instagram ? `<a class="boton boton-secundario" href="https://www.instagram.com/${esc(instagram)}/" target="_blank" rel="noopener">Escríbenos por Instagram</a>` : ""}
+        </div>
       </div>
       <div class="hecho" id="r-hecho" role="status" hidden></div>
     </div>
@@ -85,6 +91,8 @@ export const ESTILOS_RESERVA = `
 .aviso{margin:0;padding:.75rem 1rem;border-radius:.75rem;background:#fef3f2;color:#b42318}
 .sin-conexion{padding:1rem;border-radius:1rem;background:var(--crema);text-align:center}
 .sin-conexion p{margin:0 0 .75rem}
+.sin-conexion-botones{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center}
+.sin-conexion button.boton{border:0;cursor:pointer;font-family:inherit}
 .hecho{padding:1.25rem;border-radius:1rem;background:#ecfdf3;color:#205c3a;text-align:center}
 .hecho strong{display:block;font:600 1.6rem "Cormorant Garamond",serif}
 `;
@@ -114,10 +122,19 @@ export const SCRIPT_RESERVA = `(() => {
   function sinConexion() {
     selServicio.innerHTML = '<option value="">No disponible ahora</option>';
     $("r-sin-conexion-texto").textContent = enApp
-      ? "Desde Instagram a veces no se puede reservar aquí. Toca los tres puntos (⋯) de arriba y elige «Abrir en el navegador», o pide tu cita por WhatsApp:"
-      : "Ahora mismo no se puede cargar el calendario. Prueba en un momento o pide tu cita por WhatsApp:";
+      ? "Desde Instagram a veces no se puede reservar aquí. Toca los tres puntos (⋯) de arriba y elige «Abrir en el navegador». También puedes copiar el enlace y pegarlo en Safari o Chrome, o escribirnos por Instagram:"
+      : "Ahora mismo no se puede cargar el calendario. Prueba en un momento, abre la web en otro navegador o escríbenos por Instagram:";
     $("r-sin-conexion").hidden = false;
   }
+  $("r-copiar").addEventListener("click", async () => {
+    const enlace = location.origin + location.pathname;
+    try {
+      await navigator.clipboard.writeText(enlace);
+      $("r-copiar").textContent = "Enlace copiado: pégalo en Safari o Chrome";
+    } catch (e) {
+      window.prompt("Copia este enlace y pégalo en Safari o Chrome:", enlace);
+    }
+  });
 
   async function pedir(ruta, opciones) {
     const r = await fetch(api + ruta, opciones);
