@@ -169,6 +169,42 @@ mensajes solo salen dentro de esa franja y con el TPV encendido).
 4. Responde **BAJA**: la ficha queda sin permisos y te llega la confirmación.
 5. Borra la clienta de prueba.
 
+## Alternativa: conectar el número a través de Kapso
+
+Si el número del centro ya está conectado en **Kapso** (app.kapso.ai, estado **Conectado**), la app puede enviar y
+recibir por Kapso en vez de hablar directamente con Meta. Kapso usa los mismos mensajes y plantillas de Meta: solo
+cambian la clave y el webhook. Sustituye los pasos C2 y C3, y el webhook de la tanda B.
+
+### K1. Clave de la API de Kapso (va solo al TPV)
+
+1. En Kapso → **API keys** → crea una clave (nombre «adela-tpv») y **cópiala**. No la pegues en ningún chat.
+2. En Kapso → **Números de teléfono**, copia el **ID del número de teléfono** del número del centro (una tira de
+   cifras; no el de la «Salvadera»/Sandbox).
+3. En el TPV, abre `C:\AdelaMaria\.env` con el Bloc de notas y añade al final:
+
+```
+WHATSAPP_KAPSO_CLAVE=la clave de Kapso
+WHATSAPP_NUMERO_ID=el ID del número de teléfono
+```
+
+4. Guarda y ejecuta `actualizar.ps1` (o reinicia el TPV). En **Más → WhatsApp** debe salir que está conectado.
+
+### K2. Webhook: que Kapso avise al servicio de reservas
+
+1. Inventa una clave larga (al menos 24 letras y números, por ejemplo cuatro palabras seguidas con números) y
+   guárdala en **GitHub → Settings → Secrets → Actions** con el nombre `WHATSAPP_CLAVE_WEBHOOK_KAPSO`.
+2. En GitHub → **Actions → Reservas → Run workflow** para publicarla en Cloudflare.
+3. En Kapso → **Webhooks** del número → **Añadir webhook**:
+   - URL: `https://adela-reservas.especaba66.workers.dev/api/whatsapp?clave=` seguido de la clave del paso 1.
+   - Formato: el de **Meta** (reenviar los avisos de Meta sin cambios), no el formato propio de Kapso.
+   - Eventos: mensajes recibidos y estados de los mensajes.
+4. Kapso reenvía los avisos sin la firma de Meta; por eso la URL lleva la clave. Sin ella, el servicio los rechaza.
+
+### K3. Plantillas
+
+Las plantillas tienen que estar aprobadas **en la cuenta de WhatsApp del número** (en Kapso → **Plantillas**). Si las
+6 de abajo no aparecen ahí, créalas en esa cuenta con el mismo texto. Después sigue con C4, C5 y C6.
+
 ## Las 6 plantillas (texto exacto)
 
 En Meta → **WhatsApp → Plantillas de mensajes** → **Crear plantilla**, idioma **Español**. Copia el texto tal cual (las

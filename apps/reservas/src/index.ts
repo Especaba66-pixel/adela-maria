@@ -18,7 +18,7 @@
  */
 import { esFecha, sumarDias } from "@adela/dominio/agenda";
 import { MAX_PENDIENTES_POR_TELEFONO, TEXTO_PRIVACIDAD, validarSolicitud } from "@adela/dominio/reservas";
-import { MAX_CUERPO, firmaValida, verificarSuscripcion } from "./whatsapp";
+import { MAX_CUERPO, claveIgual, firmaValida, verificarSuscripcion } from "./whatsapp";
 import { estaLibre, horasLibres, intervalo, type Estado, type Ocupa, type Servicio } from "./disponibilidad";
 
 export interface Env {
@@ -31,6 +31,11 @@ export interface Env {
   WA_SECRETO_APP?: string;
   /** Token que se escribe en Meta al dar de alta el webhook. */
   WA_TOKEN_VERIFICACION?: string;
+  /**
+   * Si el número va por Kapso: Kapso reenvía los avisos de Meta tal cual pero sin la firma de Meta, así que la URL del
+   * webhook lleva esta clave («/api/whatsapp?clave=…»).
+   */
+  WA_CLAVE_KAPSO?: string;
 }
 
 /** Reservas por hora desde una misma conexión (frena el abuso). */
@@ -62,7 +67,7 @@ async function enrutar(req: Request, url: URL, env: Env): Promise<Response> {
       const reto = verificarSuscripcion(url, env.WA_TOKEN_VERIFICACION ?? "");
       return reto === null ? json({ error: "No autorizado" }, 403) : new Response(reto, { headers: { "Content-Type": "text/plain" } });
     }
-    if (req.method === "POST") return recibirWhatsapp(req, env);
+    if (req.method === "POST") return recibirWhatsapp(req, url, env);
   }
   if (ruta.startsWith("/api/sync")) {
     if (!(await claveCorrecta(req, env))) return json({ error: "No autorizado" }, 401);
@@ -260,10 +265,12 @@ async function sincronizar(req: Request, env: Env): Promise<Response> {
 
 // ── WhatsApp ─────────────────────────────────────────────────────────────────
 
-async function recibirWhatsapp(req: Request, env: Env): Promise<Response> {
+async function recibirWhatsapp(req: Request, url: URL, env: Env): Promise<Response> {
   const cuerpo = await req.text();
   if (cuerpo.length > MAX_CUERPO) return json({ error: "Demasiado grande" }, 413);
-  if (!(await firmaValida(env.WA_SECRETO_APP ?? "", cuerpo, req.headers.get("X-Hub-Signature-256")))) return json({ error: "Firma no válida" }, 401);
+  const deMeta = await firmaValida(env.WA_SECRETO_APP ?? "", cuerpo, req.headers.get("X-Hub-Signature-256"));
+  const deKapso = claveIgual(env.WA_CLAVE_KAPSO ?? "", url.searchParams.get("clave"));
+  if (!deMeta && !deKapso) return json({ error: "Firma no válida" }, 401);
   await env.DB.batch([
     env.DB.prepare("INSERT INTO whatsapp_eventos (cuerpo, recibido) VALUES (?, ?)").bind(cuerpo, Date.now()),
     // Si el TPV no se los lleva en un mes (apagado mucho tiempo), no se guardan más.

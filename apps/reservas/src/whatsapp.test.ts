@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firmaValida, verificarSuscripcion } from "./whatsapp";
+import { claveIgual, firmaValida, verificarSuscripcion } from "./whatsapp";
 
 describe("webhook de WhatsApp", () => {
   const cuerpo = JSON.stringify({ entry: [{ changes: [] }] });
@@ -15,6 +15,16 @@ describe("webhook de WhatsApp", () => {
     expect(await firmaValida("secreto", `${cuerpo} `, await firma("secreto"))).toBe(false);
     expect(await firmaValida("secreto", cuerpo, null)).toBe(false);
     expect(await firmaValida("", cuerpo, await firma(""))).toBe(false);
+  });
+
+  it("con Kapso, acepta solo la clave larga y exacta de la URL", () => {
+    const clave = "clave-kapso-0123456789abcdef";
+    expect(claveIgual(clave, clave)).toBe(true);
+    expect(claveIgual(clave, `${clave}x`)).toBe(false);
+    expect(claveIgual(clave, clave.replace("0", "1"))).toBe(false);
+    expect(claveIgual(clave, null)).toBe(false);
+    expect(claveIgual("corta", "corta")).toBe(false);
+    expect(claveIgual("", "")).toBe(false);
   });
 
   it("responde al alta en Meta solo con el token correcto", () => {

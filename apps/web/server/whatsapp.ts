@@ -25,15 +25,23 @@ import { avisar } from "./notificaciones";
  * encendido) y el TPV se los trae al sincronizar, cada minuto.
  */
 
-export const apiWhatsapp = () => Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_NUMERO_ID);
-const urlApi = () => (process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v23.0").replace(/\/+$/, "");
+/**
+ * Dos formas de conectar: directamente con Meta (WHATSAPP_TOKEN) o a través de Kapso (WHATSAPP_KAPSO_CLAVE), que habla
+ * con Meta por nosotros con los mismos mensajes. Con Kapso, la dirección por defecto es la suya.
+ */
+const claveKapso = () => process.env.WHATSAPP_KAPSO_CLAVE?.trim() || "";
+export const apiWhatsapp = () => Boolean((process.env.WHATSAPP_TOKEN || claveKapso()) && process.env.WHATSAPP_NUMERO_ID);
+const urlApi = () =>
+  (process.env.WHATSAPP_API_URL || (claveKapso() ? "https://api.kapso.ai/meta/whatsapp/v24.0" : "https://graph.facebook.com/v23.0")).replace(/\/+$/, "");
+const cabecerasApi = (): Record<string, string> =>
+  claveKapso() ? { "X-API-Key": claveKapso(), "Content-Type": "application/json" } : { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" };
 
 /** Llama a Meta para enviar un mensaje. Devuelve el identificador del mensaje (wamid) o el motivo del fallo. */
 export async function llamarMeta(cuerpo: unknown): Promise<{ ok: true; waId: string } | { ok: false; error: string }> {
   try {
     const r = await fetch(`${urlApi()}/${process.env.WHATSAPP_NUMERO_ID}/messages`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
+      headers: cabecerasApi(),
       body: JSON.stringify(cuerpo),
       signal: AbortSignal.timeout(20_000),
     });

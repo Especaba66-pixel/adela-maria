@@ -20,6 +20,14 @@ export async function firmaValida(secreto: string, cuerpo: string, cabecera: str
   return diferencia === 0;
 }
 
+/** Clave del webhook de Kapso (va en la URL). Compara sin dar pistas por el tiempo; exige al menos 24 caracteres. */
+export function claveIgual(esperada: string, dada: string | null): boolean {
+  if (esperada.length < 24 || !dada || dada.length !== esperada.length) return false;
+  let diferencia = 0;
+  for (let i = 0; i < esperada.length; i++) diferencia |= esperada.charCodeAt(i) ^ dada.charCodeAt(i);
+  return diferencia === 0;
+}
+
 /** Alta del webhook en Meta: devuelve el «challenge» si el token de verificación coincide. */
 export function verificarSuscripcion(url: URL, token: string): string | null {
   const p = url.searchParams;
