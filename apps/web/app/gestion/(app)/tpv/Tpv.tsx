@@ -313,11 +313,41 @@ export function Tpv({
     })),
   ];
   const resultados = busqueda.trim() ? buscar(opciones, busqueda, (o) => o.nombre) : [];
+  const [resaltada, setResaltada] = useState(0);
+  useEffect(() => setResaltada(0), [busqueda]);
   function elegirOpcion(o: Opcion) {
     o.elegir();
+    contarUso(o.clave);
     setBusqueda("");
     campoBusqueda.current?.focus();
   }
+
+  // Lo que más se cobra en este TPV: se cuenta en este aparato y salen como botones de un toque, arriba del todo.
+  const [usos, setUsos] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      setUsos(JSON.parse(localStorage.getItem("tpv-usos") ?? "{}") as Record<string, number>);
+    } catch {
+      /* sin memoria del navegador: simplemente no hay frecuentes */
+    }
+    // En pantalla grande el cursor ya queda en el buscador: escribir y cobrar, sin tocar nada antes.
+    if (window.matchMedia("(min-width: 1024px)").matches) campoBusqueda.current?.focus();
+  }, []);
+  function contarUso(clave: string) {
+    setUsos((u) => {
+      const nuevo = { ...u, [clave]: (u[clave] ?? 0) + 1 };
+      try {
+        localStorage.setItem("tpv-usos", JSON.stringify(nuevo));
+      } catch {
+        /* igual */
+      }
+      return nuevo;
+    });
+  }
+  const frecuentes = opciones
+    .filter((o) => o.activa && (usos[o.clave] ?? 0) > 0)
+    .sort((a, b) => (usos[b.clave] ?? 0) - (usos[a.clave] ?? 0))
+    .slice(0, 8);
   const necesitaCaja = total > 0;
   const textoCobrar = cobrando
     ? "Cobrando…"
@@ -358,11 +388,17 @@ export function Tpv({
             onChange={(e) => setBusqueda(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                const primera = resultados.find((o) => o.activa);
-                if (primera) {
+                const elegida = resultados[resaltada]?.activa ? resultados[resaltada] : resultados.find((o) => o.activa);
+                if (elegida) {
                   e.preventDefault();
-                  elegirOpcion(primera);
+                  elegirOpcion(elegida);
                 }
+              } else if (e.key === "ArrowDown" && resultados.length) {
+                e.preventDefault();
+                setResaltada((r) => (r + 1) % resultados.length);
+              } else if (e.key === "ArrowUp" && resultados.length) {
+                e.preventDefault();
+                setResaltada((r) => (r - 1 + resultados.length) % resultados.length);
               } else if (e.key === "Escape") setBusqueda("");
             }}
             aria-label="Buscar tratamiento, producto o bono"
@@ -375,8 +411,8 @@ export function Tpv({
               {resultados.length === 0 ? (
                 <li className="px-4 py-3 text-tinta-suave">No hay nada con «{busqueda.trim()}».</li>
               ) : (
-                resultados.map((o) => (
-                  <li key={o.clave} className="border-t border-borde first:border-t-0">
+                resultados.map((o, n) => (
+                  <li key={o.clave} className={`border-t border-borde first:border-t-0 ${n === resaltada ? "bg-crema" : ""}`}>
                     <button
                       type="button"
                       disabled={!o.activa}
@@ -392,6 +428,18 @@ export function Tpv({
             </ul>
           )}
         </div>
+        {frecuentes.length > 0 && !busqueda.trim() && (
+          <div className="space-y-2" role="group" aria-label="Lo que más cobras">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-tinta-suave">Lo que más cobras</h3>
+            <div className="flex flex-wrap gap-2">
+              {frecuentes.map((o) => (
+                <button key={o.clave} type="button" onClick={() => elegirOpcion(o)} className="min-h-toque rounded-full border-2 border-dorado bg-superficie px-4 py-1 font-medium hover:bg-crema">
+                  {o.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {categorias.map((cat) => (
           <div key={cat} className="space-y-2">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-tinta-suave">{cat}</h3>
@@ -405,7 +453,7 @@ export function Tpv({
                       key={c.id}
                       type="button"
                       disabled={!cobrable}
-                      onClick={() => anadir(c.id)}
+                      onClick={() => { anadir(c.id); contarUso(`t:${c.id}`); }}
                       className="min-h-boton rounded-xl border-2 border-borde bg-superficie px-3 py-2 text-left hover:border-dorado disabled:opacity-50"
                     >
                       <div className="font-medium leading-tight">{c.nombre}</div>
@@ -429,7 +477,7 @@ export function Tpv({
                     key={p.id}
                     type="button"
                     disabled={!vendible}
-                    onClick={() => anadirProducto(p.id)}
+                    onClick={() => { anadirProducto(p.id); contarUso(`p:${p.id}`); }}
                     className="min-h-boton rounded-xl border-2 border-borde bg-superficie px-3 py-2 text-left hover:border-dorado disabled:opacity-50"
                   >
                     <div className="font-medium leading-tight">{p.nombre}</div>
@@ -450,7 +498,7 @@ export function Tpv({
                 key={b.id}
                 type="button"
                 disabled={b.ivaCentesimas === null}
-                onClick={() => anadirBono(b.id)}
+                onClick={() => { anadirBono(b.id); contarUso(`b:${b.id}`); }}
                 className="min-h-boton rounded-xl border-2 border-dorado bg-crema px-3 py-2 text-left hover:border-dorado-oscuro disabled:opacity-50"
               >
                 <div className="font-medium leading-tight">{b.nombre}</div>

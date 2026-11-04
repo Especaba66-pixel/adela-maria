@@ -14,14 +14,18 @@ export function coincide(texto: string, consulta: string): boolean {
 }
 
 /**
- * Los que coinciden, primero los que empiezan por lo escrito y después por orden alfabético; como mucho `max`.
+ * Los que coinciden: primero los que empiezan por lo escrito, luego los que tienen una palabra que empieza así
+ * («cejas» antes que «sobrecejas»), y después el resto, cada grupo por orden alfabético; como mucho `max`.
  */
 export function buscar<T>(items: T[], consulta: string, texto: (item: T) => string, max = 8): T[] {
   const primera = textoBuscable(consulta).trim();
   return items
     .filter((i) => coincide(texto(i), consulta))
-    .map((i) => ({ i, empieza: textoBuscable(texto(i)).startsWith(primera), t: textoBuscable(texto(i)) }))
-    .sort((a, b) => Number(b.empieza) - Number(a.empieza) || a.t.localeCompare(b.t, "es"))
+    .map((i) => {
+      const t = textoBuscable(texto(i));
+      return { i, t, rango: t.startsWith(primera) ? 0 : t.split(/[^a-z0-9]+/).some((w) => w.startsWith(primera)) ? 1 : 2 };
+    })
+    .sort((a, b) => a.rango - b.rango || a.t.localeCompare(b.t, "es"))
     .slice(0, max)
     .map((x) => x.i);
 }
