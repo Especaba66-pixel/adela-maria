@@ -45,7 +45,9 @@ test("el horario de Adela ya viene puesto: lunes descanso, miércoles partido", 
   await expect(form.getByLabel("Miércoles tramo 2 desde")).toHaveValue("15:30");
   await expect(form.getByLabel("Miércoles tramo 2 hasta")).toHaveValue("18:30");
   await expect(form.getByLabel("Viernes tramo 1 hasta")).toHaveValue("19:00");
-  await expect(form.getByLabel("Sábado tramo 1 desde")).toHaveValue("");
+  await expect(form.getByLabel("Sábado tramo 1 desde")).toHaveValue("10:00");
+  await expect(form.getByLabel("Sábado tramo 1 hasta")).toHaveValue("14:00");
+  await expect(form.getByLabel("Domingo tramo 1 desde")).toHaveValue("");
 });
 
 test("la administración pone el horario de Adela: todos los días de 9 a 14 y de 16 a 21", async () => {

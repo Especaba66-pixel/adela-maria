@@ -113,6 +113,13 @@
       "when": 1792658057117,
       "tag": "0015_notificaciones_push",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793000000000,
+      "tag": "0016_sabado_de_10_a_14",
+      "breakpoints": true
     }
   ]
 }

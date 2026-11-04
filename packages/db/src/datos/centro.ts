@@ -7,8 +7,8 @@
 export const CABINAS = 3;
 
 /**
- * Horario de Adela (dato de Espe, 22 de octubre de 2026). Lunes, descanso; domingo, cerrado. El sábado abre solo
- * con cita (hasta las 14:00): no se ofrece en la web, y Adela da esas citas desde la app («Dar cita igualmente»).
+ * Horario de Adela (dato de Espe, 22 de octubre de 2026; sábado de 10:00 a 14:00 desde el 4 de noviembre de 2026).
+ * Lunes, descanso; domingo, cerrado.
  */
 const h = (hora: string) => Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3));
 export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: number }[] = (
@@ -18,6 +18,7 @@ export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: nu
     [3, "15:30", "18:30"],
     [4, "11:00", "18:30"],
     [5, "11:00", "19:00"],
+    [6, "10:00", "14:00"],
   ] as const
 ).map(([diaSemana, desde, hasta]) => ({ diaSemana, inicioMin: h(desde), finMin: h(hasta) }));
 
@@ -35,7 +36,7 @@ export const CONTACTO: { whatsapp: string | null; direccion: string | null; hora
     "Miércoles: de 9:15 a 13:15 y de 15:30 a 18:30",
     "Jueves: de 11:00 a 18:30",
     "Viernes: de 11:00 a 19:00",
-    "Sábado: con cita previa, hasta las 14:00",
+    "Sábado: de 10:00 a 14:00",
   ],
   /** Usuario de Instagram del centro (dato de Espe, 12 de octubre de 2026). */
   instagram: "adela_maria_bellezaholistica",

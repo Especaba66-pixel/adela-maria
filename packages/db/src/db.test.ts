@@ -75,7 +75,7 @@ describe("datos iniciales", () => {
     expect(c?.cabinas).toBe(3);
     // Horario de Adela: martes a viernes, con el miércoles partido.
     const h = await db.select().from(horarios).where(eq(horarios.profesionalId, prof!.id));
-    expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([[2, 555, 825], [3, 555, 795], [3, 930, 1110], [4, 660, 1110], [5, 660, 1140]]);
+    expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([[2, 555, 825], [3, 555, 795], [3, 930, 1110], [4, 660, 1110], [5, 660, 1140], [6, 600, 840]]);
 
     // La administración que instala con «adela» pasa a entrar con su correo.
     const [adela] = await db.select().from(usuarios).where(eq(usuarios.usuario, "adelamaria_16@hotmail.com"));

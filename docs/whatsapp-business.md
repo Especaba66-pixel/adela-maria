@@ -40,7 +40,7 @@ Te los pide al terminar (o en **Ajustes → Herramientas para la empresa → Per
   - Miércoles: de 9:15 a 13:15 y de 15:30 a 18:30
   - Jueves: de 11:00 a 18:30
   - Viernes: de 11:00 a 19:00
-  - Sábado: solo con cita (pon de 9:00 a 14:00 o márcalo como cerrado, como prefieras)
+  - Sábado: de 10:00 a 14:00
   - Domingo: cerrado
 - **Sitio web:** https://adelamariatorremejia.es
 - **Instagram:** @adela_maria_bellezaholistica
@@ -65,7 +65,7 @@ En **Ajustes → Herramientas para la empresa**:
 | /direccion | Estamos en C/ Francisco Pizarro 13, 1.ª planta, Torremejía (Badajoz). |
 | /precios | Todos los tratamientos con su precio, y la reserva, están aquí: https://adelamariatorremejia.es |
 | /llamadas | Perdona, no atendemos llamadas: escríbenos por aquí y te respondemos en cuanto podamos. 😊 |
-| /horario | Martes, de 9:15 a 13:45 · Miércoles, de 9:15 a 13:15 y de 15:30 a 18:30 · Jueves, de 11:00 a 18:30 · Viernes, de 11:00 a 19:00 · Sábado, con cita previa hasta las 14:00. Lunes, descanso. |
+| /horario | Martes, de 9:15 a 13:45 · Miércoles, de 9:15 a 13:15 y de 15:30 a 18:30 · Jueves, de 11:00 a 18:30 · Viernes, de 11:00 a 19:00 · Sábado, de 10:00 a 14:00. Lunes, descanso. |
 
 ## 5. Seguridad (importante)
 
