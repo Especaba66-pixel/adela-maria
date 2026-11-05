@@ -70,7 +70,7 @@ test("arriba el lema con las fotos y, en la misma pantalla, los servicios: la cl
   const textoHora = (await hora.textContent())!;
   await hora.click();
   await clienta.getByRole("textbox", { name: "Nombre" }).fill("Rosa Web");
-  await clienta.getByRole("textbox", { name: "Teléfono (WhatsApp)" }).fill("633 21 21 21");
+  await clienta.getByRole("textbox", { name: "Teléfono" }).fill("633 21 21 21");
   await clienta.getByRole("button", { name: "Reservar", exact: true }).click();
   await expect(clienta.getByRole("alert").filter({ hasText: /aceptar el uso de tus datos/ })).toBeVisible();
   await clienta.getByRole("checkbox").check();

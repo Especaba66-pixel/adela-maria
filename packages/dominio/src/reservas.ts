@@ -11,7 +11,7 @@ export const MAX_PENDIENTES_POR_TELEFONO = 3;
 
 export const TEXTO_PRIVACIDAD =
   "Adela María · Belleza holística usará tu nombre y teléfono solo para gestionar esta cita y contactarte por " +
-  "teléfono o WhatsApp sobre ella. Puedes pedir que borremos tus datos cuando quieras.";
+  "teléfono sobre ella. Puedes pedir que borremos tus datos cuando quieras.";
 
 /**
  * Teléfono español a formato internacional (+34XXXXXXXXX). Acepta espacios, guiones, puntos y prefijo 34/0034/+34.

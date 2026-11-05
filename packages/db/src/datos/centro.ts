@@ -28,7 +28,8 @@ export const HORARIO_INICIAL: { diaSemana: number; inicioMin: number; finMin: nu
  * Teléfono y WhatsApp del centro: dato de Espe, 15 de octubre de 2026 (9 cifras).
  */
 export const CONTACTO: { whatsapp: string | null; direccion: string | null; horario: string[]; instagram: string | null; reservas: string | null } = {
-  whatsapp: "624745734",
+  // Oculto en la web hasta que el WhatsApp funcione (4 de noviembre de 2026). Para volver a mostrarlo: "624745734".
+  whatsapp: null,
   direccion: "C/ Francisco Pizarro 13, 1.ª planta, 06210 Torremejía (Badajoz)",
   horario: [
     "Lunes: descanso",

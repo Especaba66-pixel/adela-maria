@@ -24,7 +24,7 @@ export function bloqueReserva(api: string | null, alternativa: string, instagram
   return `<section id="reservar" class="reserva" aria-labelledby="titulo-reservar">
   <div class="contenedor">
     <h2 id="titulo-reservar">Reserva tu cita</h2>
-    <p class="entrada">Elige tratamiento, día y hora. Te confirmamos la cita por WhatsApp.</p>
+    <p class="entrada">Elige tratamiento, día y hora. Te confirmamos la cita en cuanto podamos.</p>
     <div class="calendario" id="calendario" data-api="${esc(api)}">
       <label class="paso">
         <span class="paso-titulo"><span class="paso-numero">1</span>Tratamiento</span>
@@ -43,7 +43,7 @@ export function bloqueReserva(api: string | null, alternativa: string, instagram
         <span class="paso-titulo"><span class="paso-numero">4</span>Tus datos</span>
         <p class="resumen" id="r-resumen"></p>
         <label>Nombre<input name="nombre" autocomplete="name" required maxlength="80"></label>
-        <label>Teléfono (WhatsApp)<input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required></label>
+        <label>Teléfono<input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required></label>
         <label>Comentario (opcional)<textarea name="nota" rows="2" maxlength="500"></textarea></label>
         <label class="trampa" aria-hidden="true">Web<input name="web" tabindex="-1" autocomplete="off"></label>
         <label class="acepto"><input type="checkbox" name="acepta" required> <span>${esc(TEXTO_PRIVACIDAD)}</span></label>
@@ -217,7 +217,7 @@ export const SCRIPT_RESERVA = `(() => {
       for (const p of [selServicio.closest(".paso"), pasoDia, pasoHora, datos]) p.hidden = true;
       mostrarAviso("");
       hecho.innerHTML = "<strong>¡Reserva recibida!</strong>";
-      hecho.append(resumen.textContent + ". Te confirmamos la cita por WhatsApp en cuanto podamos.");
+      hecho.append(resumen.textContent + ". Te confirmamos la cita en cuanto podamos.");
       hecho.hidden = false;
       document.getElementById("reservar").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {

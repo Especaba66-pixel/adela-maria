@@ -59,4 +59,4 @@ writeFileSync(`${dist}/.nojekyll`, "");
 // Dominio propio (GitHub Pages lo lee de este archivo).
 if (process.env.DOMINIO) writeFileSync(`${dist}/CNAME`, `${process.env.DOMINIO}\n`);
 console.log(`Landing generada en ${dist}/index.html`);
-if (!CONTACTO.whatsapp) console.warn("Aviso: falta el WhatsApp del centro; la página no muestra botones de cita.");
+

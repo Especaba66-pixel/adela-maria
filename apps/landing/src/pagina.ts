@@ -156,7 +156,9 @@ export function construirPagina(d: DatosLanding): string {
 
   const ctaPrincipal = enlaceCita()
     ? `<a class="boton boton-principal" href="${enlaceCita()}" target="_blank" rel="noopener">Pedir cita por WhatsApp</a>`
-    : `<p class="pronto">Muy pronto podrás pedir cita por WhatsApp desde aquí.</p>`;
+    : instagram
+      ? `<p class="pronto">Para pedir cita, escríbenos por <a href="https://www.instagram.com/${instagram}/" target="_blank" rel="noopener">Instagram</a>.</p>`
+      : `<p class="pronto">Muy pronto podrás pedir cita desde aquí.</p>`;
 
   // Fotos de los trabajos para la cinta (una de cada tipo primero, para que se vean todos); la portada lleva las suyas.
   const conFotos = (d.trabajos ?? []).filter((t) => t.fotos.length);
@@ -206,7 +208,7 @@ export function construirPagina(d: DatosLanding): string {
     )}
   </nav>`;
 
-  const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y pide tu cita por WhatsApp.";
+  const descripcion = "Centro de belleza holística: tratamientos faciales y depilación. Consulta precios y reserva tu cita en línea.";
 
   return `<!doctype html>
 <html lang="es">
@@ -312,7 +314,7 @@ ${d.url ? `<meta property="og:url" content="${esc(d.url)}">\n<link rel="canonica
       <li><span>1</span>En «Nuestros servicios», abre una opción y pulsa «Reservar» en tu tratamiento.</li>
       <li><span>2</span>Elige día y hora: se ven las horas libres al momento.</li>
       <li><span>3</span>Deja tu nombre y tu teléfono y pulsa «Reservar».</li>
-      <li><span>4</span>Te confirmamos la cita por WhatsApp.</li>
+      <li><span>4</span>Te confirmamos la cita en cuanto podamos.</li>
     </ol>
     <div class="centrado"><a class="boton boton-principal" href="#reservar">Reservar mi cita</a></div>`
         : `<ol class="pasos">

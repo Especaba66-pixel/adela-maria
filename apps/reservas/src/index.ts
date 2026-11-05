@@ -52,7 +52,7 @@ export default {
       return r;
     } catch (e) {
       console.error(e);
-      return json({ error: "Algo ha fallado. Prueba otra vez o escríbenos por WhatsApp." }, 500, cors);
+      return json({ error: "Algo ha fallado. Prueba otra vez o escríbenos por Instagram." }, 500, cors);
     }
   },
 } satisfies ExportedHandler<Env>;
@@ -172,10 +172,10 @@ async function reservar(req: Request, env: Env): Promise<Response> {
     env.DB.prepare("SELECT count(*) AS n FROM reservas WHERE importada = 0 AND telefono = ?").bind(v.datos.telefono),
   ]);
   if (ip && (porIp!.results[0] as { n: number }).n >= MAX_POR_IP_HORA) {
-    return json({ error: "Has hecho muchas reservas seguidas. Si necesitas más, escríbenos por WhatsApp." }, 429);
+    return json({ error: "Has hecho muchas reservas seguidas. Si necesitas más, escríbenos por Instagram." }, 429);
   }
   if ((porTelefono!.results[0] as { n: number }).n >= MAX_PENDIENTES_POR_TELEFONO) {
-    return json({ error: "Ya tienes varias citas por confirmar. Te contestaremos enseguida; si es urgente, escríbenos por WhatsApp." }, 429);
+    return json({ error: "Ya tienes varias citas por confirmar. Te contestaremos enseguida; si es urgente, escríbenos por Instagram." }, 429);
   }
 
   const { inicio, fin } = intervalo(fecha, minutos, s.duracion);

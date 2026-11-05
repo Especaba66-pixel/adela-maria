@@ -117,7 +117,7 @@ describe("landing", () => {
   it("sin WhatsApp no muestra botones rotos", () => {
     const sin = construirPagina({ categorias: CATEGORIAS, bonos: BONOS, contacto: { ...contacto, whatsapp: null } });
     expect(sin).not.toContain("wa.me");
-    expect(sin).toContain("Muy pronto podrás pedir cita");
+    expect(sin).toContain("escríbenos por <a href=\"https://www.instagram.com/adela_maria_bellezaholistica/\"");
   });
 
   it("rechaza un WhatsApp mal escrito y escapa el texto", () => {
