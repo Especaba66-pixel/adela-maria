@@ -201,7 +201,7 @@ function EstadoInternet() {
           ? "Reservas por internet: conectando…"
           : u.ok
             ? `Reservas por internet al día (${fechaHora(u.cuando).slice(-8, -3)}${u.importadas ? `, ${u.importadas} nuevas` : ""}).`
-            : `Reservas por internet: no se ha podido conectar (${fechaHora(u.cuando).slice(-8, -3)}). Se reintenta cada minuto; las clientas pueden seguir reservando.`}
+            : `Reservas por internet: no se ha podido conectar (${fechaHora(u.cuando).slice(-8, -3)}; motivo: ${u.error}). Se reintenta cada minuto; las clientas pueden seguir reservando.`}
       </span>
       <Boton type="submit" variante="secundario" className="min-h-10">
         Sincronizar ahora
