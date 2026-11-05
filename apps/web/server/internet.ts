@@ -60,7 +60,10 @@ async function llamar(ruta: string, opciones: RequestInit = {}) {
     headers: { Authorization: `Bearer ${process.env.RESERVAS_CLAVE}`, "Content-Type": "application/json" },
     signal: AbortSignal.timeout(20_000),
   });
-  if (!r.ok) throw new Error(`El servicio de reservas respondió ${r.status}`);
+  if (!r.ok) {
+    const detalle = await r.json().then((j: { error?: unknown }) => (typeof j.error === "string" ? j.error : ""), () => "");
+    throw new Error(`El servicio de reservas respondió ${r.status}${detalle ? `: ${detalle.slice(0, 300)}` : ""}`);
+  }
   return r.json();
 }
 

@@ -71,10 +71,16 @@ async function enrutar(req: Request, url: URL, env: Env): Promise<Response> {
   }
   if (ruta.startsWith("/api/sync")) {
     if (!(await claveCorrecta(req, env))) return json({ error: "No autorizado" }, 401);
-    if (req.method === "GET" && ruta === "/api/sync/whatsapp") return eventosWhatsapp(env);
-    if (req.method === "POST" && ruta === "/api/sync/whatsapp") return borrarEventosWhatsapp(req, env);
-    if (req.method === "GET" && ruta === "/api/sync/reservas") return pendientesDeImportar(env);
-    if (req.method === "POST" && ruta === "/api/sync") return sincronizar(req, env);
+    // Solo el TPV (con la clave) llega aquí: si algo falla, se le dice qué para poder arreglarlo.
+    try {
+      if (req.method === "GET" && ruta === "/api/sync/whatsapp") return await eventosWhatsapp(env);
+      if (req.method === "POST" && ruta === "/api/sync/whatsapp") return await borrarEventosWhatsapp(req, env);
+      if (req.method === "GET" && ruta === "/api/sync/reservas") return await pendientesDeImportar(env);
+      if (req.method === "POST" && ruta === "/api/sync") return await sincronizar(req, env);
+    } catch (e) {
+      console.error(e);
+      return json({ error: `Fallo en ${req.method} ${ruta}: ${e instanceof Error ? e.message : String(e)}` }, 500);
+    }
   }
   return json({ error: "No existe" }, 404);
 }
