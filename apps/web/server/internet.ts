@@ -17,6 +17,7 @@ import { and, asc, eq, gt, inArray, isNotNull, isNull, lt, ne } from "drizzle-or
 import { cabinas, crearCitas, profesionalesActivos, profesionalesQueHacen } from "./agenda";
 import { db } from "./db";
 import { avisar } from "./notificaciones";
+import { createHash } from "node:crypto";
 import { apiWhatsapp, envioAutomatico, procesarEventos } from "./whatsapp";
 
 /**
@@ -45,6 +46,7 @@ const estado = globalThis as typeof globalThis & {
   __ultimaSincronizacion?: ResultadoSincronizacion;
   __sincronizando?: Promise<ResultadoSincronizacion>;
   __ultimoWhatsapp?: ResultadoWhatsapp;
+  __ultimaAgendaEnviada?: { huella: string; cuando: number };
 };
 
 export const internetConfigurado = () => Boolean(process.env.RESERVAS_URL && process.env.RESERVAS_CLAVE);
@@ -80,7 +82,15 @@ export function sincronizar(): Promise<ResultadoSincronizacion> {
         importadas.push(reserva.id);
         if (resultado !== "repetida") await avisar(avisoDeReserva(reserva, resultado), "reservas.gestionar");
       }
-      await llamar("/api/sync", { method: "POST", body: JSON.stringify({ ...(await estadoAgenda()), importadas }) });
+      // Cada escritura en Cloudflare cuenta para su límite diario gratuito (100.000 filas): la agenda solo se manda
+      // cuando ha cambiado (o hay reservas que marcar como importadas, o hace más de 6 horas de la última vez).
+      const agenda = JSON.stringify(await estadoAgenda());
+      const huella = createHash("sha256").update(agenda).digest("hex");
+      const ultima = estado.__ultimaAgendaEnviada;
+      if (importadas.length > 0 || !ultima || ultima.huella !== huella || Date.now() - ultima.cuando > 6 * 3_600_000) {
+        await llamar("/api/sync", { method: "POST", body: JSON.stringify({ ...JSON.parse(agenda), importadas }) });
+        estado.__ultimaAgendaEnviada = { huella, cuando: Date.now() };
+      }
       r = { ok: true, cuando: new Date(), importadas: importadas.length };
     } catch (e) {
       console.error("Sincronización de reservas por internet:", e);
