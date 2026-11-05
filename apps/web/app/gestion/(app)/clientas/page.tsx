@@ -1,6 +1,7 @@
 import { NOMBRE_SEGMENTO, SEGMENTOS, formatearTelefono, type Segmento } from "@adela/dominio";
 import { Aviso, Tarjeta } from "@adela/ui";
 import Link from "next/link";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 import { enlaceMensaje } from "@/components/ListaAvisos";
 import { buscarClientas, clientasDeSegmento } from "@/server/clientas";
 
@@ -46,7 +47,7 @@ export default async function Clientas({ searchParams }: { searchParams: Promise
       {segmento && (
         <p className="text-tinta-suave">
           {lista.length} {lista.length === 1 ? "clienta" : "clientas"}
-          {plantilla && " · el botón de WhatsApp sale solo a quien acepta promociones"}
+          {mostrarWhatsapp() && plantilla && " · el botón de WhatsApp sale solo a quien acepta promociones"}
         </p>
       )}
       {lista.length === 0 ? (
@@ -60,7 +61,7 @@ export default async function Clientas({ searchParams }: { searchParams: Promise
               </Link>
               {c.dato && <span className="text-sm text-tinta-suave">{c.dato}</span>}
               <span className="text-tinta-suave">{c.telefono ? formatearTelefono(c.telefono) : "sin teléfono"}</span>
-              {plantilla && c.telefono && c.promociones && (
+              {mostrarWhatsapp() && plantilla && c.telefono && c.promociones && (
                 <a href={enlaceMensaje({ clienteId: c.id, plantilla })} target="_blank" rel="noopener" className="inline-flex min-h-10 items-center rounded-lg bg-correcto px-3 text-sm font-semibold text-white hover:opacity-90">
                   WhatsApp
                 </a>

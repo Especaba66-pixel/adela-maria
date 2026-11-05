@@ -3,11 +3,12 @@ import { Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { AvisosMovil } from "@/components/AvisosMovil";
 import { MAS } from "@/components/menu";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 import { requerirSesion } from "@/server/auth";
 
 export default async function Mas() {
   const { usuario } = await requerirSesion();
-  const entradas = MAS.filter((e) => !e.permiso || puede(usuario.rol, e.permiso));
+  const entradas = MAS.filter((e) => (mostrarWhatsapp() || e.href !== "/gestion/mas/whatsapp") && (!e.permiso || puede(usuario.rol, e.permiso)));
   return (
     <div className="space-y-6">
       <h1 className="text-4xl">Más</h1>

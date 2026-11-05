@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EstadoCitaChip } from "@/components/EstadoCita";
 import { diaLargo, fechaHora } from "@/lib/fechas";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 import { detalleCita, profesionalDeUsuario, profesionalesActivos } from "@/server/agenda";
 import { requerirSesion } from "@/server/auth";
 import { consentimientosQueFaltan } from "@/server/fichas";
@@ -109,7 +110,7 @@ export default async function Cita({ params, searchParams }: { params: Promise<{
         </Link>
       )}
 
-      {gestiona && d.cliente.telefono && (d.c.estado === "pendiente" || d.c.estado === "confirmada") && (
+      {mostrarWhatsapp() && gestiona && d.cliente.telefono && (d.c.estado === "pendiente" || d.c.estado === "confirmada") && (
         <a
           href={enlaceWhatsapp(d.cliente.telefono, mensaje)}
           target="_blank"

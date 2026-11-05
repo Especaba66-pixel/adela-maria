@@ -5,6 +5,7 @@ import { asc, desc, eq, ne } from "drizzle-orm";
 import Link from "next/link";
 import { citasEntre } from "@/server/agenda";
 import { diaLargo, fechaHora } from "@/lib/fechas";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
 import { internetConfigurado, ultimaSincronizacion } from "@/server/internet";
@@ -82,7 +83,7 @@ export default async function Reservas() {
                 )}
               </dl>
               <div className="flex flex-wrap gap-3">
-                {c.cliente.telefono && (
+                {mostrarWhatsapp() && c.cliente.telefono && (
                   <a
                     href={enlaceWhatsapp(c.cliente.telefono, mensaje)}
                     target="_blank"
@@ -135,6 +136,7 @@ export default async function Reservas() {
                 )}
               </dl>
               <div className="flex flex-wrap gap-3">
+                {mostrarWhatsapp() && (
                 <a
                   href={enlaceWhatsapp(s.telefono, mensaje)}
                   target="_blank"
@@ -143,6 +145,7 @@ export default async function Reservas() {
                 >
                   Escribir por WhatsApp
                 </a>
+                )}
                 <Link
                   href={`/gestion/agenda/nueva?solicitud=${s.id}`}
                   className="inline-flex min-h-toque items-center rounded-xl bg-dorado-oscuro px-5 font-semibold text-white hover:bg-tinta"

@@ -9,6 +9,7 @@ import { db } from "@/server/db";
 import { datosTicket } from "@/server/tpv";
 import { BotonesTicket } from "../../../tpv/ticket/[id]/Botones";
 import { Devolver } from "./Devolver";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 
 export default async function Factura({ params }: { params: Promise<{ id: string }> }) {
   const { usuario } = await requerirSesion("cobrar");
@@ -34,7 +35,7 @@ export default async function Factura({ params }: { params: Promise<{ id: string
             </Link>
           </p>
         )}
-        <BotonesTicket facturaId={id} whatsapp={`https://wa.me/?text=${encodeURIComponent("```\n" + lineasTicket(datos, 40).join("\n") + "\n```")}`} />
+        <BotonesTicket facturaId={id} whatsapp={!mostrarWhatsapp() ? "" : `https://wa.me/?text=${encodeURIComponent("```\n" + lineasTicket(datos, 40).join("\n") + "\n```")}`} />
         {f.tipo !== "rectificativa" && !rectificativa && puede(usuario.rol, "facturas.anular") && <Devolver facturaId={id} total={f.total} />}
       </div>
       <Tarjeta className="w-fit bg-white p-4">

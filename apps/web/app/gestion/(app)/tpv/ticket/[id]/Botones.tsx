@@ -16,9 +16,11 @@ export function BotonesTicket({ facturaId, whatsapp }: { facturaId: string; what
         <Boton variante="secundario" disabled={pendiente} onClick={() => iniciar(async () => setEstado(await reimprimir(facturaId)))}>
           Reimprimir
         </Boton>
-        <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-toque items-center rounded-xl border-2 border-correcto px-5 font-semibold text-correcto hover:bg-correcto-fondo">
-          Enviar por WhatsApp
-        </a>
+        {whatsapp && (
+          <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-toque items-center rounded-xl border-2 border-correcto px-5 font-semibold text-correcto hover:bg-correcto-fondo">
+            Enviar por WhatsApp
+          </a>
+        )}
       </div>
       {estado.ok && <Aviso prioridad="correcto">{estado.ok}</Aviso>}
       {estado.error && <Aviso prioridad="urgente">{estado.error}</Aviso>}

@@ -8,6 +8,7 @@ import { fichaClienta, mensajesDeClienta } from "@/server/clientas";
 import { plantillasGuardadas } from "@/server/avisos";
 import { enlaceMensaje } from "@/components/ListaAvisos";
 import { FormularioTarea } from "../../avisos/FormularioTarea";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 import { EnviarWhatsapp } from "@/components/EnviarWhatsapp";
 import { enviable } from "@/server/mensajes";
 import { apiWhatsapp, ultimoDeLaClienta } from "@/server/whatsapp";
@@ -72,7 +73,7 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
             {f.proximas > 0 && ` · ${f.proximas} ${f.proximas === 1 ? "cita próxima" : "citas próximas"}`}
           </p>
         </div>
-        {c.telefono && (
+        {mostrarWhatsapp() && c.telefono && (
           <details className="relative">
             <summary className="inline-flex min-h-toque cursor-pointer items-center rounded-xl border-2 border-correcto px-5 font-semibold text-correcto hover:bg-correcto-fondo">
               WhatsApp
@@ -208,7 +209,7 @@ export default async function Ficha({ params }: { params: Promise<{ id: string }
             <h2 className="text-xl">Apuntar una tarea sobre {c.nombre.split(" ")[0]}</h2>
             <FormularioTarea clienteId={c.id} />
           </Tarjeta>
-          {(mensajes.length > 0 || puedeResponder) && (
+          {mostrarWhatsapp() && (mensajes.length > 0 || puedeResponder) && (
             <Tarjeta className="space-y-3">
               <h2 id="whatsapp" className="scroll-mt-4 text-xl">
                 WhatsApp

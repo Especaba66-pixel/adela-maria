@@ -22,6 +22,7 @@ export const ENTORNO_PRUEBAS = {
   RESERVAS_CLAVE: RESERVAS.clave,
   // En las pruebas se sincroniza a mano («Sincronizar ahora»).
   RESERVAS_CADA_SEGUNDOS: "3600",
+  MOSTRAR_WHATSAPP: "1",
   WHATSAPP_TOKEN: "token-de-pruebas",
   WHATSAPP_NUMERO_ID: "123456",
   WHATSAPP_API_URL: `${META.url}/v23.0`,

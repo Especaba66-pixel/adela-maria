@@ -29,6 +29,7 @@ import { ventasPendientes } from "./tpv";
 import { plantillaMeta } from "./mensajes";
 import { consentimientosQueFaltan } from "./fichas";
 import { ajustesWhatsapp, apiWhatsapp } from "./whatsapp";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 
 /** Un mensaje de WhatsApp listo para preparar desde un aviso. */
 export interface MensajeAviso {
@@ -304,6 +305,8 @@ export async function avisosDeHoy(usuario: { rol: Rol }): Promise<AvisoDia[]> {
     const aprobadas = new Set((await db().select().from(plantillas)).filter((p) => plantillaMeta(p)).map((p) => p.clave));
     for (const a of visibles) if (a.mensaje && aprobadas.has(a.mensaje.plantilla)) a.mensaje.api = true;
   }
+  // Sin WhatsApp a la vista (ver lib/whatsapp-visible.ts), los avisos no traen mensaje que enviar.
+  if (!mostrarWhatsapp()) for (const a of visibles) delete a.mensaje;
   return ordenarPorPrioridad(visibles);
 }
 

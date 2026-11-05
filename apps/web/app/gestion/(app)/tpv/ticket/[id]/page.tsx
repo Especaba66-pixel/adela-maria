@@ -7,6 +7,7 @@ import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
 import { datosTicket } from "@/server/tpv";
 import { BotonesTicket } from "./Botones";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 
 export default async function Ticket({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cambio?: string; pendiente?: string; impresion?: string }> }) {
   await requerirSesion("cobrar");
@@ -39,7 +40,7 @@ export default async function Ticket({ params, searchParams }: { params: Promise
         )}
         {pendiente > 0 && <Aviso prioridad="pendiente">Quedan {formatearEuros(pendiente)} a deber. Aparecen en el TPV y en el inicio.</Aviso>}
         {q.impresion && <Aviso prioridad="importante">{q.impresion} La venta está guardada: puedes reimprimir o enviar el ticket por WhatsApp.</Aviso>}
-        <BotonesTicket facturaId={id} whatsapp={whatsapp} />
+        <BotonesTicket facturaId={id} whatsapp={mostrarWhatsapp() ? whatsapp : ""} />
       </div>
       <Tarjeta className="w-fit bg-white p-4">
         <pre aria-label="Ticket" className="font-mono text-sm leading-snug">

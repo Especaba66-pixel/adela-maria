@@ -8,6 +8,7 @@ import { requerirSesion } from "@/server/auth";
 import { db } from "@/server/db";
 import { datosVale } from "@/server/tpv";
 import { BotonesVale, DevolverTarjeta } from "./Botones";
+import { mostrarWhatsapp } from "@/lib/whatsapp-visible";
 
 const MOVIMIENTO = { carga: "Compra", pago: "Pago", devolucion: "Devolución de una venta", anulacion: "Tarjeta devuelta" };
 
@@ -47,7 +48,7 @@ export default async function Vale({ params, searchParams }: { params: Promise<{
             {compradora && <> · comprada por {compradora.nombre}</>}
           </div>
         </Tarjeta>
-        <BotonesVale tarjetaId={id} whatsapp={whatsapp} />
+        <BotonesVale tarjetaId={id} whatsapp={mostrarWhatsapp() ? whatsapp : ""} />
         <Tarjeta className="divide-y divide-borde p-0">
           <h2 className="px-6 py-3 text-2xl">Movimientos</h2>
           {t.movimientos.map((m) => (
