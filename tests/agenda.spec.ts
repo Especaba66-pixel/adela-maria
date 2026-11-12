@@ -132,6 +132,16 @@ test("la vista de día muestra las citas y dónde queda cabina libre", async () 
   await expect(adela.getByRole("link", { name: "Hueco libre de 09:10 a 14:00 con Adela" })).toBeVisible();
 });
 
+test("el día se ve por horas (con la escala a un lado) y también en lista", async () => {
+  await pagina.goto(`/gestion/agenda?fecha=${manana}`);
+  await expect(pagina.getByRole("link", { name: "Por horas" })).toHaveAttribute("aria-current", "true");
+  await expect(pagina.getByText("09:30", { exact: true })).toBeVisible(); // la escala de horas
+  await pagina.getByRole("link", { name: "Lista" }).click();
+  await expect(pagina.getByRole("link", { name: "Lista" })).toHaveAttribute("aria-current", "true");
+  await expect(pagina.getByRole("region", { name: "Agenda de Adela" }).getByRole("link", { name: /11:00–11:30 · Carmen Ruiz/ })).toBeVisible();
+  await expect(pagina.getByText("09:30", { exact: true })).toHaveCount(0);
+});
+
 test("una cita que se repite crea toda la serie y se puede cancelar entera", async () => {
   await pagina.goto(`/gestion/agenda/nueva?fecha=${manana}`);
   await elegirClienta("Carmen Ruiz");
