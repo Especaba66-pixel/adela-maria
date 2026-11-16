@@ -77,6 +77,9 @@ export default async function Informes({ searchParams }: { searchParams: Promise
             Mes siguiente ›
           </Link>
         )}
+        <Link href="/gestion/mas/informes/servicios" className={enlace}>
+          Servicios por día
+        </Link>
         <a href={`/gestion/mas/informes/exportar?mes=${mes}`} className={enlace}>
           Descargar para Excel
         </a>

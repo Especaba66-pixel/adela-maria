@@ -1,5 +1,5 @@
 import "server-only";
-import { baseSinIva, comision, instanteMadrid, sumarDias, type Cuadre } from "@adela/dominio";
+import { NOMBRE_METODO, baseSinIva, comision, desglosarTotal, horaATexto, instanteMadrid, partesMadrid, sumarDias, type Cuadre, type MetodoPago } from "@adela/dominio";
 import { sql } from "drizzle-orm";
 import { db } from "./db";
 
@@ -191,3 +191,67 @@ export async function informe(desde: string, hasta: string) {
 }
 
 export type Informe = Awaited<ReturnType<typeof informe>>;
+
+export interface LineaServicio {
+  fecha: string;
+  hora: string;
+  factura: string | null;
+  clienta: string | null;
+  tipo: "Servicio" | "Producto" | "Bono" | "Otro";
+  descripcion: string;
+  cantidad: number;
+  base: number;
+  iva: number;
+  total: number;
+  pago: string;
+  devolucion: boolean;
+}
+
+/**
+ * Lo cobrado en un periodo línea a línea (servicios, productos y bonos), con su factura, base, IVA, total y forma de
+ * pago. Las devoluciones salen en negativo. Sirve para ver el día y para mandarlo a la asesoría.
+ */
+export async function serviciosDelPeriodo(desde: string, hasta: string): Promise<LineaServicio[]> {
+  const ini = instanteMadrid(desde, 0).toISOString();
+  const fin = instanteMadrid(sumarDias(hasta, 1), 0).toISOString();
+  const filas = await consulta<{
+    creada_en: Date | string;
+    numero_completo: string | null;
+    clienta: string | null;
+    descripcion: string;
+    cantidad: number;
+    total: number;
+    iva_centesimas: number;
+    tipo: LineaServicio["tipo"];
+    metodos: string | null;
+    devolucion_de: string | null;
+  }>(sql`
+    select v.creada_en, f.numero_completo, c.nombre as clienta, l.descripcion, l.cantidad, l.total, l.iva_centesimas, v.devolucion_de,
+           case when l.tratamiento_id is not null then 'Servicio' when l.producto_id is not null then 'Producto'
+                when l.tipo_bono_id is not null then 'Bono' else 'Otro' end as tipo,
+           (select string_agg(distinct p.metodo::text, ',' order by p.metodo::text) from pagos p where p.venta_id = v.id) as metodos
+    from ventas v
+    join lineas_venta l on l.venta_id = v.id
+    left join facturas f on f.venta_id = v.id
+    left join clientes c on c.id = v.cliente_id
+    where v.creada_en >= ${ini} and v.creada_en < ${fin}
+    order by v.creada_en, v.id, l.orden`);
+  return filas.map((f) => {
+    const cuando = partesMadrid(new Date(f.creada_en));
+    const { base, cuota } = desglosarTotal(n(f.total), n(f.iva_centesimas));
+    return {
+      fecha: cuando.fecha,
+      hora: horaATexto(cuando.minutos),
+      factura: f.numero_completo,
+      clienta: f.clienta,
+      tipo: f.tipo,
+      descripcion: f.descripcion,
+      cantidad: n(f.cantidad),
+      base,
+      iva: cuota,
+      total: n(f.total),
+      pago: (f.metodos ?? "").split(",").filter(Boolean).map((m) => NOMBRE_METODO[m as MetodoPago] ?? m).join(" + "),
+      devolucion: f.devolucion_de !== null,
+    };
+  });
+}

@@ -143,6 +143,28 @@ test("con el correo de la asesoría, Stock y Gastos abren el correo ya redactado
   expect(await pagina.getByRole("link", { name: "Escribir a la asesoría" }).getAttribute("href")).toContain("mailto:gestoria%40ejemplo.es?subject=");
 });
 
+test("los servicios y ventas del día, en pantalla y en Excel (día y mes) para la asesoría", async () => {
+  await pagina.goto("/gestion/mas/informes");
+  await pagina.getByRole("link", { name: "Servicios por día" }).click();
+  await expect(pagina.getByTestId("total-dia")).toContainText("Total del día:");
+  await expect(pagina.getByRole("cell", { name: /Sérum vitamina C/ }).first()).toBeVisible();
+
+  const [dia] = await Promise.all([pagina.waitForEvent("download"), pagina.getByRole("link", { name: "Descargar este día (Excel)" }).click()]);
+  expect(dia.suggestedFilename()).toMatch(/^adela-maria-servicios-\d{4}-\d{2}-\d{2}\.csv$/);
+  const textoDia = Buffer.concat(await (await dia.createReadStream()).toArray()).toString("utf8");
+  expect(textoDia).toContain("Fecha;Hora;Factura;Clienta;Tipo;Concepto;Cantidad;Base;IVA;Total;Forma de pago");
+  expect(textoDia).toMatch(/;Producto;Sérum vitamina C;2;/);
+  expect(textoDia).toContain("TOTAL");
+
+  const [mes] = await Promise.all([pagina.waitForEvent("download"), pagina.getByRole("link", { name: /Descargar .* entero \(Excel\)/ }).click()]);
+  expect(mes.suggestedFilename()).toMatch(/^adela-maria-servicios-\d{4}-\d{2}\.csv$/);
+  const textoMes = Buffer.concat(await (await mes.createReadStream()).toArray()).toString("utf8");
+  expect(textoMes).toMatch(/Total \d{4}-\d{2}-\d{2};/);
+
+  await pagina.goto("/gestion/mas/informes/servicios?dia=2020-01-02");
+  await expect(pagina.getByText("No hay ventas este día.")).toBeVisible();
+});
+
 test("el registro de actividad recoge compras y gastos", async () => {
   await pagina.goto("/gestion/mas/configuracion/actividad");
   for (const accion of ["Añadió un proveedor", "Añadió un producto", "Registró una compra", "Hizo un recuento de stock", "Anotó un gasto"]) {
