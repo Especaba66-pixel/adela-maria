@@ -122,6 +122,19 @@ powershell -ExecutionPolicy Bypass -File infra\windows\actualizar.ps1
 
 Hace una copia de seguridad antes, descarga la versión aprobada y reinicia la app.
 
+### Que se actualice sola cada noche
+
+Se programa una vez (en PowerShell, en el TPV):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\AdelaMaria\infra\windows\programar-actualizacion.ps1
+```
+
+A las 3:30 de cada noche (o en cuanto se encienda el ordenador, si estaba apagado) mira si hay una versión nueva en
+«main». Si no la hay, no hace nada. Si la hay, hace antes una copia de seguridad, actualiza y enciende la app; si algo
+falla, la app se vuelve a encender igualmente. Lo que pasa queda en `infra\windows\actualizar.log`. Para quitarlo, el
+mismo comando con `-Quitar` al final. Ojo: todo lo que se sube a «main» llega al TPV esa noche.
+
 ## Lo que hace falta además
 
 - **Reservas por internet**: con la dirección y la clave del paso 2, en **Reservas web** sale «Reservas por internet
