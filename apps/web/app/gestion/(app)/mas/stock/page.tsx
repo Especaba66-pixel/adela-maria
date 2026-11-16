@@ -1,10 +1,13 @@
-import { NOMBRE_USO, formatearEuros } from "@adela/dominio";
+import { NOMBRE_USO, formatearEuros, hoyEnMadrid, mesVecino } from "@adela/dominio";
 import { Aviso, Tarjeta } from "@adela/ui";
 import Link from "next/link";
 import { fechaHora } from "@/lib/fechas";
 import { requerirSesion } from "@/server/auth";
 import { listaProveedores, productosConStock, ultimasCompras } from "@/server/stock";
 import { FormularioProducto } from "./Formularios";
+
+/** El mes que acaba de terminar, que es el que suele pedir la asesoría. */
+const mesPasado = () => mesVecino(hoyEnMadrid(new Date()).slice(0, 7), -1);
 
 export default async function Stock({ searchParams }: { searchParams: Promise<{ compra?: string }> }) {
   await requerirSesion("stock.gestionar");
@@ -18,6 +21,16 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
           Registrar una compra
         </Link>
       </header>
+      <form action="/gestion/mas/stock/exportar" method="get" aria-label="Stock para la asesoría" className="flex flex-wrap items-end gap-3 rounded-xl border border-borde bg-superficie p-4">
+        <label className="font-medium">
+          Stock del mes para la asesoría
+          <input name="mes" type="month" required defaultValue={mesPasado()} max={hoyEnMadrid(new Date()).slice(0, 7)} className="mt-1 block min-h-toque rounded-xl border-2 border-borde bg-white px-3" />
+        </label>
+        <button type="submit" className="inline-flex min-h-toque items-center rounded-xl border-2 border-dorado-oscuro px-5 font-semibold text-dorado-oscuro hover:bg-crema">
+          Descargar
+        </button>
+        <span className="basis-full text-sm text-tinta-suave">Lo que había, lo que entró, lo que se vendió y se gastó, y lo que queda, con su valor. Se abre en Excel.</span>
+      </form>
       {compra && <Aviso prioridad="correcto">Compra registrada por {formatearEuros(Number(compra))}: ya está en el stock y en los gastos.</Aviso>}
       {bajos.length > 0 && (
         <Aviso prioridad="importante">

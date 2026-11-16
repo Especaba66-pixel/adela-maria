@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { registrarTpv } from "./ayudas";
+import { diaMadrid, registrarTpv } from "./ayudas";
 
 /**
  * Fase 4: proveedor, productos, compra que entra en el stock, venta en el TPV que lo descuenta y aviso de stock bajo,
@@ -111,6 +111,19 @@ test("los gastos del trimestre, con su IVA, y la descarga para la gestoría", as
   expect(texto).toContain("Luz de octubre");
   expect(texto).toContain("F-2026-118;Cosmética Levante;B12345678");
   expect(texto).toContain("FACTURAS EMITIDAS");
+});
+
+test("el stock del mes para la asesoría: lo que había, entró, salió y queda, con su valor", async () => {
+  await pagina.goto("/gestion/mas/stock");
+  const form = pagina.getByRole("form", { name: "Stock para la asesoría" });
+  await form.getByLabel(/Stock del mes/).fill(diaMadrid(0).slice(0, 7));
+  const [descarga] = await Promise.all([pagina.waitForEvent("download"), form.getByRole("button", { name: "Descargar" }).click()]);
+  expect(descarga.suggestedFilename()).toMatch(/^adela-maria-stock-\d{4}-\d{2}\.csv$/);
+  const texto = Buffer.concat(await (await descarga.createReadStream()).toArray()).toString("utf8");
+  // Empezó en 0; entraron 3 (compra), salieron 2 (venta), un recuento sumó 3 y quedan 4, a 12 € cada uno.
+  expect(texto).toContain("Existencias al empezar");
+  expect(texto).toContain("Sérum vitamina C;Para vender;;Cosmética Levante;0;3;2;0;0;3;4;12,00;48,00");
+  expect(texto).toContain("Valor total del stock al acabar el mes");
 });
 
 test("el registro de actividad recoge compras y gastos", async () => {

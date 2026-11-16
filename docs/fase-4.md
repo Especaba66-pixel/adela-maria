@@ -38,6 +38,9 @@ el aviso de stock bajo**. Funciona y está probado (punto 3).
   diferencia orientativa.
 - **Descargar el trimestre para la gestoría**: un archivo que abre Excel con el resumen de IVA, las facturas emitidas
   y los gastos (con nº de factura y NIF del proveedor).
+- **Stock del mes para la asesoría** (Más → Stock → «Stock del mes para la asesoría» → Descargar): un archivo que abre Excel con, por
+  producto, las existencias al empezar el mes, las entradas (compras), las salidas por venta (netas de devoluciones), lo gastado
+  en cabina, las mermas, los ajustes, las existencias al acabar y su valor al último coste de compra, sin IVA.
 - Un gasto anotado por error se **anula** (no se borra).
 
 **Lo que garantiza la base de datos**

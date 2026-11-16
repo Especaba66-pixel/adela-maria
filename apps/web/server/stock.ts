@@ -1,7 +1,7 @@
 import "server-only";
 import { categorias, consumosTratamiento, facturas, gastos, movimientosStock, productos, proveedores, compras, lineasCompra, stock, tratamientos, usuarios } from "@adela/db";
-import { eurosACentimos, stockBajo, trimestre } from "@adela/dominio";
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { eurosACentimos, instanteMadrid, stockBajo, sumarDias, trimestre } from "@adela/dominio";
+import { and, asc, desc, eq, gte, isNull, lt, lte, sql } from "drizzle-orm";
 import { db } from "./db";
 
 /** «12,50» → 1250; vacío → null; mal escrito → undefined. */
@@ -114,4 +114,44 @@ export async function trimestreFiscal(fecha: string) {
       gastosTotal: vigentes.reduce((s, x) => s + x.g.total, 0),
     },
   };
+}
+
+/**
+ * Inventario de un mes para la asesoría: por producto, lo que había al empezar, lo que entró (compras), lo que salió
+ * (ventas netas de devoluciones, consumo en cabina y mermas), los ajustes y lo que queda al acabar. `desde` y `hasta`
+ * son los días primero y último del mes («AAAA-MM-DD»).
+ */
+export async function inventarioDelMes(desde: string, hasta: string) {
+  const inicio = instanteMadrid(desde, 0);
+  const fin = instanteMadrid(sumarDias(hasta, 1), 0);
+  const [prods, antes, mes] = await Promise.all([
+    db().select({ p: productos, proveedor: proveedores.nombre }).from(productos).leftJoin(proveedores, eq(proveedores.id, productos.proveedorId)).orderBy(asc(productos.uso), asc(productos.nombre)),
+    db()
+      .select({ id: movimientosStock.productoId, n: sql<number>`sum(${movimientosStock.cantidad})::int` })
+      .from(movimientosStock)
+      .where(lt(movimientosStock.cuando, inicio))
+      .groupBy(movimientosStock.productoId),
+    db()
+      .select({ id: movimientosStock.productoId, tipo: movimientosStock.tipo, n: sql<number>`sum(${movimientosStock.cantidad})::int` })
+      .from(movimientosStock)
+      .where(and(gte(movimientosStock.cuando, inicio), lt(movimientosStock.cuando, fin)))
+      .groupBy(movimientosStock.productoId, movimientosStock.tipo),
+  ]);
+  const inicial = new Map(antes.map((a) => [a.id, a.n]));
+  const filas = prods
+    .map(({ p, proveedor }) => {
+      const de = (tipo: string) => mes.find((m) => m.id === p.id && m.tipo === tipo)?.n ?? 0;
+      const ini = inicial.get(p.id) ?? 0;
+      const entradas = de("compra");
+      // Una venta resta y su devolución suma: lo que sale por venta es el neto.
+      const ventas = -(de("venta") + de("devolucion"));
+      const consumo = -de("consumo");
+      const mermas = -de("merma");
+      const ajustes = de("ajuste");
+      const final = ini + entradas - ventas - consumo - mermas + ajustes;
+      return { p, proveedor, ini, entradas, ventas, consumo, mermas, ajustes, final, valor: p.costeCentimos === null ? null : final * p.costeCentimos };
+    })
+    // Fuera los que no se han movido nunca y están dados de baja o a cero.
+    .filter((f) => f.ini !== 0 || f.entradas !== 0 || f.ventas !== 0 || f.consumo !== 0 || f.mermas !== 0 || f.ajustes !== 0 || f.final !== 0 || !f.p.anuladoEn);
+  return { filas, valorTotal: filas.reduce((suma, f) => suma + (f.valor ?? 0), 0), sinCoste: filas.filter((f) => f.final !== 0 && f.valor === null).length };
 }
