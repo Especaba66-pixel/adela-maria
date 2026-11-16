@@ -126,6 +126,23 @@ test("el stock del mes para la asesoría: lo que había, entró, salió y queda,
   expect(texto).toContain("Valor total del stock al acabar el mes");
 });
 
+test("con el correo de la asesoría, Stock y Gastos abren el correo ya redactado", async () => {
+  await pagina.goto("/gestion/mas/stock");
+  await expect(pagina.getByText(/pon el correo de la asesoría/)).toBeVisible();
+  await pagina.goto("/gestion/mas/configuracion/centro");
+  await pagina.getByLabel("Correo de la asesoría").fill("gestoria@asesoria");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByRole("alert").filter({ hasText: "Revisa el correo de la asesoría" })).toBeVisible();
+  await pagina.getByLabel("Correo de la asesoría").fill("Gestoria@Ejemplo.es");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Guardado. Ya se ve en la web de clientas.")).toBeVisible();
+  await pagina.goto("/gestion/mas/stock");
+  const enlace = await pagina.getByRole("link", { name: "2. Escribir a la asesoría" }).getAttribute("href");
+  expect(enlace).toContain("mailto:gestoria%40ejemplo.es?subject=Stock%20de%20");
+  await pagina.goto("/gestion/mas/gastos");
+  expect(await pagina.getByRole("link", { name: "Escribir a la asesoría" }).getAttribute("href")).toContain("mailto:gestoria%40ejemplo.es?subject=");
+});
+
 test("el registro de actividad recoge compras y gastos", async () => {
   await pagina.goto("/gestion/mas/configuracion/actividad");
   for (const accion of ["Añadió un proveedor", "Añadió un producto", "Registró una compra", "Hizo un recuento de stock", "Anotó un gasto"]) {

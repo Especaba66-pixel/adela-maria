@@ -1,0 +1,1 @@
+ALTER TABLE "centro" ADD COLUMN "correo_asesoria" text;

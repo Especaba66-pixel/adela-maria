@@ -12,6 +12,7 @@ export async function guardar(_: Resultado | null, f: FormData): Promise<Resulta
     nif: t("nif"),
     direccionFiscal: t("direccionFiscal"),
     pieTicket: t("pieTicket"),
+    correoAsesoria: t("correoAsesoria"),
   });
   revalidatePath("/", "layout");
   return r;

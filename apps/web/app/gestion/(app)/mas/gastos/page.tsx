@@ -2,7 +2,9 @@ import { stock } from "@adela/db";
 import { NOMBRE_CATEGORIA_GASTO, formatearEuros, textoPorcentaje, trimestre } from "@adela/dominio";
 import { Boton, Tarjeta } from "@adela/ui";
 import Link from "next/link";
+import { centro } from "@adela/db";
 import { requerirSesion } from "@/server/auth";
+import { db } from "@/server/db";
 import { listaProveedores, trimestreFiscal } from "@/server/stock";
 import { anular } from "./acciones";
 import { FormularioGasto } from "./Formulario";
@@ -21,7 +23,8 @@ const vecino = (fecha: string, meses: number) => {
 export default async function Gastos({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   await requerirSesion("gastos.gestionar");
   const fecha = fechaDe((await searchParams).t);
-  const [datos, proveedores] = await Promise.all([trimestreFiscal(fecha), listaProveedores()]);
+  const [datos, proveedores, [c]] = await Promise.all([trimestreFiscal(fecha), listaProveedores(), db().select({ correo: centro.correoAsesoria }).from(centro).limit(1)]);
+  const correoAsesoria = c?.correo ?? "";
   const { trimestre: t, resumen: r } = datos;
   const [anio, num] = t.nombre.split("-T");
   return (
@@ -62,6 +65,17 @@ export default async function Gastos({ searchParams }: { searchParams: Promise<{
         <a href={`/gestion/mas/gastos/exportar?t=${t.nombre}`} className="font-semibold text-dorado-oscuro underline">
           Descargar el trimestre para la gestoría (Excel)
         </a>
+        {correoAsesoria && (
+          <>
+            {" · "}
+            <a
+              href={`mailto:${encodeURIComponent(correoAsesoria)}?subject=${encodeURIComponent(`${t.nombre} · Adela María Belleza holística`)}&body=${encodeURIComponent(`Hola,\n\nTe paso el ${t.nombre}: resumen de IVA, facturas emitidas y gastos.\n\nAdjunto el archivo (adela-maria-${t.nombre}.csv).\n\nUn saludo.`)}`}
+              className="font-semibold text-dorado-oscuro underline"
+            >
+              Escribir a la asesoría
+            </a>
+          </>
+        )}
       </p>
 
       <details className="rounded-tarjeta border border-borde bg-superficie p-6" open={datos.gastos.length === 0}>

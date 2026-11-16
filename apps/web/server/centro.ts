@@ -16,6 +16,7 @@ export async function guardarDatosCentro(datos: {
   nif: string;
   direccionFiscal: string;
   pieTicket: string;
+  correoAsesoria: string;
 }): Promise<Resultado> {
   const { usuario } = await requerirSesion("configuracion.gestionar");
   let telefono: string | null = null;
@@ -35,11 +36,13 @@ export async function guardarDatosCentro(datos: {
   const nombreFiscal = datos.nombreFiscal.trim() || null;
   const direccionFiscal = datos.direccionFiscal.trim().replace(/\s+/g, " ") || null;
   const pieTicket = datos.pieTicket.trim().slice(0, 200) || null;
+  const correoAsesoria = datos.correoAsesoria.trim().toLowerCase() || null;
+  if (correoAsesoria && !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]{2,}$/.test(correoAsesoria)) return { ok: false, error: "Revisa el correo de la asesoría: debe ser una sola dirección, como nombre@asesoria.es." };
 
   const [antes] = await db().select().from(centro).limit(1);
   if (!antes) return { ok: false, error: "No hay datos del centro." };
   await db().transaction(async (tx) => {
-    const [despues] = await tx.update(centro).set({ telefono, direccion, cabinas, nombreFiscal, nif, direccionFiscal, pieTicket }).where(eq(centro.id, antes.id)).returning();
+    const [despues] = await tx.update(centro).set({ telefono, direccion, cabinas, nombreFiscal, nif, direccionFiscal, pieTicket, correoAsesoria }).where(eq(centro.id, antes.id)).returning();
     await registrarActividad(tx, { usuarioId: usuario.id, accion: "centro.editar", entidad: "centro", entidadId: antes.id, antes, despues });
   });
   return { ok: true, mensaje: "Guardado. Ya se ve en la web de clientas." };

@@ -19,6 +19,7 @@ export default async function DatosCentro() {
           nif={c?.nif ?? ""}
           direccionFiscal={c?.direccionFiscal ?? ""}
           pieTicket={c?.pieTicket ?? ""}
+          correoAsesoria={c?.correoAsesoria ?? ""}
         />
       </Tarjeta>
     </div>

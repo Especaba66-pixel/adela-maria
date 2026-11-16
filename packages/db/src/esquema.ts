@@ -47,6 +47,8 @@ export const centro = pgTable("centro", {
   nombreFiscal: text(),
   direccionFiscal: text(),
   pieTicket: text(),
+  /** Correo de la asesoría, para abrir el mensaje ya redactado con el stock y el trimestre. */
+  correoAsesoria: text(),
   /** Impresora de tickets: { tipo: "ninguna" | "simulador" | "red" | "windows", host?, puerto?, nombre?, ancho? }. */
   impresora: jsonb(),
   /** Qué avisos automáticos se generan (ver AjustesAvisos en @adela/dominio). */

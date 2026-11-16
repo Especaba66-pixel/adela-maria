@@ -14,9 +14,10 @@ export interface ValoresCentro {
   nif: string;
   direccionFiscal: string;
   pieTicket: string;
+  correoAsesoria: string;
 }
 
-export function Formulario({ telefono, direccion, cabinas, nombreFiscal, nif, direccionFiscal, pieTicket }: ValoresCentro) {
+export function Formulario({ telefono, direccion, cabinas, nombreFiscal, nif, direccionFiscal, pieTicket, correoAsesoria }: ValoresCentro) {
   const [estado, accion, pendiente] = useActionState(guardar, null);
   return (
     <form onSubmit={sinReinicio(accion)} className="space-y-5">
@@ -37,6 +38,13 @@ export function Formulario({ telefono, direccion, cabinas, nombreFiscal, nif, di
         <input name="cabinas" type="number" min={1} max={20} required defaultValue={cabinas} className={campo} />
         <span className="mt-1 block text-sm font-normal text-tinta-suave">
           Cuántas citas puede haber a la vez. Los tratamientos marcados «va sola» (como el microblading) no admiten nada a la vez.
+        </span>
+      </label>
+      <label className="block font-medium">
+        Correo de la asesoría
+        <input name="correoAsesoria" type="email" inputMode="email" defaultValue={correoAsesoria} maxLength={120} className={campo} />
+        <span className="mt-1 block text-sm font-normal text-tinta-suave">
+          Opcional. Con él, los botones «Escribir a la asesoría» (en Stock y en Gastos) abren el correo ya redactado para su dirección.
         </span>
       </label>
       <fieldset className="space-y-4 rounded-xl border border-borde p-4">
