@@ -165,6 +165,31 @@ test("los servicios y ventas del día, en pantalla y en Excel (día y mes) para 
   await expect(pagina.getByText("No hay ventas este día.")).toBeVisible();
 });
 
+test("Más → Asesoría: los papeles del mes en PDF y Excel, y el correo ya redactado", async () => {
+  await pagina.goto("/gestion/mas");
+  await pagina.getByRole("link", { name: /Asesoría/ }).click();
+  await expect(pagina.getByRole("heading", { level: 1 })).toContainText("Asesoría");
+  // Por defecto sale el mes pasado; aquí se mira el actual, que es el que tiene ventas.
+  const mes = diaMadrid(0).slice(0, 7);
+  await pagina.goto(`/gestion/mas/asesoria?mes=${mes}`);
+  for (const [clave, nombre] of [
+    ["servicios", /^adela-maria-servicios-\d{4}-\d{2}\.pdf$/],
+    ["stock", /^adela-maria-stock-\d{4}-\d{2}\.pdf$/],
+    ["trimestre", /^adela-maria-trimestre-\d{4}-T[1-4]\.pdf$/],
+  ] as const) {
+    const tarjeta = pagina.getByRole("listitem").filter({ has: pagina.getByRole("heading", { name: clave === "trimestre" ? /Trimestre/ : clave === "stock" ? /Stock de/ : /Servicios y ventas/ }) });
+    const [descarga] = await Promise.all([pagina.waitForEvent("download"), tarjeta.getByRole("link", { name: "Descargar PDF" }).click()]);
+    expect(descarga.suggestedFilename()).toMatch(nombre);
+    const bytes = Buffer.concat(await (await descarga.createReadStream()).toArray());
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(bytes.length).toBeGreaterThan(1500);
+    await descarga.saveAs(test.info().outputPath(descarga.suggestedFilename()));
+  }
+  const correo = await pagina.getByRole("link", { name: "Escribir a la asesoría" }).getAttribute("href");
+  expect(correo).toContain("mailto:gestoria%40ejemplo.es?subject=Documentaci%C3%B3n%20de%20");
+  expect(decodeURIComponent(correo!)).toContain(`adela-maria-servicios-${mes}.pdf`);
+});
+
 test("el registro de actividad recoge compras y gastos", async () => {
   await pagina.goto("/gestion/mas/configuracion/actividad");
   for (const accion of ["Añadió un proveedor", "Añadió un producto", "Registró una compra", "Hizo un recuento de stock", "Anotó un gasto"]) {

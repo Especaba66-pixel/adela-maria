@@ -30,4 +30,5 @@ export const MAS: (EntradaMenu & { permiso?: Permiso })[] = [
   { href: "/gestion/mas/gastos", nombre: "Gastos", icono: "◧", fase: 0, permiso: "gastos.gestionar" },
   { href: "/gestion/mas/whatsapp", nombre: "WhatsApp", icono: "✆", fase: 0, permiso: "configuracion.gestionar" },
   { href: "/gestion/mas/informes", nombre: "Informes", icono: "▲", fase: 0, permiso: "informes.ver" },
+  { href: "/gestion/mas/asesoria", nombre: "Asesoría", icono: "✎", fase: 0, permiso: "informes.ver" },
 ];

@@ -41,6 +41,9 @@ el aviso de stock bajo**. Funciona y está probado (punto 3).
 - **Stock del mes para la asesoría** (Más → Stock → «Stock del mes para la asesoría» → Descargar): un archivo que abre Excel con, por
   producto, las existencias al empezar el mes, las entradas (compras), las salidas por venta (netas de devoluciones), lo gastado
   en cabina, las mermas, los ajustes, las existencias al acabar y su valor al último coste de compra, sin IVA.
+- **Más → Asesoría**: los papeles del mes juntos (servicios y ventas, stock y trimestre), cada uno en **PDF** (tablas
+  para leer o imprimir, con el nombre fiscal y el NIF) o en Excel, y el botón «Escribir a la asesoría» con el correo
+  ya redactado (los PDF se adjuntan a mano).
 - Un gasto anotado por error se **anula** (no se borra).
 
 **Lo que garantiza la base de datos**
