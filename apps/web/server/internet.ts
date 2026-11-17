@@ -220,7 +220,7 @@ export async function estadoAgenda() {
       .orderBy(asc(categorias.orden), asc(tratamientos.orden)),
     activas.length ? db().select().from(horarios).where(inArray(horarios.profesionalId, activas.map((p) => p.id))) : Promise.resolve([]),
     db()
-      .select({ inicio: citas.inicio, fin: citas.fin, exclusiva: citas.exclusiva })
+      .select({ inicio: citas.inicio, fin: citas.fin, exclusiva: citas.exclusiva, aLaVez: citas.aLaVez })
       .from(citas)
       .where(and(ne(citas.estado, "cancelada"), lt(citas.inicio, hasta), gt(citas.fin, desde))),
     db()
@@ -238,6 +238,7 @@ export async function estadoAgenda() {
       categoria,
       duracion: t.duracionMinutos!,
       exclusivo: t.exclusivo,
+      aLaVez: t.aLaVez,
       precio: t.precioCentimos,
       orden: ordenCategoria * 1000 + t.orden,
     });
@@ -247,7 +248,7 @@ export async function estadoAgenda() {
     horario: horario.map((h) => ({ diaSemana: h.diaSemana, inicio: h.inicioMin, fin: h.finMin })),
     cabinas: capacidad,
     ocupado: [
-      ...ocupan.map((c) => ({ inicio: c.inicio.getTime(), fin: c.fin.getTime(), exclusiva: c.exclusiva, bloqueo: false })),
+      ...ocupan.map((c) => ({ inicio: c.inicio.getTime(), fin: c.fin.getTime(), exclusiva: c.exclusiva, aLaVez: c.aLaVez, bloqueo: false })),
       // Con una sola profesional, un bloqueo (vacaciones, descanso) cierra la agenda de internet.
       ...bloq.map((b) => ({ inicio: b.inicio.getTime(), fin: b.fin.getTime(), exclusiva: false, bloqueo: true })),
     ],

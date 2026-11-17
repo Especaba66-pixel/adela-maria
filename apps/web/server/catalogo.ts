@@ -16,6 +16,7 @@ export async function guardarTratamiento(d: {
   iva: string;
   descripcion: string;
   exclusivo: boolean;
+  aLaVez: boolean;
   retirado: boolean;
 }): Promise<Resultado> {
   const { usuario } = await requerirSesion("configuracion.gestionar");
@@ -56,6 +57,8 @@ export async function guardarTratamiento(d: {
     ivaCentesimas,
     descripcion: d.descripcion.trim() || null,
     exclusivo: d.exclusivo,
+    // Un tratamiento no puede ir solo y a la vez que otro: si va solo, manda eso.
+    aLaVez: d.aLaVez && !d.exclusivo,
     anuladoEn: d.retirado ? new Date() : null,
   };
   await db().transaction(async (tx) => {

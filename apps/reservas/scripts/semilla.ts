@@ -17,7 +17,7 @@ for (const c of CATEGORIAS) {
     if (!t.duracionMinutos) continue;
     // El id lleva el nombre: el TPV reconoce el tratamiento por su nombre hasta que sincroniza con sus propios ids.
     lineas.push(
-      `INSERT OR IGNORE INTO servicios (id, nombre, categoria, duracion, exclusivo, precio, orden) SELECT ${texto(`tarifa:${t.nombre}`)}, ${texto(t.nombre)}, ${texto(c.nombre)}, ${t.duracionMinutos}, 0, ${t.precioCentimos ?? "NULL"}, ${orden} WHERE ${nuncaSincronizado};`,
+      `INSERT OR IGNORE INTO servicios (id, nombre, categoria, duracion, exclusivo, a_la_vez, precio, orden) SELECT ${texto(`tarifa:${t.nombre}`)}, ${texto(t.nombre)}, ${texto(c.nombre)}, ${t.duracionMinutos}, ${t.exclusivo ? 1 : 0}, ${t.aLaVez ? 1 : 0}, ${t.precioCentimos ?? "NULL"}, ${orden} WHERE ${nuncaSincronizado};`,
     );
   }
 }

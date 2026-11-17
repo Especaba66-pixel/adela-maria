@@ -20,6 +20,8 @@ export interface Servicio {
   categoria: string;
   duracion: number;
   exclusivo: boolean;
+  /** Se hace a la vez que otra cita (presoterapia): no ocupa cabina, pero dos no coinciden. */
+  aLaVez?: boolean;
   precio: number | null;
 }
 /** Algo que ya ocupa el centro: una cita (de la agenda o reservada en la web) o un bloqueo. */
@@ -27,6 +29,7 @@ export interface Ocupa {
   inicio: number;
   fin: number;
   exclusiva: boolean;
+  aLaVez?: boolean;
   bloqueo: boolean;
 }
 export interface Estado {
@@ -47,7 +50,7 @@ export function horasLibres(estado: Estado, servicio: Servicio, fecha: string, a
   const { desde, hasta } = rangoFechasReserva(ahora);
   if (fecha < desde || fecha > hasta) return [];
   const bloqueos = estado.ocupado.filter((o) => o.bloqueo).map(aIntervalo);
-  const citas: CitaOcupa[] = estado.ocupado.filter((o) => !o.bloqueo).map((o) => ({ ...aIntervalo(o), exclusiva: o.exclusiva, profesionalId: PROFESIONAL }));
+  const citas: CitaOcupa[] = estado.ocupado.filter((o) => !o.bloqueo).map((o) => ({ ...aIntervalo(o), exclusiva: o.exclusiva, aLaVez: Boolean(o.aLaVez), profesionalId: PROFESIONAL }));
   return huecosLibres({
     fecha,
     horario: horarioDelDia(estado, fecha),
@@ -55,7 +58,7 @@ export function horasLibres(estado: Estado, servicio: Servicio, fecha: string, a
     duracion: servicio.duracion,
     paso: PASO_WEB,
     desde: new Date(ahora.getTime() + ANTELACION_MINUTOS_WEB * 60_000),
-    admite: (i) => cabeCita({ ...i, exclusiva: servicio.exclusivo, profesionalId: PROFESIONAL }, citas, estado.cabinas),
+    admite: (i) => cabeCita({ ...i, exclusiva: servicio.exclusivo, aLaVez: Boolean(servicio.aLaVez), profesionalId: PROFESIONAL }, citas, estado.cabinas),
   });
 }
 

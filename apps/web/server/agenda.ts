@@ -41,9 +41,9 @@ export function mensajeSinHueco(e: unknown): string | null {
   const codigo = err.cause?.code ?? err.code;
   if (codigo !== "23P01") return null;
   const texto = err.cause?.message ?? err.message ?? "";
-  return texto.includes("cita_exclusiva")
-    ? "A esa hora coincide con un tratamiento que necesita a la profesional en exclusiva (como el microblading)."
-    : "No queda cabina libre a esa hora.";
+  if (texto.includes("cita_exclusiva")) return "A esa hora coincide con un tratamiento que necesita a la profesional en exclusiva (como el microblading).";
+  if (texto.includes("a_la_vez_ocupada")) return "A esa hora ya hay otra presoterapia.";
+  return "A esa hora ya hay otra cita.";
 }
 
 /** Cuántas citas puede haber a la vez (cabinas). Sin indicar, 1. */
@@ -85,7 +85,7 @@ export async function horarioDe(profesionalId: string, fecha: string): Promise<T
 /** Citas no canceladas de todo el centro en un rango (cuentan para las cabinas). */
 export async function citasQueOcupan(desde: Date, hasta: Date, excluirCita?: string): Promise<CitaOcupa[]> {
   return db()
-    .select({ inicio: citas.inicio, fin: citas.fin, exclusiva: citas.exclusiva, profesionalId: citas.profesionalId })
+    .select({ inicio: citas.inicio, fin: citas.fin, exclusiva: citas.exclusiva, aLaVez: citas.aLaVez, profesionalId: citas.profesionalId })
     .from(citas)
     .where(and(ne(citas.estado, "cancelada"), lt(citas.inicio, hasta), gt(citas.fin, desde), excluirCita ? ne(citas.id, excluirCita) : undefined));
 }
@@ -108,7 +108,7 @@ export async function bloqueosEntre(desde: Date, hasta: Date, profesionalId?: st
 const limitesDia = (fecha: string) => ({ desde: instanteMadrid(fecha, 0), hasta: instanteMadrid(sumarDias(fecha, 1), 0) });
 
 /** Horas de comienzo libres para una profesional: horario, bloqueos, cabinas y exclusivos. */
-async function libresDe(profesionalId: string, fecha: string, duracion: number, exclusiva: boolean, paso: number, desdeMinimo?: Date, excluirCita?: string) {
+async function libresDe(profesionalId: string, fecha: string, duracion: number, exclusiva: boolean, aLaVez: boolean, paso: number, desdeMinimo?: Date, excluirCita?: string) {
   const { desde, hasta } = limitesDia(fecha);
   const [horario, bloq, ocupan, capacidad] = await Promise.all([
     horarioDe(profesionalId, fecha),
@@ -123,7 +123,7 @@ async function libresDe(profesionalId: string, fecha: string, duracion: number, 
     duracion,
     paso,
     desde: desdeMinimo,
-    admite: (i) => cabeCita({ ...i, exclusiva, profesionalId }, ocupan, capacidad),
+    admite: (i) => cabeCita({ ...i, exclusiva, aLaVez, profesionalId }, ocupan, capacidad),
   });
   return { horario, libres };
 }
@@ -135,7 +135,7 @@ export async function huecosWeb(tratamientoId: string, fecha: string): Promise<{
   const minimo = new Date(Date.now() + ANTELACION_MINUTOS_WEB * 60_000);
   const resultado = new Map<number, string>();
   for (const p of await profesionalesQueHacen([tratamientoId])) {
-    const { libres } = await libresDe(p.id, fecha, t.duracionMinutos, t.exclusivo, PASO_WEB, minimo);
+    const { libres } = await libresDe(p.id, fecha, t.duracionMinutos, t.exclusivo, t.aLaVez, PASO_WEB, minimo);
     for (const m of libres) if (!resultado.has(m)) resultado.set(m, p.id);
   }
   return [...resultado.entries()].sort((a, b) => a[0] - b[0]).map(([minutos, profesionalId]) => ({ minutos, profesionalId }));
@@ -206,6 +206,7 @@ export async function crearCitas(nueva: NuevaCita, usuarioId: string | null, tx?
               fin,
               estado: nueva.estado,
               exclusiva: servicios.some((s) => s.exclusivo),
+              aLaVez: servicios.every((s) => s.aLaVez),
               origen: nueva.origen,
               serieId,
               solicitudId: nueva.solicitudId ?? null,
@@ -355,7 +356,7 @@ export async function huecosProfesional(profesionalId: string, fecha: string, tr
   const lista = tratamientoIds.length ? await db().select().from(tratamientos).where(inArray(tratamientos.id, tratamientoIds)) : [];
   const duracion = duracionTotal(lista);
   if (!esFecha(fecha) || !duracion) return { horario: [] as Tramo[], libres: [] as number[] };
-  return libresDe(profesionalId, fecha, duracion, lista.some((t) => t.exclusivo), 15);
+  return libresDe(profesionalId, fecha, duracion, lista.some((t) => t.exclusivo), lista.length > 0 && lista.every((t) => t.aLaVez), 15);
 }
 
 /** Tratamientos que se pueden poner en una cita (los activos), con su categoría. */
@@ -368,6 +369,7 @@ export async function catalogoParaCitas() {
       categoria: categorias.nombre,
       duracionMinutos: tratamientos.duracionMinutos,
       exclusivo: tratamientos.exclusivo,
+      aLaVez: tratamientos.aLaVez,
     })
     .from(tratamientos)
     .innerJoin(categorias, eq(categorias.id, tratamientos.categoriaId))

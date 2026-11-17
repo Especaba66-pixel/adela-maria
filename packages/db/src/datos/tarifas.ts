@@ -12,6 +12,8 @@ export interface TarifaTratamiento {
   descripcion?: string;
   /** Va sola: no admite ninguna otra cita a la vez (microblading, maquillaje, uñas). */
   exclusivo?: boolean;
+  /** Se hace a la vez que otra cita (presoterapia): no ocupa cabina. */
+  aLaVez?: boolean;
 }
 
 export interface TarifaCategoria {
@@ -82,7 +84,7 @@ export const CATEGORIAS: TarifaCategoria[] = [
     nombre: "Corporal",
     tratamientos: [
       { nombre: "Peeling + hidratación corporal", duracionMinutos: 45, precioCentimos: 3_500 },
-      { nombre: "Presoterapia (1 sesión)", duracionMinutos: 35, precioCentimos: 1_000 },
+      { nombre: "Presoterapia (1 sesión)", duracionMinutos: 35, precioCentimos: 1_000, aLaVez: true },
       { nombre: "Ritual piernas ligeras + glow facial express", duracionMinutos: 35, precioCentimos: 3_000 },
     ],
   },

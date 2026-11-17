@@ -15,6 +15,7 @@ export interface ValoresTratamiento {
   iva: string;
   descripcion: string;
   exclusivo: boolean;
+  aLaVez: boolean;
   retirado: boolean;
 }
 
@@ -60,6 +61,10 @@ export function FormularioTratamiento({ valores, categorias }: { valores?: Valor
         <label className="col-span-2 flex min-h-toque items-center gap-3">
           <input name="exclusivo" type="checkbox" defaultChecked={valores?.exclusivo} className="size-6 accent-dorado-oscuro" />
           Va sola: necesita a la profesional en exclusiva (como el microblading)
+        </label>
+        <label className="col-span-2 flex min-h-toque items-center gap-3">
+          <input name="aLaVez" type="checkbox" defaultChecked={valores?.aLaVez} className="size-6 accent-dorado-oscuro" />
+          A la vez: se hace mientras hay otra cita (como la presoterapia); dos de estas no coinciden
         </label>
         {valores && (
           <label className="col-span-2 flex min-h-toque items-center gap-3">

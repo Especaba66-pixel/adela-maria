@@ -11,6 +11,7 @@ interface Tratamiento {
   categoria: string;
   duracionMinutos: number | null;
   exclusivo: boolean;
+  aLaVez: boolean;
 }
 interface Profesional {
   id: string;
@@ -156,6 +157,7 @@ export function FormularioCita({ tratamientos, equipo, inicial }: { tratamientos
                     <span className="ml-2 text-sm font-normal text-tinta-suave">
                       {t.duracionMinutos === null ? "sin duración" : `${t.duracionMinutos}′`}
                       {t.exclusivo && " · va sola"}
+                      {t.aLaVez && " · a la vez"}
                     </span>
                   </label>
                 ))}

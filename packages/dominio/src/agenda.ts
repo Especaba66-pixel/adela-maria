@@ -222,15 +222,23 @@ export function aMinutosDelDia(fecha: string, i: Intervalo): Tramo {
 export interface CitaOcupa extends Intervalo {
   exclusiva: boolean;
   profesionalId: string;
+  /**
+   * Se hace a la vez que otra cita (como la presoterapia, que va sola en su aparato): no ocupa cabina, pero dos de
+   * ellas no pueden coincidir.
+   */
+  aLaVez?: boolean;
 }
 
 /**
  * ¿Cabe una cita nueva? Puede haber a la vez tantas citas como cabinas (de cualquier profesional), y una cita
- * exclusiva (microblading) no puede coincidir con ninguna otra de la misma profesional.
+ * exclusiva (microblading) no puede coincidir con ninguna otra de la misma profesional. Las citas «a la vez»
+ * (presoterapia) van aparte: no cuentan para las cabinas ni se las cuenta, pero no coinciden entre sí.
  */
 export function cabeCita(nueva: CitaOcupa, citas: CitaOcupa[], cabinas: number): boolean {
-  const coinciden = citas.filter((c) => seSolapan(c, nueva));
-  if (coinciden.some((c) => c.profesionalId === nueva.profesionalId && (c.exclusiva || nueva.exclusiva))) return false;
+  const solapan = citas.filter((c) => seSolapan(c, nueva));
+  if (solapan.some((c) => c.profesionalId === nueva.profesionalId && (c.exclusiva || nueva.exclusiva))) return false;
+  if (nueva.aLaVez) return !solapan.some((c) => c.aLaVez);
+  const coinciden = solapan.filter((c) => !c.aLaVez);
   // El máximo de citas a la vez se alcanza al empezar alguna: basta mirar esos momentos.
   const momentos = [nueva.inicio.getTime(), ...coinciden.map((c) => c.inicio.getTime()).filter((t) => t > nueva.inicio.getTime())];
   return momentos.every((t) => coinciden.filter((c) => c.inicio.getTime() <= t && t < c.fin.getTime()).length + 1 <= cabinas);

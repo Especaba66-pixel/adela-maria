@@ -89,7 +89,7 @@ test("con dos cabinas deja dos citas a la vez, pero no tres", async () => {
   await elegirTratamientos("Brazos");
   await pagina.getByLabel("Hora").fill("09:05");
   await pagina.getByRole("button", { name: "Guardar cita" }).click();
-  await expect(alerta(pagina)).toHaveText("No queda cabina libre a esa hora.");
+  await expect(alerta(pagina)).toHaveText("A esa hora ya hay otra cita.");
 });
 
 test("una cita con varios servicios suma sus duraciones, y las horas libres ya no ofrecen las ocupadas", async () => {
@@ -113,7 +113,7 @@ test("cambia el estado: ha venido y, si fue un error, se puede deshacer", async 
 test("mueve una cita de hora, pero no si no queda cabina", async () => {
   await pagina.getByLabel("Hora", { exact: true }).fill("09:00");
   await pagina.getByRole("button", { name: "Cambiar hora" }).click();
-  await expect(alerta(pagina)).toHaveText("No queda cabina libre a esa hora.");
+  await expect(alerta(pagina)).toHaveText("A esa hora ya hay otra cita.");
   await pagina.getByLabel("Hora", { exact: true }).fill("11:00");
   await pagina.getByRole("button", { name: "Cambiar hora" }).click();
   await expect(pagina.getByText("Cita cambiada de hora.")).toBeVisible();
@@ -309,4 +309,37 @@ test("el registro de actividad recoge las citas", async () => {
   await expect(pagina.getByRole("row").filter({ hasText: "Dio una cita" }).first()).toBeVisible();
   await expect(pagina.getByRole("row").filter({ hasText: "Movió una cita" })).toHaveCount(1);
   await expect(pagina.getByRole("row").filter({ hasText: "Eliminó los datos de una clienta" })).toHaveCount(1);
+});
+
+test("con una cabina las citas no se solapan, salvo la presoterapia, que va a la vez", async () => {
+  await pagina.goto("/gestion/mas/configuracion/centro");
+  await pagina.getByLabel("Número de cabinas").fill("1");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Guardado.", { exact: false })).toBeVisible();
+  const dia = diaMadrid(6);
+  const dar = async (tratamiento: string, hora: string) => {
+    await pagina.goto(`/gestion/agenda/nueva?fecha=${dia}`);
+    await elegirClienta("Carmen Ruiz");
+    await elegirTratamientos(tratamiento);
+    await pagina.getByLabel("Hora").fill(hora);
+    await pagina.getByRole("button", { name: "Guardar cita" }).click();
+  };
+  await dar("Ceja y labio", "10:00");
+  await expect(pagina.getByText("Cita guardada.")).toBeVisible();
+  // Otra cita normal a la misma hora no cabe…
+  await dar("Axilas", "10:05");
+  await expect(alerta(pagina)).toHaveText("A esa hora ya hay otra cita.");
+  // …pero la presoterapia sí, y no otra presoterapia a la vez.
+  await dar("Presoterapia", "10:00");
+  await expect(pagina.getByText("Cita guardada.")).toBeVisible();
+  await dar("Presoterapia", "10:15");
+  await expect(alerta(pagina)).toHaveText("A esa hora ya hay otra presoterapia.");
+  // En la agenda, durante la cita normal no queda hueco libre.
+  await pagina.goto(`/gestion/agenda?fecha=${dia}`);
+  await expect(pagina.getByRole("link", { name: /^Hueco libre de 10:00/ })).toHaveCount(0);
+  // Las demás pruebas cuentan con dos cabinas.
+  await pagina.goto("/gestion/mas/configuracion/centro");
+  await pagina.getByLabel("Número de cabinas").fill("2");
+  await pagina.getByRole("button", { name: "Guardar" }).click();
+  await expect(pagina.getByText("Guardado.", { exact: false })).toBeVisible();
 });

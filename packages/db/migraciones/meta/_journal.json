@@ -127,6 +127,13 @@
       "when": 1794852910710,
       "tag": "0017_correo_asesoria",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794915415122,
+      "tag": "0018_presoterapia_a_la_vez",
+      "breakpoints": true
     }
   ]
 }

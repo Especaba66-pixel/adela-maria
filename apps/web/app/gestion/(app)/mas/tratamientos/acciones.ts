@@ -15,6 +15,7 @@ export async function guardar(_: Resultado | null, f: FormData): Promise<Resulta
     iva: texto(f, "iva"),
     descripcion: texto(f, "descripcion"),
     exclusivo: f.get("exclusivo") === "on",
+    aLaVez: f.get("aLaVez") === "on",
     retirado: f.get("retirado") === "on",
   });
   revalidatePath("/", "layout");

@@ -33,6 +33,19 @@ describe("horas libres por internet", () => {
     expect(estaLibre(estado([cita(a10, 60, true)]), facial, FECHA, a10 + 60, AHORA)).toBe(true);
   });
 
+  it("con una cabina no se solapan citas, salvo la presoterapia, que va a la vez (pero no dos presoterapias)", () => {
+    const preso: Servicio = { id: "p", nombre: "Presoterapia", categoria: "Corporal", duracion: 35, exclusivo: false, aLaVez: true, precio: 1000 };
+    const unaCita = estado([cita(a10, 60)], 1);
+    expect(estaLibre(unaCita, facial, FECHA, a10, AHORA)).toBe(false);
+    expect(estaLibre(unaCita, facial, FECHA, a10 + 30, AHORA)).toBe(false);
+    expect(estaLibre(unaCita, facial, FECHA, a10 + 60, AHORA)).toBe(true);
+    expect(estaLibre(unaCita, preso, FECHA, a10, AHORA)).toBe(true);
+    // Durante una presoterapia sí cabe otra cita, pero no otra presoterapia.
+    const conPreso = estado([{ ...cita(a10, 35), aLaVez: true }], 1);
+    expect(estaLibre(conPreso, facial, FECHA, a10, AHORA)).toBe(true);
+    expect(estaLibre(conPreso, preso, FECHA, a10 + 15, AHORA)).toBe(false);
+  });
+
   it("los bloqueos (vacaciones, descansos) cierran esas horas", () => {
     const vacaciones = { ...intervalo(FECHA, 0, 24 * 60), exclusiva: false, bloqueo: true };
     expect(horasLibres(estado([vacaciones]), facial, FECHA, AHORA)).toEqual([]);

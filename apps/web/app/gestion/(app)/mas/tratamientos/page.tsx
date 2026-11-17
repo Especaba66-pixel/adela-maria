@@ -32,6 +32,7 @@ export default async function Tratamientos({ searchParams }: { searchParams: Pro
     iva: t.ivaCentesimas === null ? "" : String(t.ivaCentesimas / 100).replace(".", ","),
     descripcion: t.descripcion ?? "",
     exclusivo: t.exclusivo,
+    aLaVez: t.aLaVez,
     retirado: t.anuladoEn !== null,
   });
 
@@ -65,6 +66,7 @@ export default async function Tratamientos({ searchParams }: { searchParams: Pro
                       <div className="text-sm text-tinta-suave">
                         {t.duracionMinutos === null ? "Duración por decidir" : `${t.duracionMinutos} min`}
                         {t.exclusivo && " · va sola"}
+                        {t.aLaVez && " · a la vez"}
                         {t.ivaCentesimas === null ? " · sin IVA" : ` · IVA ${(t.ivaCentesimas / 100).toLocaleString("es-ES")} %`}
                       </div>
                     </div>

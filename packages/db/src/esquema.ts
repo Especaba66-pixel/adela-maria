@@ -188,6 +188,8 @@ export const tratamientos = pgTable(
     descripcion: text(),
     /** Necesita a la profesional en exclusiva (por ejemplo, microblading): no admite otra cita a la vez. */
     exclusivo: boolean().notNull().default(false),
+    /** Se hace a la vez que otra cita (presoterapia: va en su aparato): no ocupa cabina; dos no coinciden. */
+    aLaVez: boolean().notNull().default(false),
     /** La agenda trabaja en tramos de 5 minutos. Vacío mientras esté por decidir. */
     duracionMinutos: integer(),
     /** Vacío mientras el precio esté por decidir: se muestra «Precio a consultar» y no se puede cobrar. */
@@ -421,7 +423,8 @@ export const series = pgTable("series", {
 export const estadoCita = pgEnum("estado_cita", ["pendiente", "confirmada", "realizada", "no_presentada", "cancelada"]);
 
 /**
- * Citas. Pueden coincidir varias a la vez, una por cabina, salvo las exclusivas (microblading), que van solas.
+ * Citas. Pueden coincidir varias a la vez, una por cabina, salvo las exclusivas (microblading), que van solas. Las
+ * «a la vez» (presoterapia) no ocupan cabina: caben junto a otra, pero no dos de ellas juntas.
  * Lo comprueba la base de datos con el disparador `citas_comprobar_hueco` (en la migración).
  */
 export const citas = pgTable(
@@ -439,6 +442,8 @@ export const citas = pgTable(
     estado: estadoCita().notNull().default("confirmada"),
     /** Alguno de sus servicios necesita a la profesional en exclusiva. */
     exclusiva: boolean().notNull().default(false),
+    /** Todos sus servicios se hacen a la vez que otra cita (presoterapia): no ocupa cabina. */
+    aLaVez: boolean().notNull().default(false),
     origen: text({ enum: ["centro", "web"] }).notNull(),
     serieId: uuid().references(() => series.id),
     solicitudId: uuid().references(() => solicitudesReserva.id),

@@ -1,10 +1,10 @@
 /** Datos iniciales del centro. Se aplican solo si aún no hay nada guardado; después se cambian desde la app. */
 
 /**
- * Citas a la vez (dato de Espe, 13 de octubre de 2026): hasta tres, salvo los tratamientos que van solos
- * (microblading, maquillaje y uñas). Se cambia en Configuración → Datos del centro.
+ * Citas a la vez (dato de Espe, 17 de noviembre de 2026): una, sin solaparse, salvo la presoterapia, que se hace a la
+ * vez que otra (va en su aparato). Antes eran tres. Se cambia en Configuración → Datos del centro.
  */
-export const CABINAS = 3;
+export const CABINAS = 1;
 
 /**
  * Horario de Adela (dato de Espe, 22 de octubre de 2026; sábado de 10:00 a 14:00 desde el 4 de noviembre de 2026).

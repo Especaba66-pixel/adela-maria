@@ -87,18 +87,17 @@ async function enrutar(req: Request, url: URL, env: Env): Promise<Response> {
 
 // ── Web ──────────────────────────────────────────────────────────────────────
 
+type FilaServicio = Omit<Servicio, "exclusivo" | "aLaVez"> & { exclusivo: number; a_la_vez: number };
+const aServicio = ({ a_la_vez, ...s }: FilaServicio): Servicio => ({ ...s, exclusivo: Boolean(s.exclusivo), aLaVez: Boolean(a_la_vez) });
+
 async function servicios(env: Env): Promise<Servicio[]> {
-  const { results } = await env.DB.prepare("SELECT id, nombre, categoria, duracion, exclusivo, precio FROM servicios ORDER BY orden, nombre").all<
-    Omit<Servicio, "exclusivo"> & { exclusivo: number }
-  >();
-  return results.map((s) => ({ ...s, exclusivo: Boolean(s.exclusivo) }));
+  const { results } = await env.DB.prepare("SELECT id, nombre, categoria, duracion, exclusivo, a_la_vez, precio FROM servicios ORDER BY orden, nombre").all<FilaServicio>();
+  return results.map(aServicio);
 }
 
 async function servicio(env: Env, id: string): Promise<Servicio | null> {
-  const s = await env.DB.prepare("SELECT id, nombre, categoria, duracion, exclusivo, precio FROM servicios WHERE id = ?")
-    .bind(id)
-    .first<Omit<Servicio, "exclusivo"> & { exclusivo: number }>();
-  return s ? { ...s, exclusivo: Boolean(s.exclusivo) } : null;
+  const s = await env.DB.prepare("SELECT id, nombre, categoria, duracion, exclusivo, a_la_vez, precio FROM servicios WHERE id = ?").bind(id).first<FilaServicio>();
+  return s ? aServicio(s) : null;
 }
 
 /** Horario, cabinas y todo lo que ocupa entre dos instantes (citas del TPV, bloqueos y reservas web aún no importadas). */
@@ -106,11 +105,11 @@ async function estado(env: Env, desde: number, hasta: number): Promise<Estado & 
   const [horario, ajustes, ocupado, reservas] = await env.DB.batch([
     env.DB.prepare("SELECT dia_semana AS diaSemana, inicio, fin FROM horario"),
     env.DB.prepare("SELECT clave, valor FROM ajustes WHERE clave IN ('cabinas', 'version')"),
-    env.DB.prepare("SELECT inicio, fin, exclusiva, bloqueo FROM ocupado WHERE inicio < ? AND fin > ?").bind(hasta, desde),
-    env.DB.prepare("SELECT inicio, fin, exclusiva, 0 AS bloqueo FROM reservas WHERE importada = 0 AND inicio < ? AND fin > ?").bind(hasta, desde),
+    env.DB.prepare("SELECT inicio, fin, exclusiva, a_la_vez, bloqueo FROM ocupado WHERE inicio < ? AND fin > ?").bind(hasta, desde),
+    env.DB.prepare("SELECT inicio, fin, exclusiva, a_la_vez, 0 AS bloqueo FROM reservas WHERE importada = 0 AND inicio < ? AND fin > ?").bind(hasta, desde),
   ]);
   const a = new Map((ajustes!.results as { clave: string; valor: string }[]).map((x) => [x.clave, x.valor]));
-  const aOcupa = (o: Record<string, number>): Ocupa => ({ inicio: o.inicio!, fin: o.fin!, exclusiva: Boolean(o.exclusiva), bloqueo: Boolean(o.bloqueo) });
+  const aOcupa = (o: Record<string, number>): Ocupa => ({ inicio: o.inicio!, fin: o.fin!, exclusiva: Boolean(o.exclusiva), aLaVez: Boolean(o.a_la_vez), bloqueo: Boolean(o.bloqueo) });
   return {
     horario: horario!.results as Estado["horario"],
     cabinas: Math.max(1, Number(a.get("cabinas") ?? 1)),
@@ -187,9 +186,9 @@ async function reservar(req: Request, env: Env): Promise<Response> {
     const [, insertada] = await env.DB.batch([
       env.DB.prepare("UPDATE ajustes SET valor = CAST(valor AS INTEGER) + 1 WHERE clave = 'version' AND valor = ?").bind(e.version),
       env.DB.prepare(
-        `INSERT INTO reservas (id, servicio_id, servicio_nombre, inicio, fin, exclusiva, nombre, telefono, nota, consentimiento, ip, creada)
-         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1`,
-      ).bind(id, s.id, s.nombre, inicio, fin, s.exclusivo ? 1 : 0, v.datos.nombre, v.datos.telefono, v.datos.nota, TEXTO_PRIVACIDAD, ip, Date.now()),
+        `INSERT INTO reservas (id, servicio_id, servicio_nombre, inicio, fin, exclusiva, a_la_vez, nombre, telefono, nota, consentimiento, ip, creada)
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1`,
+      ).bind(id, s.id, s.nombre, inicio, fin, s.exclusivo ? 1 : 0, s.aLaVez ? 1 : 0, v.datos.nombre, v.datos.telefono, v.datos.nota, TEXTO_PRIVACIDAD, ip, Date.now()),
     ]);
     if (insertada!.meta.changes === 1) return json({ ok: true, id }, 201);
   }
@@ -248,14 +247,14 @@ async function sincronizar(req: Request, env: Env): Promise<Response> {
     db.prepare("DELETE FROM servicios"),
     ...d.servicios.map((s) =>
       db
-        .prepare("INSERT INTO servicios (id, nombre, categoria, duracion, exclusivo, precio, orden) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .bind(s.id, s.nombre, s.categoria ?? "", s.duracion, s.exclusivo ? 1 : 0, s.precio ?? null, s.orden ?? 0),
+        .prepare("INSERT INTO servicios (id, nombre, categoria, duracion, exclusivo, a_la_vez, precio, orden) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(s.id, s.nombre, s.categoria ?? "", s.duracion, s.exclusivo ? 1 : 0, s.aLaVez ? 1 : 0, s.precio ?? null, s.orden ?? 0),
     ),
     db.prepare("DELETE FROM horario"),
     ...d.horario.map((h) => db.prepare("INSERT INTO horario (dia_semana, inicio, fin) VALUES (?, ?, ?)").bind(h.diaSemana, h.inicio, h.fin)),
     db.prepare("DELETE FROM ocupado"),
     ...d.ocupado.map((o) =>
-      db.prepare("INSERT INTO ocupado (inicio, fin, exclusiva, bloqueo) VALUES (?, ?, ?, ?)").bind(o.inicio, o.fin, o.exclusiva ? 1 : 0, o.bloqueo ? 1 : 0),
+      db.prepare("INSERT INTO ocupado (inicio, fin, exclusiva, a_la_vez, bloqueo) VALUES (?, ?, ?, ?, ?)").bind(o.inicio, o.fin, o.exclusiva ? 1 : 0, o.aLaVez ? 1 : 0, o.bloqueo ? 1 : 0),
     ),
     // Las importadas ya están en la agenda del TPV: aquí se borran sus datos personales.
     ...d.importadas.map((id) =>

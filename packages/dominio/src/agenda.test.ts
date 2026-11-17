@@ -162,7 +162,7 @@ describe("tramos libres del día", () => {
 
 describe("cabinas y tratamientos exclusivos", () => {
   const fecha = "2026-10-13";
-  const c = (desde: number, hasta: number, extra: Partial<{ exclusiva: boolean; profesionalId: string }> = {}) => ({
+  const c = (desde: number, hasta: number, extra: Partial<{ exclusiva: boolean; profesionalId: string; aLaVez: boolean }> = {}) => ({
     inicio: instanteMadrid(fecha, desde),
     fin: instanteMadrid(fecha, hasta),
     exclusiva: false,
@@ -188,6 +188,22 @@ describe("cabinas y tratamientos exclusivos", () => {
     expect(cabeCita(c(h(10), h(12), { exclusiva: true }), [c(h(11), h(11, 15))], 2)).toBe(false);
     // Otra profesional sí podría, si queda cabina.
     expect(cabeCita(c(h(10), h(10, 15), { profesionalId: "otra" }), [c(h(9), h(11), { exclusiva: true })], 2)).toBe(true);
+  });
+
+  it("la presoterapia va a la vez que otra cita, aunque solo haya una cabina, pero no dos presoterapias juntas", async () => {
+    const { cabeCita } = await import("./agenda");
+    const preso = (i: number, f: number) => c(i, f, { aLaVez: true });
+    // Con una cabina, dos citas normales no coinciden…
+    expect(cabeCita(c(h(10), h(10, 30)), [c(h(10), h(11))], 1)).toBe(false);
+    // …pero la presoterapia sí cabe durante otra, y otra cita cabe durante la presoterapia.
+    expect(cabeCita(preso(h(10), h(10, 35)), [c(h(10), h(11))], 1)).toBe(true);
+    expect(cabeCita(c(h(10), h(10, 30)), [preso(h(10), h(10, 35))], 1)).toBe(true);
+    // Una presoterapia más una cita normal llenan la única cabina para otra normal.
+    expect(cabeCita(c(h(10), h(10, 30)), [preso(h(10), h(10, 35)), c(h(10), h(11))], 1)).toBe(false);
+    // Dos presoterapias no coinciden (un solo aparato).
+    expect(cabeCita(preso(h(10, 15), h(10, 50)), [preso(h(10), h(10, 35))], 1)).toBe(false);
+    // Lo que va solo (microblading) tampoco admite presoterapia a la vez.
+    expect(cabeCita(preso(h(10), h(10, 35)), [c(h(9), h(12), { exclusiva: true })], 1)).toBe(false);
   });
 
   it("los huecos de la vista de día tienen en cuenta cabinas, exclusivos y bloqueos", async () => {

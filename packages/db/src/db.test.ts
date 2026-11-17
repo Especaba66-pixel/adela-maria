@@ -72,7 +72,7 @@ describe("datos iniciales", () => {
     const [prof] = await db.select().from(profesionales);
     expect(prof?.nombre).toBe("Adela");
     const [c] = await db.select().from(centro);
-    expect(c?.cabinas).toBe(3);
+    expect(c?.cabinas).toBe(1);
     // Horario de Adela: martes a viernes, con el miércoles partido.
     const h = await db.select().from(horarios).where(eq(horarios.profesionalId, prof!.id));
     expect(h.map((x) => [x.diaSemana, x.inicioMin, x.finMin]).sort()).toEqual([[2, 555, 825], [3, 555, 795], [3, 930, 1110], [4, 660, 1110], [5, 660, 1140], [6, 600, 840]]);
@@ -213,6 +213,28 @@ describe("reglas que impone la base de datos", () => {
     expect(await errorDe(cita("2026-11-03T10:00:00Z", "2026-11-03T10:15:00Z"))).toMatch(/cita_exclusiva/);
     expect(await errorDe(cita("2026-11-03T08:00:00Z", "2026-11-03T09:00:00Z"))).toBeNull();
     expect(await errorDe(cita("2026-11-03T08:30:00Z", "2026-11-03T09:30:00Z", true))).toMatch(/cita_exclusiva/);
+  });
+
+  it("la presoterapia (a la vez) no ocupa cabina, pero dos no coinciden; y una cita que ya coincidía se puede marcar hecha", async () => {
+    const [adela] = await db.select().from(profesionales).limit(1);
+    const [cliente] = await db.select().from(clientes).limit(1);
+    const cita = (desde: string, hasta: string, extra: { aLaVez?: boolean; exclusiva?: boolean } = {}) =>
+      db.insert(citas).values({ clienteId: cliente!.id, profesionalId: adela!.id, inicio: new Date(desde), fin: new Date(hasta), origen: "centro", ...extra }).returning();
+    await db.update(centro).set({ cabinas: 2 });
+    // Dos citas normales a la vez, de cuando había dos cabinas.
+    const [a] = await cita("2026-11-04T09:00:00Z", "2026-11-04T10:00:00Z");
+    expect(await errorDe(cita("2026-11-04T09:00:00Z", "2026-11-04T09:30:00Z"))).toBeNull();
+    await db.update(centro).set({ cabinas: 1 });
+    // Ya no cabe otra normal, pero la que ya estaba se puede marcar como hecha.
+    expect(await errorDe(cita("2026-11-04T09:15:00Z", "2026-11-04T09:45:00Z"))).toMatch(/cabinas_llenas/);
+    expect(await errorDe(db.update(citas).set({ estado: "realizada" }).where(eq(citas.id, a!.id)))).toBeNull();
+    // La presoterapia cabe a la vez que una normal, aunque solo haya una cabina…
+    expect(await errorDe(cita("2026-11-04T11:00:00Z", "2026-11-04T12:00:00Z"))).toBeNull();
+    expect(await errorDe(cita("2026-11-04T11:00:00Z", "2026-11-04T11:35:00Z", { aLaVez: true }))).toBeNull();
+    // …pero no dos presoterapias juntas, ni con un tratamiento que va solo.
+    expect(await errorDe(cita("2026-11-04T11:20:00Z", "2026-11-04T11:55:00Z", { aLaVez: true }))).toMatch(/a_la_vez_ocupada/);
+    expect(await errorDe(cita("2026-11-04T13:00:00Z", "2026-11-04T15:00:00Z", { exclusiva: true }))).toBeNull();
+    expect(await errorDe(cita("2026-11-04T13:30:00Z", "2026-11-04T14:05:00Z", { aLaVez: true }))).toMatch(/cita_exclusiva/);
   });
 
   it("un teléfono no se repite entre clientas activas, y los consentimientos no se modifican", async () => {
