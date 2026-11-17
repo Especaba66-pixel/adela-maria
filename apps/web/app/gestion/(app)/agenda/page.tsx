@@ -396,7 +396,11 @@ function DiaPorHoras({ fecha, gestiona, columnas }: { fecha: string; gestiona: b
                   <div className="truncate font-semibold">
                     {horaATexto(ini)}–{horaATexto(fin)} · {c.cliente.nombre}
                   </div>
-                  <div className="truncate text-tinta-suave">{c.servicios.join(" + ")}</div>
+                  <div className="truncate text-tinta-suave">
+                    {c.servicios.join(" + ")}
+                    {c.origen === "web" && " · pedida en la web"}
+                    {c.confirmoClienta && <span className="font-semibold text-correcto"> · ✓ confirmó por WhatsApp</span>}
+                  </div>
                 </Link>
               );
             })}
