@@ -10,7 +10,8 @@ describe("landing", () => {
   it("muestra todos los tratamientos de las tarifas con su precio", () => {
     for (const c of CATEGORIAS) {
       for (const t of c.tratamientos) {
-        expect(html).toContain(t.nombre);
+        if (t.enWeb === false) expect(html).not.toContain(`>${t.nombre}<`);
+        else expect(html).toContain(t.nombre);
       }
     }
     expect(html).toContain("Verse limpia y purificada (higiene facial)");
@@ -76,9 +77,9 @@ describe("landing", () => {
     expect(main.indexOf('id="tratamientos"')).toBeLessThan(main.indexOf('id="reservar"'));
     // Cada opción se abre para ver sus tratamientos, con el precio desde el que empieza.
     expect(main).toMatch(/<details class="opcion" id="cat-depilacion">\s*<summary><span class="opcion-nombre">Depilación<\/span><span class="opcion-resumen">desde 3[\s\u00a0]€<\/span>/);
-    expect(main).toMatch(/<span class="opcion-nombre">Microblading, maquillaje y uñas<\/span><span class="opcion-resumen">desde 30[\s\u00a0]€<\/span>/);
-    // Lo que aún no tiene precio, a consultar.
-    expect(main).toMatch(/<div class="nombre">Uñas<\/div>\s*<div class="detalle"><strong>Consultar<\/strong>/);
+    expect(main).toMatch(/<span class="opcion-nombre">Microblading y maquillaje<\/span><span class="opcion-resumen">desde 30[\s\u00a0]€<\/span>/);
+    // Las uñas no salen en la web (las clientas no podían pedirlas).
+    expect(main).not.toContain('<div class="nombre">Uñas</div>');
     expect(main).toContain('<details class="opcion" id="bonos">');
     expect(main).toContain('<details class="opcion" id="regalo">');
     expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');

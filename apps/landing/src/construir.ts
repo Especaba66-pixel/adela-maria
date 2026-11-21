@@ -13,7 +13,6 @@ const publico = fileURLToPath(new URL("../publico", import.meta.url));
 const TIPOS: [string, string][] = [
   ["microblading", "Microblading"],
   ["maquillaje", "Maquillaje"],
-  ["unas", "Uñas"],
   ["faciales", "Faciales"],
 ];
 /** Medidas de un JPEG (para reservar su hueco y que la página no salte al cargar las fotos). */

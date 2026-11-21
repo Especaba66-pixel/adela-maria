@@ -84,11 +84,13 @@ export function construirPagina(d: DatosLanding): string {
   };
 
   const categorias = d.categorias
+    // Lo marcado «fuera de la web» (por ejemplo, las uñas) no sale.
+    .map((c) => ({ ...c, tratamientos: c.tratamientos.filter((t) => t.enWeb !== false) }))
     .filter((c) => c.tratamientos.length > 0)
     .map((c) =>
       opcion(
         idDe("cat", c.nombre),
-        c.nombre,
+        c.nombreWeb ?? c.nombre,
         desde(c.tratamientos.map((t) => t.precioCentimos)),
         `
         ${PREGUNTA[c.nombre] ? `<p class="pregunta">${esc(PREGUNTA[c.nombre]!)}</p>` : ""}

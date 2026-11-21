@@ -14,10 +14,14 @@ export interface TarifaTratamiento {
   exclusivo?: boolean;
   /** Se hace a la vez que otra cita (presoterapia): no ocupa cabina. */
   aLaVez?: boolean;
+  /** false = no sale en la web de clientas (sigue en el TPV). */
+  enWeb?: boolean;
 }
 
 export interface TarifaCategoria {
   nombre: string;
+  /** Nombre en la web, si es distinto (por ejemplo, cuando algún tratamiento no sale en ella). */
+  nombreWeb?: string;
   tratamientos: TarifaTratamiento[];
 }
 
@@ -90,12 +94,13 @@ export const CATEGORIAS: TarifaCategoria[] = [
   },
   {
     // Van solos (dato de Espe, 13 de octubre de 2026): no admiten otra cita a la vez.
-    // PENDIENTE: precio y duración de las uñas; hasta tenerlos, no se reservan por internet.
+    // Uñas: fuera de la web (dato de Espe, 21 de noviembre de 2026: las clientas entraban y no podían pedirla).
     nombre: "Microblading, maquillaje y uñas",
+    nombreWeb: "Microblading y maquillaje",
     tratamientos: [
       { nombre: "Microblading", duracionMinutos: 210, precioCentimos: 25_000, exclusivo: true },
       { nombre: "Maquillaje", duracionMinutos: 60, precioCentimos: 3_000, exclusivo: true },
-      { nombre: "Uñas", exclusivo: true },
+      { nombre: "Uñas", exclusivo: true, enWeb: false },
     ],
   },
 ];
