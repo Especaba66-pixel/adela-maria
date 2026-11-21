@@ -170,6 +170,7 @@ export function construirPagina(d: DatosLanding): string {
   const servicios = `<nav id="tratamientos" class="servicios" aria-labelledby="titulo-servicios">
     <h2 id="titulo-servicios">Nuestros servicios</h2>
     <p class="servicios-ayuda">Toca una opción para ver sus tratamientos y precios.</p>
+    <div id="cat-lista">
     ${
       api
         ? `
@@ -183,6 +184,7 @@ export function construirPagina(d: DatosLanding): string {
         : ""
     }
     ${categorias}
+    </div>
     ${
       d.bonos.length
         ? opcion(

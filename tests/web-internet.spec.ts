@@ -149,3 +149,38 @@ test("las uñas que el centro tiene en el TPV salen en la web en su apartado, y 
   await expect(clienta.locator("#r-servicio optgroup[label='Uñas']")).toHaveCount(1);
   await expect(clienta.getByRole("group", { name: "Día" }).getByRole("button").first()).toBeVisible();
 });
+
+test("toda la lista de servicios de la web sigue al TPV: precios nuevos, lo retirado no sale y lo nuevo sí", async () => {
+  await tpv.goto("/gestion/mas/tratamientos");
+  const editar = async (nombre: string, cambio: (f: ReturnType<Page["locator"]>) => Promise<void>) => {
+    await tpv.getByLabel(`Editar ${nombre}`, { exact: true }).click();
+    const form = tpv.locator("details", { has: tpv.getByLabel(`Editar ${nombre}`, { exact: true }) }).locator("form");
+    await cambio(form);
+    await Promise.all([tpv.waitForResponse((r) => r.request().method() === "POST"), form.getByRole("button", { name: "Guardar" }).click()]);
+    await tpv.reload();
+  };
+  await editar("Axilas", (f) => f.getByLabel("Precio (€)").fill("6"));
+  await editar("Brazos", (f) => f.getByLabel(/Retirado/).check());
+  await tpv.getByLabel("Nueva categoría").fill("Novedades");
+  await tpv.getByRole("button", { name: "Crear", exact: true }).click();
+  const nuevo = tpv.locator("form").filter({ has: tpv.getByRole("button", { name: "Añadir tratamiento" }) });
+  await nuevo.getByLabel("Nombre").fill("Masaje de prueba");
+  await nuevo.getByLabel("Categoría").selectOption({ label: "Novedades" });
+  await nuevo.getByLabel("Minutos").fill("30");
+  await nuevo.getByLabel("Precio (€)").fill("20");
+  await nuevo.getByRole("button", { name: "Añadir tratamiento" }).click();
+  await expect(tpv.getByText("«Masaje de prueba» añadido.")).toBeVisible();
+  await sincronizar();
+
+  await clienta.goto(RESERVAS.landing);
+  const menu = clienta.getByRole("navigation", { name: "Nuestros servicios" });
+  await expect(menu.locator("#cat-novedades")).toBeVisible();
+  await menu.getByText("Depilación", { exact: true }).click();
+  const depilacion = menu.locator("#cat-depilacion");
+  await expect(depilacion).toContainText(/Axilas\s*10 min · 6\s€/);
+  await expect(depilacion.getByText("Brazos", { exact: true })).toHaveCount(0);
+  await menu.getByText("Novedades", { exact: true }).click();
+  await expect(menu.locator("#cat-novedades")).toContainText(/Masaje de prueba\s*30 min · 20\s€/);
+  await menu.getByRole("link", { name: "Reservar: Masaje de prueba" }).click();
+  await expect(clienta.locator("#r-servicio option:checked")).toHaveText(/^Masaje de prueba/);
+});

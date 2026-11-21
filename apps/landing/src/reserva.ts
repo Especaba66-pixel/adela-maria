@@ -143,36 +143,69 @@ export const SCRIPT_RESERVA = `(() => {
     return cuerpo;
   }
 
-  // Uñas: sus servicios los crea el centro en el TPV, así que el apartado «Uñas» de «Nuestros servicios» se rellena
-  // aquí con los que haya en cada momento, cada uno con su botón de reservar. Si no hay ninguno, no se muestra.
+  // «Nuestros servicios» sigue al TPV: al abrir la web, cada apartado se rellena con los tratamientos que el centro
+  // tiene ahora (nombre, duración, precio y botón de reservar). Lo que se quita en el TPV deja de salir, lo nuevo sale
+  // (también apartados nuevos) y los precios son los del TPV. Si no se puede conectar, se queda la lista de la página.
+  // Las uñas van juntas en su apartado, el primero.
   const esUnas = (s) => /u[ñn]as?\\b/i.test(s.nombre);
   const grupoDe = (s) => esUnas(s) ? "Uñas" : s.categoria === "Microblading, maquillaje y uñas" ? "Microblading y maquillaje" : s.categoria;
+  const claveDe = (s) => esUnas(s) ? "Uñas" : s.categoria;
+  const idCat = (t) => "cat-" + t.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const bonito = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const duracion = (m) => { const h = Math.floor(m / 60), r = m % 60; return h === 0 ? r + " min" : r === 0 ? h + " h" : h + " h " + r + " min"; };
   const precio = (c) => c == null ? "Consultar" : c === 0 ? "Gratis" : (c / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }).replace(",00", "");
-  function mostrarUnas() {
-    const caja = $("cat-unas"), lista = $("unas-lista");
-    if (!caja || !lista) return;
-    // Primero los servicios de uñas, de más barato a más caro; lo gratis (la retirada) al final.
-    const orden = (s) => (s.precio === 0 ? 1e9 : s.precio ?? 1e8);
-    const unas = servicios.filter(esUnas).sort((a, b) => orden(a) - orden(b) || a.nombre.localeCompare(b.nombre, "es"));
-    if (unas.length === 0) return;
-    lista.replaceChildren();
-    for (const s of unas) {
-      const li = document.createElement("li"); li.className = "tratamiento";
-      const texto = document.createElement("div");
-      const nombre = document.createElement("div"); nombre.className = "nombre"; nombre.textContent = bonito(s.nombre);
-      const detalle = document.createElement("div"); detalle.className = "detalle"; detalle.textContent = duracion(s.duracion) + " · ";
-      const p = document.createElement("strong"); p.textContent = precio(s.precio); detalle.append(p);
-      texto.append(nombre, detalle);
-      const boton = document.createElement("a"); boton.className = "boton boton-secundario"; boton.href = "#reservar";
-      boton.dataset.reservar = s.nombre; boton.dataset.reservarId = s.id; boton.textContent = "Reservar";
-      boton.setAttribute("aria-label", "Reservar: " + bonito(s.nombre));
-      li.append(texto, boton); lista.append(li);
+  function crearApartado(id, titulo) {
+    const caja = document.createElement("details"); caja.className = "opcion"; caja.id = id;
+    const resumen = document.createElement("summary");
+    const nombre = document.createElement("span"); nombre.className = "opcion-nombre"; nombre.textContent = titulo;
+    const desde = document.createElement("span"); desde.className = "opcion-resumen";
+    resumen.append(nombre, desde);
+    const cuerpo = document.createElement("div"); cuerpo.className = "opcion-cuerpo";
+    const lista = document.createElement("ul"); lista.className = "lista"; cuerpo.append(lista);
+    caja.append(resumen, cuerpo);
+    return caja;
+  }
+  function filaServicio(s) {
+    const li = document.createElement("li"); li.className = "tratamiento";
+    const texto = document.createElement("div");
+    const nombre = document.createElement("div"); nombre.className = "nombre"; nombre.textContent = bonito(s.nombre);
+    const detalle = document.createElement("div"); detalle.className = "detalle"; detalle.textContent = duracion(s.duracion) + " · ";
+    const p = document.createElement("strong"); p.textContent = precio(s.precio); detalle.append(p);
+    texto.append(nombre, detalle);
+    const boton = document.createElement("a"); boton.className = "boton boton-secundario"; boton.href = "#reservar";
+    boton.dataset.reservar = s.nombre; boton.dataset.reservarId = s.id; boton.textContent = "Reservar";
+    boton.setAttribute("aria-label", "Reservar: " + bonito(s.nombre));
+    li.append(texto, boton);
+    return li;
+  }
+  function mostrarServicios() {
+    const contenedor = $("cat-lista");
+    if (!contenedor || servicios.length === 0) return;
+    const grupos = new Map();
+    for (const s of servicios) {
+      const clave = claveDe(s);
+      if (!grupos.has(clave)) grupos.set(clave, { titulo: grupoDe(s), lista: [] });
+      grupos.get(clave).lista.push(s);
     }
-    const conPrecio = unas.map((s) => s.precio).filter((c) => c > 0);
-    $("unas-resumen").textContent = conPrecio.length ? "desde " + precio(Math.min(...conPrecio)) : "";
-    caja.hidden = false;
+    const claves = [...grupos.keys()].sort((a, b) => Number(b === "Uñas") - Number(a === "Uñas"));
+    const vistos = new Set();
+    for (const clave of claves) {
+      const { titulo, lista } = grupos.get(clave);
+      const id = idCat(clave);
+      vistos.add(id);
+      const caja = $(id) || crearApartado(id, titulo);
+      let ul = caja.querySelector("ul.lista");
+      if (!ul) { ul = document.createElement("ul"); ul.className = "lista"; caja.querySelector(".opcion-cuerpo").append(ul); }
+      // En uñas, de más barato a más caro y lo gratis (la retirada) al final; en lo demás, el orden del TPV.
+      const orden = (s) => (s.precio === 0 ? 1e9 : s.precio ?? 1e8);
+      const enOrden = clave === "Uñas" ? [...lista].sort((a, b) => orden(a) - orden(b) || a.nombre.localeCompare(b.nombre, "es")) : lista;
+      ul.replaceChildren(...enOrden.map(filaServicio));
+      const conPrecio = lista.map((s) => s.precio).filter((c) => c > 0);
+      caja.querySelector(".opcion-resumen").textContent = conPrecio.length ? "desde " + precio(Math.min(...conPrecio)) : "";
+      caja.hidden = false;
+      contenedor.append(caja);
+    }
+    for (const caja of contenedor.querySelectorAll("details.opcion")) if (!vistos.has(caja.id)) caja.hidden = true;
   }
 
   async function cargarServicios() {
@@ -186,7 +219,7 @@ export const SCRIPT_RESERVA = `(() => {
         if (!grupos.has(grupo)) { const g = document.createElement("optgroup"); g.label = grupo; grupos.set(grupo, g); selServicio.append(g); }
         const o = document.createElement("option"); o.value = s.id; o.textContent = bonito(s.nombre) + euros(s.precio); grupos.get(grupo).append(o);
       }
-      mostrarUnas();
+      mostrarServicios();
     } catch (e) {
       sinConexion();
     }
