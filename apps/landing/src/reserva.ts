@@ -112,7 +112,7 @@ export const SCRIPT_RESERVA = `(() => {
   const sumar = (f, n) => { const d = new Date(f + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const fmt = (f, o) => new Intl.DateTimeFormat("es-ES", { timeZone: "UTC", ...o }).format(new Date(f + "T12:00:00Z"));
   const hhmm = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-  const euros = (c) => c == null ? "" : " · " + (c / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }).replace(",00", "");
+  const euros = (c) => c == null ? "" : c === 0 ? " · Gratis" : " · " + (c / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }).replace(",00", "");
   const mostrarAviso = (t) => { aviso.textContent = t; aviso.hidden = !t; };
   const boton = (clase, html, alPulsar) => { const b = document.createElement("button"); b.type = "button"; b.className = clase; b.setAttribute("aria-pressed", "false"); b.innerHTML = html; b.addEventListener("click", alPulsar); return b; };
   const marcar = (cont, b) => { for (const x of cont.children) x.setAttribute("aria-pressed", String(x === b)); };
@@ -143,6 +143,38 @@ export const SCRIPT_RESERVA = `(() => {
     return cuerpo;
   }
 
+  // Uñas: sus servicios los crea el centro en el TPV, así que el apartado «Uñas» de «Nuestros servicios» se rellena
+  // aquí con los que haya en cada momento, cada uno con su botón de reservar. Si no hay ninguno, no se muestra.
+  const esUnas = (s) => /u[ñn]as?\\b/i.test(s.nombre);
+  const grupoDe = (s) => esUnas(s) ? "Uñas" : s.categoria === "Microblading, maquillaje y uñas" ? "Microblading y maquillaje" : s.categoria;
+  const bonito = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const duracion = (m) => { const h = Math.floor(m / 60), r = m % 60; return h === 0 ? r + " min" : r === 0 ? h + " h" : h + " h " + r + " min"; };
+  const precio = (c) => c == null ? "Consultar" : c === 0 ? "Gratis" : (c / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }).replace(",00", "");
+  function mostrarUnas() {
+    const caja = $("cat-unas"), lista = $("unas-lista");
+    if (!caja || !lista) return;
+    // Primero los servicios de uñas, de más barato a más caro; lo gratis (la retirada) al final.
+    const orden = (s) => (s.precio === 0 ? 1e9 : s.precio ?? 1e8);
+    const unas = servicios.filter(esUnas).sort((a, b) => orden(a) - orden(b) || a.nombre.localeCompare(b.nombre, "es"));
+    if (unas.length === 0) return;
+    lista.replaceChildren();
+    for (const s of unas) {
+      const li = document.createElement("li"); li.className = "tratamiento";
+      const texto = document.createElement("div");
+      const nombre = document.createElement("div"); nombre.className = "nombre"; nombre.textContent = bonito(s.nombre);
+      const detalle = document.createElement("div"); detalle.className = "detalle"; detalle.textContent = duracion(s.duracion) + " · ";
+      const p = document.createElement("strong"); p.textContent = precio(s.precio); detalle.append(p);
+      texto.append(nombre, detalle);
+      const boton = document.createElement("a"); boton.className = "boton boton-secundario"; boton.href = "#reservar";
+      boton.dataset.reservar = s.nombre; boton.dataset.reservarId = s.id; boton.textContent = "Reservar";
+      boton.setAttribute("aria-label", "Reservar: " + bonito(s.nombre));
+      li.append(texto, boton); lista.append(li);
+    }
+    const conPrecio = unas.map((s) => s.precio).filter((c) => c > 0);
+    $("unas-resumen").textContent = conPrecio.length ? "desde " + precio(Math.min(...conPrecio)) : "";
+    caja.hidden = false;
+  }
+
   async function cargarServicios() {
     try {
       // Un reintento: una conexión floja del móvil no debe dejar a nadie sin reservar.
@@ -150,9 +182,11 @@ export const SCRIPT_RESERVA = `(() => {
       selServicio.innerHTML = '<option value="">Elige un tratamiento</option>';
       const grupos = new Map();
       for (const s of servicios) {
-        if (!grupos.has(s.categoria)) { const g = document.createElement("optgroup"); g.label = s.categoria; grupos.set(s.categoria, g); selServicio.append(g); }
-        const o = document.createElement("option"); o.value = s.id; o.textContent = s.nombre + euros(s.precio); grupos.get(s.categoria).append(o);
+        const grupo = grupoDe(s);
+        if (!grupos.has(grupo)) { const g = document.createElement("optgroup"); g.label = grupo; grupos.set(grupo, g); selServicio.append(g); }
+        const o = document.createElement("option"); o.value = s.id; o.textContent = bonito(s.nombre) + euros(s.precio); grupos.get(grupo).append(o);
       }
+      mostrarUnas();
     } catch (e) {
       sinConexion();
     }

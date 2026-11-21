@@ -119,3 +119,33 @@ test("sin la clave, nadie puede leer las reservas ni cambiar la agenda de intern
   expect((await fetch(`${RESERVAS.url}/api/sync/reservas`, { headers: { Authorization: "Bearer otra-clave-que-no-es-la-buena-de-ningun-modo" } })).status).toBe(401);
   expect((await fetch(`${RESERVAS.url}/api/sync`, { method: "POST", body: "{}" })).status).toBe(401);
 });
+
+test("las uñas que el centro tiene en el TPV salen en la web en su apartado, y se reservan con un toque", async () => {
+  // Sin servicios de uñas con duración, el apartado no sale (nada vacío).
+  await clienta.goto(RESERVAS.landing);
+  const menu = clienta.getByRole("navigation", { name: "Nuestros servicios" });
+  await expect(clienta.locator("#r-servicio option").nth(1)).toBeAttached();
+  await expect(menu.getByText("Uñas", { exact: true })).toBeHidden();
+
+  await tpv.goto("/gestion/mas/tratamientos");
+  const form = tpv.locator("form").filter({ has: tpv.getByRole("button", { name: "Añadir tratamiento" }) });
+  await form.getByLabel("Nombre").fill("uñas permanente con retirada");
+  await form.getByLabel("Categoría").selectOption({ label: "Microblading, maquillaje y uñas" });
+  await form.getByLabel("Minutos").fill("75");
+  await form.getByLabel("Precio (€)").fill("15");
+  await form.getByRole("button", { name: "Añadir tratamiento" }).click();
+  await expect(tpv.getByText("«uñas permanente con retirada» añadido.")).toBeVisible();
+  await sincronizar();
+
+  await clienta.goto(RESERVAS.landing);
+  await menu.getByText("Uñas", { exact: true }).click();
+  const unas = menu.locator("#cat-unas");
+  await expect(unas).toContainText("desde 15 €");
+  await expect(unas.getByRole("listitem")).toHaveCount(1);
+  await expect(unas.getByRole("listitem")).toContainText("Uñas permanente con retirada");
+  await expect(unas.getByRole("listitem")).toContainText("1 h 15 min · 15 €");
+  await unas.getByRole("link", { name: "Reservar: Uñas permanente con retirada" }).click();
+  await expect(clienta.locator("#r-servicio option:checked")).toHaveText(/^Uñas permanente con retirada/);
+  await expect(clienta.locator("#r-servicio optgroup[label='Uñas']")).toHaveCount(1);
+  await expect(clienta.getByRole("group", { name: "Día" }).getByRole("button").first()).toBeVisible();
+});

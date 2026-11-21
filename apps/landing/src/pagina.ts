@@ -170,6 +170,18 @@ export function construirPagina(d: DatosLanding): string {
   const servicios = `<nav id="tratamientos" class="servicios" aria-labelledby="titulo-servicios">
     <h2 id="titulo-servicios">Nuestros servicios</h2>
     <p class="servicios-ayuda">Toca una opción para ver sus tratamientos y precios.</p>
+    ${
+      api
+        ? `
+      <details class="opcion" id="cat-unas" hidden>
+        <summary><span class="opcion-nombre">Uñas</span><span class="opcion-resumen" id="unas-resumen"></span></summary>
+        <div class="opcion-cuerpo">
+          <p class="pregunta">Uñas permanentes, más largas o retirada: elige la tuya y reserva al momento.</p>
+          <ul class="lista" id="unas-lista"></ul>
+        </div>
+      </details>`
+        : ""
+    }
     ${categorias}
     ${
       d.bonos.length
@@ -351,7 +363,7 @@ document.addEventListener("click", (e) => {
   const a = e.target.closest("[data-reservar]");
   if (!a) return;
   const sel = document.getElementById("r-servicio");
-  const o = [...sel.options].find((x) => x.textContent.startsWith(a.dataset.reservar));
+  const o = [...sel.options].find((x) => x.value && x.value === a.dataset.reservarId) || [...sel.options].find((x) => x.textContent.startsWith(a.dataset.reservar));
   if (o) { sel.value = o.value; sel.dispatchEvent(new Event("change")); }
 });</script>`
     : ""
