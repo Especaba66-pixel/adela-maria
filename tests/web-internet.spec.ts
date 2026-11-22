@@ -184,3 +184,18 @@ test("toda la lista de servicios de la web sigue al TPV: precios nuevos, lo reti
   await menu.getByRole("link", { name: "Reservar: Masaje de prueba" }).click();
   await expect(clienta.locator("#r-servicio option:checked")).toHaveText(/^Masaje de prueba/);
 });
+
+test("si el móvil no consigue conectar, la web no se queda «cargando»: lo reintenta, avisa y deja volver a intentarlo", async ({ browser }) => {
+  const pagina = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await pagina.route(`${RESERVAS.url}/api/servicios`, (r) => r.abort());
+  await pagina.goto(RESERVAS.landing);
+  const tratamiento = pagina.getByRole("combobox", { name: /Tratamiento/ });
+  await expect(tratamiento.locator("option").first()).toHaveText("No disponible ahora", { timeout: 15_000 });
+  await expect(pagina.getByText(/no se puede cargar el calendario/)).toBeVisible();
+  // Vuelve la conexión: con un toque se cargan los tratamientos.
+  await pagina.unroute(`${RESERVAS.url}/api/servicios`);
+  await pagina.getByRole("button", { name: "Volver a intentarlo" }).click();
+  await expect(tratamiento.locator("option", { hasText: "Ingles" })).toHaveCount(1);
+  await expect(pagina.getByText(/no se puede cargar el calendario/)).toBeHidden();
+  await pagina.close();
+});

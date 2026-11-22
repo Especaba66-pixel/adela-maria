@@ -53,7 +53,8 @@ export function bloqueReserva(api: string | null, alternativa: string, instagram
       <div class="sin-conexion" id="r-sin-conexion" hidden>
         <p id="r-sin-conexion-texto"></p>
         <div class="sin-conexion-botones">
-          <button type="button" class="boton boton-principal" id="r-copiar">Copiar enlace</button>
+          <button type="button" class="boton boton-principal" id="r-reintentar">Volver a intentarlo</button>
+          <button type="button" class="boton boton-secundario" id="r-copiar">Copiar enlace</button>
           ${instagram ? `<a class="boton boton-secundario" href="https://www.instagram.com/${esc(instagram)}/" target="_blank" rel="noopener">Escríbenos por Instagram</a>` : ""}
         </div>
       </div>
@@ -126,6 +127,11 @@ export const SCRIPT_RESERVA = `(() => {
       : "Ahora mismo no se puede cargar el calendario. Prueba en un momento, abre la web en otro navegador o escríbenos por Instagram:";
     $("r-sin-conexion").hidden = false;
   }
+  $("r-reintentar").addEventListener("click", () => {
+    selServicio.innerHTML = '<option value="">Cargando tratamientos…</option>';
+    $("r-sin-conexion").hidden = true;
+    cargarServicios();
+  });
   $("r-copiar").addEventListener("click", async () => {
     const enlace = location.origin + location.pathname;
     try {
@@ -136,12 +142,24 @@ export const SCRIPT_RESERVA = `(() => {
     }
   });
 
+  // Nunca se espera para siempre: si la conexión se queda colgada (cobertura floja, el navegador de Instagram…), a los
+  // 10 segundos se da por fallida y se reintenta o se dice qué hacer.
   async function pedir(ruta, opciones) {
-    const r = await fetch(api + ruta, opciones);
+    const control = new AbortController();
+    const reloj = setTimeout(() => control.abort(), 10000);
+    let r;
+    try {
+      r = await fetch(api + ruta, Object.assign({}, opciones, { signal: control.signal }));
+    } catch (e) {
+      throw new Error("No se ha podido conectar. Prueba otra vez.");
+    } finally {
+      clearTimeout(reloj);
+    }
     const cuerpo = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(cuerpo.error || "No se ha podido conectar. Prueba otra vez.");
     return cuerpo;
   }
+  const esperar = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
   // «Nuestros servicios» sigue al TPV: al abrir la web, cada apartado se rellena con los tratamientos que el centro
   // tiene ahora (nombre, duración, precio y botón de reservar). Lo que se quita en el TPV deja de salir, lo nuevo sale
@@ -211,7 +229,14 @@ export const SCRIPT_RESERVA = `(() => {
   async function cargarServicios() {
     try {
       // Un reintento: una conexión floja del móvil no debe dejar a nadie sin reservar.
-      servicios = (await pedir("/api/servicios").catch(() => new Promise((ok) => setTimeout(ok, 1500)).then(() => pedir("/api/servicios")))).servicios;
+      // Hasta tres intentos: una conexión floja del móvil no debe dejar a nadie sin reservar.
+      let ultimoError;
+      for (let intento = 0; intento < 3 && !servicios.length; intento++) {
+        if (intento > 0) { selServicio.innerHTML = '<option value="">Conectando… un momento</option>'; await esperar(1500 * intento); }
+        try { servicios = (await pedir("/api/servicios")).servicios || []; } catch (e) { ultimoError = e; }
+      }
+      if (!servicios.length) throw ultimoError || new Error("Sin tratamientos");
+      $("r-sin-conexion").hidden = true;
       selServicio.innerHTML = '<option value="">Elige un tratamiento</option>';
       const grupos = new Map();
       for (const s of servicios) {
