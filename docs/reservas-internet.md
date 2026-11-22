@@ -73,3 +73,11 @@ La pone sola la publicación (Actions → «Reservas por internet»): como el do
 
 El TPV puede seguir usando la dirección de workers.dev (`RESERVAS_URL` en su `.env`): esa conexión no pasa por los
 móviles de las clientas.
+
+### Instagram
+
+El navegador de dentro de Instagram (y el de Facebook) no deja a la página pedir datos a otra dirección, ni siquiera
+a `reservas.adelamariatorremejia.es`. Por eso el servicio de reservas sirve también la web entera (la misma que GitHub
+Pages, generada en la publicación) y, cuando la web se abre desde Instagram o Facebook, pasa sola a
+`https://reservas.adelamariatorremejia.es/`: allí la web y las reservas tienen la misma dirección y no hay nada que
+bloquear. Desde Safari o Chrome se queda en `adelamariatorremejia.es`.

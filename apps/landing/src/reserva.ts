@@ -104,6 +104,8 @@ export const SCRIPT_RESERVA = `(() => {
   if (!raiz) return;
   // Una o varias direcciones del servicio (separadas por comas): se usa la primera que responda.
   const apis = raiz.dataset.api.split(",").map((a) => a.trim().replace(/\\/+$/, "")).filter(Boolean);
+  // Si la página la sirve el propio servicio de reservas, se usa su misma dirección (lo que no bloquea Instagram).
+  if (apis.includes(location.origin)) apis.unshift(...apis.splice(apis.indexOf(location.origin), 1));
   let api = apis[0];
   const $ = (id) => document.getElementById(id);
   const selServicio = $("r-servicio"), pasoDia = $("r-paso-dia"), dias = $("r-dias"), mas = $("r-mas");

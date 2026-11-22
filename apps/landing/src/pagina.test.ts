@@ -83,6 +83,8 @@ describe("landing", () => {
     expect(main).toContain('<details class="opcion" id="bonos">');
     expect(main).toContain('<details class="opcion" id="regalo">');
     expect(con).toContain('data-api="https://reservas.ejemplo.workers.dev"');
+    // Desde Instagram o Facebook se va a la copia de la web que sirve el propio servicio de reservas.
+    expect(con).toContain('if(/Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)&&location.origin!=="https://reservas.ejemplo.workers.dev")location.replace("https://reservas.ejemplo.workers.dev"');
     // Si el calendario no carga (dentro de Instagram), se puede copiar el enlace o escribir por Instagram, sin WhatsApp.
     expect(con).toContain('id="r-copiar"');
     expect(con).toMatch(/<div class="sin-conexion"[\s\S]*href="https:\/\/www\.instagram\.com\/adela_maria_bellezaholistica\/"[\s\S]*Escríbenos por Instagram/);

@@ -199,3 +199,19 @@ test("si el móvil no consigue conectar, la web no se queda «cargando»: lo rei
   await expect(pagina.getByText(/no se puede cargar el calendario/)).toBeHidden();
   await pagina.close();
 });
+
+test("la web también la sirve el propio servicio de reservas (para Instagram): misma dirección y se reserva igual", async ({ browser }) => {
+  const pagina = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const llamadas: string[] = [];
+  pagina.on("request", (r) => { if (r.url().includes("/api/")) llamadas.push(new URL(r.url()).origin); });
+  await pagina.goto(`${RESERVAS.url}/`);
+  await expect(pagina.getByRole("heading", { level: 1 })).toHaveText("Cuidamos de ti");
+  const menu = pagina.getByRole("navigation", { name: "Nuestros servicios" });
+  await menu.getByText("Depilación", { exact: true }).click();
+  await menu.getByRole("link", { name: "Reservar: Axilas" }).click();
+  await expect(pagina.getByRole("combobox", { name: /Tratamiento/ }).locator("option:checked")).toHaveText(/^Axilas/);
+  await expect(pagina.getByRole("group", { name: "Día" }).getByRole("button").first()).toBeVisible();
+  // Todo con la misma dirección que la página: nada que bloquear.
+  expect(new Set(llamadas)).toEqual(new Set([RESERVAS.url]));
+  await pagina.close();
+});

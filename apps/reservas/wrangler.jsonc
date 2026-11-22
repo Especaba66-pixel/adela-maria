@@ -15,5 +15,9 @@
       "migrations_dir": "migraciones"
     }
   ],
+  // La web de clientas también se sirve desde aquí (la misma que en GitHub Pages): en reservas.adelamariatorremejia.es
+  // la web y el servicio comparten dirección, y el navegador de Instagram no bloquea las peticiones. /api/* va al
+  // servicio; lo demás, a los archivos de la web (la publicación la genera antes en apps/landing/dist).
+  "assets": { "directory": "../landing/dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
   "observability": { "enabled": true }
 }

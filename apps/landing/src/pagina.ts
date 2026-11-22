@@ -229,7 +229,12 @@ export function construirPagina(d: DatosLanding): string {
   return `<!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8">${
+    api
+      ? `
+<script>${scriptInstagram(api)}</script>`
+      : ""
+  }
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Adela María · Belleza holística</title>
 <meta name="description" content="${esc(descripcion)}">
@@ -373,6 +378,15 @@ document.addEventListener("click", (e) => {
 </body>
 </html>
 `;
+}
+
+/**
+ * El navegador de Instagram (y el de Facebook) no deja a la página pedir datos a otra dirección: desde ahí se va a la
+ * copia de la web que sirve el propio servicio de reservas (misma dirección para la web y las reservas).
+ */
+function scriptInstagram(api: string): string {
+  const destino = new URL(api.split(",")[0]!.trim()).origin;
+  return `if(/Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)&&location.origin!==${JSON.stringify(destino)})location.replace(${JSON.stringify(destino)}+"/"+location.search+location.hash);`;
 }
 
 /** Segundos que se ve cada foto de la portada. */
