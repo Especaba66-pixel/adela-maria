@@ -102,7 +102,9 @@ export const ESTILOS_RESERVA = `
 export const SCRIPT_RESERVA = `(() => {
   const raiz = document.getElementById("calendario");
   if (!raiz) return;
-  const api = raiz.dataset.api.replace(/\\/+$/, "");
+  // Una o varias direcciones del servicio (separadas por comas): se usa la primera que responda.
+  const apis = raiz.dataset.api.split(",").map((a) => a.trim().replace(/\\/+$/, "")).filter(Boolean);
+  let api = apis[0];
   const $ = (id) => document.getElementById(id);
   const selServicio = $("r-servicio"), pasoDia = $("r-paso-dia"), dias = $("r-dias"), mas = $("r-mas");
   const pasoHora = $("r-paso-hora"), horas = $("r-horas"), datos = $("r-datos"), resumen = $("r-resumen");
@@ -151,6 +153,9 @@ export const SCRIPT_RESERVA = `(() => {
     try {
       r = await fetch(api + ruta, Object.assign({}, opciones, { signal: control.signal }));
     } catch (e) {
+      // Sin conexión con esta dirección: si hay otra, se pasa a ella (y se queda para lo que siga).
+      const siguiente = apis[apis.indexOf(api) + 1];
+      if (siguiente) { api = siguiente; clearTimeout(reloj); return pedir(ruta, opciones); }
       throw new Error("No se ha podido conectar. Prueba otra vez.");
     } finally {
       clearTimeout(reloj);

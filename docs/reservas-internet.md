@@ -55,3 +55,21 @@ nombre y teléfono y reserva. La cita entra en la agenda del TPV «por confirmar
 - Para que un tratamiento se pueda reservar por internet necesita **duración** (y conviene el precio). Microblading,
   maquillaje y uñas aparecerán cuando les pongas precio y duración en **Más → Tratamientos**.
 - Para cerrar la agenda unos días (vacaciones), crea un **bloqueo** en la agenda: internet deja de ofrecer esas horas.
+
+## Dirección propia (reservas.adelamariatorremejia.es)
+
+Desde el 22 de noviembre de 2026 la web llama primero a `https://reservas.adelamariatorremejia.es` y, si no responde,
+a `https://adela-reservas.especaba66.workers.dev`. Con la dirección del mismo dominio que la web, el navegador de
+Instagram y los filtros de algunas redes no la bloquean.
+
+La pone sola la publicación (Actions → «Reservas por internet»): como el dominio ya está en Cloudflare, el script
+`apps/reservas/scripts/desplegar.mjs` conecta el servicio a esa dirección. Si en el registro de la publicación sale
+«AVISO: no se pudo poner la dirección…», el token de Cloudflare no tiene permiso; se hace a mano una vez:
+
+1. Cloudflare → **Workers & Pages** → **adela-reservas** → **Settings** → **Domains & Routes** → **Add** →
+   **Custom domain**.
+2. Escribe `reservas.adelamariatorremejia.es` y pulsa **Add domain**. En unos minutos funciona (Cloudflare pone solo
+   el certificado).
+
+El TPV puede seguir usando la dirección de workers.dev (`RESERVAS_URL` en su `.env`): esa conexión no pasa por los
+móviles de las clientas.

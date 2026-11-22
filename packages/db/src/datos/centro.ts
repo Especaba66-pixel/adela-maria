@@ -42,8 +42,9 @@ export const CONTACTO: { whatsapp: string | null; direccion: string | null; hora
   /** Usuario de Instagram del centro (dato de Espe, 12 de octubre de 2026). */
   instagram: "adela_maria_bellezaholistica",
   /**
-   * Servicio de reservas por internet (Cloudflare), publicado el 13 de octubre de 2026. Si fuera null, la web
-   * explicaría cómo pedir cita por WhatsApp.
+   * Servicio de reservas por internet (Cloudflare), publicado el 13 de octubre de 2026. La web prueba primero la
+   * dirección del propio dominio (22 de noviembre de 2026: desde Instagram y algunas redes «workers.dev» no se
+   * alcanzaba) y, si no responde, la de workers.dev. Si fuera null, la web explicaría cómo pedir cita.
    */
-  reservas: "https://adela-reservas.especaba66.workers.dev",
+  reservas: "https://reservas.adelamariatorremejia.es,https://adela-reservas.especaba66.workers.dev",
 };

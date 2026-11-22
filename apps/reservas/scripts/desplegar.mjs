@@ -45,3 +45,30 @@ for (const [secreto, variable] of [["WA_SECRETO_APP", "WHATSAPP_SECRETO_APP"], [
 }
 const url = salida.match(/https:\/\/[^\s]+\.workers\.dev/)?.[0];
 console.log(`\nServicio de reservas publicado en: ${url ?? "(mira la salida de arriba)"}`);
+
+// Dirección propia (reservas.adelamariatorremejia.es): el dominio ya está en Cloudflare, así que el servicio se sirve
+// también ahí. Con la dirección del mismo dominio que la web, ni el navegador de Instagram ni los filtros de algunas
+// redes la bloquean como a «workers.dev». Si el permiso de Cloudflare no alcanza, se avisa y no se para nada.
+const DOMINIO = "adelamariatorremejia.es";
+const SUBDOMINIO = `reservas.${DOMINIO}`;
+async function cloudflare(ruta, opciones = {}) {
+  const r = await fetch(`https://api.cloudflare.com/client/v4${ruta}`, {
+    ...opciones,
+    headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+  });
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok || cuerpo.success === false) throw new Error(`${r.status} ${JSON.stringify(cuerpo.errors ?? cuerpo).slice(0, 400)}`);
+  return cuerpo.result;
+}
+try {
+  const [zona] = await cloudflare(`/zones?name=${DOMINIO}&account.id=${process.env.CLOUDFLARE_ACCOUNT_ID}`);
+  if (!zona) throw new Error(`el dominio ${DOMINIO} no está en esta cuenta de Cloudflare`);
+  await cloudflare(`/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/workers/domains`, {
+    method: "PUT",
+    body: JSON.stringify({ hostname: SUBDOMINIO, service: "adela-reservas", environment: "production", zone_id: zona.id }),
+  });
+  console.log(`Servicio de reservas también en: https://${SUBDOMINIO}`);
+} catch (e) {
+  console.log(`AVISO: no se pudo poner la dirección https://${SUBDOMINIO} (${e.message}).`);
+  console.log("La web sigue usando la dirección de workers.dev. Mira docs/reservas-internet.md, «Dirección propia».");
+}

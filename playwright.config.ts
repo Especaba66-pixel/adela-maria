@@ -81,7 +81,8 @@ export default defineConfig({
       url: RESERVAS.landing,
       timeout: 60_000,
       reuseExistingServer: false,
-      env: { RESERVAS_URL: RESERVAS.url },
+      // Primero una dirección que no responde (como la propia del dominio mientras no esté activa): la web pasa sola a la buena.
+      env: { RESERVAS_URL: `http://127.0.0.1:8789,${RESERVAS.url}` },
     },
     { command: "node tests/meta-falso.mjs 8099", url: META.url, timeout: 10_000, reuseExistingServer: false },
   ],
